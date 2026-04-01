@@ -5,6 +5,8 @@ Project-X web console (English): load core IR examples, run verifier + orchestra
 from __future__ import annotations
 
 import json
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
@@ -13,22 +15,54 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from src.execution.engine_routing import run_rust_pipeline_with_fallback
+from src.ai.adapter import suggest_ir_bundle_from_prompt
+from src.control.ir_mutation_json import try_apply_ir_mutations_from_json
+from src.control.patch_preview import build_patch_preview_report
+from src.diagnostics.report import build_full_diagnostic_report
+from src.diagnostics.system_health import build_system_health_report
 from src.ir.canonical_ir import (
-    compute_ir_fingerprint,
+    CANONICAL_IR_VERSION,
     ir_goal_from_json,
     ir_goal_to_json,
-    validate_ir,
-    validate_ir_handoff_compatibility,
+    validate_bundle_envelope,
 )
-from src.orchestrator.system_orchestrator import SystemOrchestrator
-from src.projection.projection_graph import projection_graph_to_json
-from src.projection.projection_strategy import ProjectionContext, projection_plan_to_json
+from src.ir.explain import explain_ir_goal
+from src.ir.quality import build_ir_quality_report
+from src.orchestrator.pipeline_run import build_console_run_payload
+from src.projection.projection_strategy import ProjectionContext, explain_projection_strategy
 from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_function_registry
+from .middleware_rate_limit import RateLimitMiddleware
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(REPO_ROOT / ".env")
+    load_dotenv(REPO_ROOT / ".env.local")
+except ImportError:
+    pass
+
 EXAMPLES_DIR = REPO_ROOT / "examples" / "core"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+_LOG = logging.getLogger("project_x.webui")
+
+
+def _bundle_envelope_errors(bundle: Dict[str, Any]) -> List[str]:
+    if not isinstance(bundle, dict):
+        return ["Request body ir_bundle must be a JSON object."]
+    return validate_bundle_envelope(bundle)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s [%(name)s] %(message)s",
+    )
+    _LOG.info("Project-X web console ready")
+    yield
 
 
 class RunRequest(BaseModel):
@@ -37,11 +71,29 @@ class RunRequest(BaseModel):
     engine_mode: Literal["rust_preferred", "python_only", "rust_only"] = "rust_preferred"
 
 
+class PatchRequest(BaseModel):
+    ir_bundle: Dict[str, Any]
+    mutations: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class AISuggestRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    max_retries: int = Field(default=3, ge=0, le=8)
+    model: Optional[str] = None
+
+
+class SystemHealthRequest(RunRequest):
+    skip_parity: bool = False
+
+
 app = FastAPI(
     title="Project-X Console",
     description="AI-first core IR: validate, execute (engine), generate projections.",
-    version="0.1.0",
+    version="0.3.0",
+    lifespan=lifespan,
 )
+
+app.add_middleware(RateLimitMiddleware, max_calls=120, window_sec=60.0)
 
 if STATIC_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -55,9 +107,23 @@ def index_page():
     return FileResponse(index)
 
 
+def _package_version() -> str:
+    try:
+        from importlib.metadata import version
+
+        return version("project-x")
+    except Exception:
+        return "0.0.0"
+
+
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "service": "project-x-webui"}
+    return {
+        "status": "ok",
+        "service": "project-x-webui",
+        "canonical_ir_version": CANONICAL_IR_VERSION,
+        "package_version": _package_version(),
+    }
 
 
 @app.get("/api/examples")
@@ -65,7 +131,11 @@ def list_examples():
     if not EXAMPLES_DIR.is_dir():
         return {"examples": []}
     out: List[Dict[str, str]] = []
-    for p in sorted(EXAMPLES_DIR.glob("*.json")):
+    paths = sorted(
+        EXAMPLES_DIR.glob("*.json"),
+        key=lambda x: (not x.name.startswith("demo_"), x.name),
+    )
+    for p in paths:
         out.append({"name": p.name, "path": str(p.relative_to(REPO_ROOT)).replace("\\", "/")})
     return {"examples": out}
 
@@ -81,6 +151,100 @@ def get_example(name: str):
         return json.load(f)
 
 
+@app.post("/api/diagnostics")
+def api_diagnostics(body: RunRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    return build_full_diagnostic_report(
+        ir_goal,
+        bundle_envelope_errors=_bundle_envelope_errors(body.ir_bundle),
+    )
+
+
+@app.post("/api/ir/patch")
+def api_ir_patch(body: PatchRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    new_goal, err = try_apply_ir_mutations_from_json(ir_goal, body.mutations)
+    if err:
+        raise HTTPException(400, err)
+    rep = build_full_diagnostic_report(
+        new_goal,
+        bundle_envelope_errors=_bundle_envelope_errors(body.ir_bundle),
+    )
+    return {
+        "ok": rep["ok"],
+        "ir_bundle": ir_goal_to_json(new_goal),
+        "diagnostics": rep,
+    }
+
+
+@app.post("/api/quality")
+def api_quality(body: RunRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    return build_ir_quality_report(ir_goal)
+
+
+@app.post("/api/explain")
+def api_explain(body: RunRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    return explain_ir_goal(ir_goal)
+
+
+@app.post("/api/strategy")
+def api_strategy(body: RunRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    reg = default_ir_function_registry()
+    sem = build_ir_semantic_report(ir_goal, reg)
+    return explain_projection_strategy(ir_goal, sem, None, ProjectionContext())
+
+
+@app.post("/api/preview-patch")
+def api_preview_patch(body: PatchRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    return build_patch_preview_report(ir_goal, body.mutations)
+
+
+@app.post("/api/system-health")
+def api_system_health(body: SystemHealthRequest):
+    try:
+        ir_goal = ir_goal_from_json(body.ir_bundle)
+    except Exception as ex:
+        raise HTTPException(400, f"IR parse failed: {ex}") from ex
+    return build_system_health_report(
+        ir_goal,
+        demo_inputs=dict(body.demo_inputs or {}),
+        engine_mode=body.engine_mode,
+        include_parity=not body.skip_parity,
+    )
+
+
+@app.post("/api/ai/suggest")
+def api_ai_suggest(body: AISuggestRequest):
+    _LOG.info("AI suggest request (prompt length=%s)", len(body.prompt))
+    return suggest_ir_bundle_from_prompt(
+        body.prompt,
+        max_retries=body.max_retries,
+        model=body.model,
+    )
+
+
 @app.post("/api/run")
 def run_pipeline(body: RunRequest):
     try:
@@ -88,50 +252,9 @@ def run_pipeline(body: RunRequest):
     except Exception as ex:
         raise HTTPException(400, f"IR parse failed: {ex}") from ex
 
-    v_err = validate_ir(ir_goal)
-    h_err = validate_ir_handoff_compatibility(ir_goal)
-    reg = default_ir_function_registry()
-    semantic = build_ir_semantic_report(ir_goal, reg)
-    fp = compute_ir_fingerprint(ir_goal)
-
-    routing: Dict[str, Any] = {}
-    rust_block: Dict[str, Any] = {}
-    fallback: Dict[str, Any] = {}
-    try:
-        routing, rust_block, fallback = run_rust_pipeline_with_fallback(
-            ir_goal,
-            dict(body.demo_inputs or {}),
-            mode=body.engine_mode,
-        )
-    except Exception as ex:
-        rust_block = {"error": str(ex)}
-
-    orch = SystemOrchestrator(ir_goal, context=ProjectionContext(), engine_mode=body.engine_mode)
-    orch_out = orch.run_v4() if hasattr(orch, "run_v4") else orch.run()
-
-    ir_valid = len(v_err) == 0 and len(h_err) == 0
-
-    plan = orch_out.get("projection_plan")
-    graph = orch_out.get("graph")
-    return {
-        "ir_valid": ir_valid,
-        "validation_errors": v_err,
-        "handoff_errors": h_err,
-        "fingerprint": fp,
-        "semantic": semantic,
-        "engine": {
-            "routing": routing,
-            "rust_output": rust_block,
-            "fallback": fallback,
-        },
-        "orchestrator": {
-            "consistency_errors": orch_out.get("consistency_errors", []),
-            "artifacts": orch_out.get("artifacts", []),
-            "projection_plan": projection_plan_to_json(plan)["projection_plan"] if plan else None,
-            "projection_graph": projection_graph_to_json(graph)["projection_graph"] if graph else None,
-            "semantic": orch_out.get("semantic"),
-            "manifest": orch_out.get("manifest"),
-            "self_analysis_report": orch_out.get("self_analysis_report"),
-        },
-        "ir_bundle_echo": ir_goal_to_json(ir_goal),
-    }
+    return build_console_run_payload(
+        ir_goal,
+        dict(body.demo_inputs or {}),
+        engine_mode=body.engine_mode,
+        bundle_envelope_errors=_bundle_envelope_errors(body.ir_bundle),
+    )

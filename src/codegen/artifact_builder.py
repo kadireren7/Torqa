@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 from src.ir.canonical_ir import IRGoal
 from src.projection.projection_strategy import ProjectionPlan, ProjectionTarget
+from src.projection.extra_artifacts import merge_extra_projection_artifacts
 from src.codegen.ir_to_projection import (
     ir_goal_cpp_projection,
     ir_goal_go_projection,
@@ -387,4 +388,4 @@ def generate_all_artifacts(ir_goal: IRGoal, projection_plan: ProjectionPlan) -> 
         if _target_key(t) == website_key:
             continue
         artifacts.append(generate_stub_artifact(ir_goal, t))
-    return artifacts
+    return merge_extra_projection_artifacts(ir_goal, projection_plan, artifacts)

@@ -13,6 +13,7 @@ from src.execution.ir_execution import (
     IRExecutionContext,
     default_ir_runtime_impls,
     execute_ir_goal,
+    ir_execution_plan_to_json,
     ir_execution_result_to_json,
 )
 from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_function_registry
@@ -63,7 +64,7 @@ def fallback_to_python(ir_goal: IRGoal, demo_inputs: Dict[str, Any]) -> Dict[str
         "semantic_report": semantic_report,
         "guarantee_table": semantic_report.get("guarantee_table", {}),
         "execution": {
-            "execution_plan": {"steps": [s.__dict__ for s in ir_exec_plan.steps]},
+            "execution_plan": ir_execution_plan_to_json(ir_exec_plan),
             "execution_result": ir_execution_result_to_json(ir_exec_result),
         },
     }

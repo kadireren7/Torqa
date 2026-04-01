@@ -338,6 +338,47 @@ def choose_projection_targets(
     return ProjectionPlan(primary, secondary, notes)
 
 
+def explain_projection_strategy(
+    ir_goal: IRGoal,
+    semantic_report: Dict[str, Any],
+    execution_summary: Optional[Dict[str, Any]] = None,
+    context: Optional[ProjectionContext] = None,
+) -> Dict[str, Any]:
+    """
+    Transparent breakdown of language scores, chosen plan, and deprioritized targets.
+    """
+    ctx = context or ProjectionContext()
+    ranked: List[Dict[str, Any]] = []
+    for lang in sorted(SUPPORTED_LANGUAGES):
+        score, reasons = score_projection_target(
+            lang, ir_goal, semantic_report, execution_summary, ctx
+        )
+        ranked.append(
+            {
+                "language": lang,
+                "score": score,
+                "inferred_purpose": _choose_purpose(lang, ctx),
+                "reasons": reasons,
+            }
+        )
+    ranked.sort(key=lambda x: x["score"], reverse=True)
+    plan = choose_projection_targets(ir_goal, semantic_report, execution_summary, ctx)
+    primary_key = (plan.primary_target.language, plan.primary_target.purpose)
+    rejected = [
+        r
+        for r in ranked
+        if (r["language"], r["inferred_purpose"]) != primary_key and r["score"] < 0.35
+    ]
+    return {
+        "domain": analyze_ir_domains(ir_goal),
+        "features": _infer_features(ir_goal, semantic_report, execution_summary),
+        "ranked_languages": ranked,
+        "selected": projection_plan_to_json(plan)["projection_plan"],
+        "deprioritized_summary": rejected[:8],
+        "strategy_notes": list(plan.strategy_notes),
+    }
+
+
 def projection_plan_to_json(plan: ProjectionPlan) -> dict:
     def tgt_to_json(t: ProjectionTarget) -> dict:
         return {

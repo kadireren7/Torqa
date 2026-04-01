@@ -1,7 +1,10 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+_DEFAULT_RUST_TIMEOUT = 120.0
 
 
 def _resolve_rust_core_dir() -> Path:
@@ -33,6 +36,10 @@ def run_rust_core(ir_bundle_json: str) -> Dict[str, Any]:
             "stderr": "Repository rust-core directory is missing or inaccessible.",
         }
     try:
+        timeout = float(os.environ.get("PROJECT_X_RUST_TIMEOUT_SEC", str(_DEFAULT_RUST_TIMEOUT)))
+    except ValueError:
+        timeout = _DEFAULT_RUST_TIMEOUT
+    try:
         proc = subprocess.run(
             cmd,
             input=ir_bundle_json.encode("utf-8"),
@@ -40,7 +47,15 @@ def run_rust_core(ir_bundle_json: str) -> Dict[str, Any]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
+            timeout=timeout,
         )
+    except subprocess.TimeoutExpired:
+        return {
+            "ok": False,
+            "error": "rust_core_timeout",
+            "detail": f"cargo bridge exceeded {timeout}s (set PROJECT_X_RUST_TIMEOUT_SEC to adjust)",
+            "stderr": "Rust bridge subprocess timed out.",
+        }
     except FileNotFoundError as ex:
         return {
             "ok": False,

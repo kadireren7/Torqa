@@ -1,9 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "project-x"
 version = "0.0.0"
-description = "AI-first IR core with verifier and projections"
+description = "AI-first IR core with verifier, projections, and web console"
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-dotenv>=1.0.0",
+    "jsonschema>=4.23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.27.0",
+    "jsonschema>=4.23.0",
+]
+
+[project.scripts]
+project-x = "src.cli.main:main"
+project-x-console = "webui.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "webui*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,5 +1,5 @@
 """
-IR-native execution semantics (V1.3).
+IR-native execution semantics (V1.4).
 
 Depends only on canonical IR + IR semantic registry/guarantees.
 No parser AST, CoreGoal, or CLI bindings.
@@ -182,6 +182,7 @@ def default_ir_runtime_impls() -> Dict[str, Any]:
 
     return {
         "exists": lambda x: x is not None,
+        "strings_equal": lambda a, b: str(a) == str(b),
         "verify_username": lambda username: True,
         "verify_password": lambda username, password: True,
         "user_account_status": lambda username: "active",

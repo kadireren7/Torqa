@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-use crate::execution::planner::build_execution_plan;
+use crate::execution::planner::{build_execution_plan, ExecutionPlan};
 use crate::execution::runtime::ExecutionContext;
 use crate::ir::expr::IrExpr;
 use crate::ir::goal::{IrCondition, IrGoal, IrTransition};
@@ -71,7 +71,11 @@ pub fn evaluate_expr(expr: &IrExpr, ctx: &mut ExecutionContext, runtime: &Runtim
     }
 }
 
-pub fn execute(goal: &IrGoal, ctx: &mut ExecutionContext, runtime: &RuntimeMap) -> ExecutionResult {
+pub fn execute(
+    goal: &IrGoal,
+    ctx: &mut ExecutionContext,
+    runtime: &RuntimeMap,
+) -> (ExecutionResult, ExecutionPlan) {
     let mut plan = build_execution_plan(goal);
     let c_req: HashMap<String, &IrCondition> = goal
         .preconditions
@@ -96,14 +100,17 @@ pub fn execute(goal: &IrGoal, ctx: &mut ExecutionContext, runtime: &RuntimeMap) 
                     let ok = evaluate_expr(&c.expr, ctx, runtime).as_bool().unwrap_or(false);
                     if !ok {
                         s.status = "failed".to_string();
-                        return ExecutionResult {
-                            success: false,
-                            result_text: None,
-                            executed_transitions: executed,
-                            failed_step: Some(s.step_id.clone()),
-                            errors: vec![format!("Precondition '{}' failed.", c.condition_id)],
-                            after_state_summary: json!({}),
-                        };
+                        return (
+                            ExecutionResult {
+                                success: false,
+                                result_text: None,
+                                executed_transitions: executed,
+                                failed_step: Some(s.step_id.clone()),
+                                errors: vec![format!("Precondition '{}' failed.", c.condition_id)],
+                                after_state_summary: json!({}),
+                            },
+                            plan,
+                        );
                     }
                     s.status = "passed".to_string();
                 }
@@ -113,14 +120,17 @@ pub fn execute(goal: &IrGoal, ctx: &mut ExecutionContext, runtime: &RuntimeMap) 
                     let bad = evaluate_expr(&c.expr, ctx, runtime).as_bool().unwrap_or(false);
                     if bad {
                         s.status = "failed".to_string();
-                        return ExecutionResult {
-                            success: false,
-                            result_text: None,
-                            executed_transitions: executed,
-                            failed_step: Some(s.step_id.clone()),
-                            errors: vec![format!("Forbid '{}' triggered.", c.condition_id)],
-                            after_state_summary: json!({}),
-                        };
+                        return (
+                            ExecutionResult {
+                                success: false,
+                                result_text: None,
+                                executed_transitions: executed,
+                                failed_step: Some(s.step_id.clone()),
+                                errors: vec![format!("Forbid '{}' triggered.", c.condition_id)],
+                                after_state_summary: json!({}),
+                            },
+                            plan,
+                        );
                     }
                     s.status = "passed".to_string();
                 }
@@ -143,12 +153,15 @@ pub fn execute(goal: &IrGoal, ctx: &mut ExecutionContext, runtime: &RuntimeMap) 
             _ => {}
         }
     }
-    ExecutionResult {
-        success: true,
-        result_text: goal.result.clone(),
-        executed_transitions: executed,
-        failed_step: None,
-        errors: vec![],
-        after_state_summary: json!({ "guarantees": {}, "reads": [], "writes": [] }),
-    }
+    (
+        ExecutionResult {
+            success: true,
+            result_text: goal.result.clone(),
+            executed_transitions: executed,
+            failed_step: None,
+            errors: vec![],
+            after_state_summary: json!({ "guarantees": {}, "reads": [], "writes": [] }),
+        },
+        plan,
+    )
 }

@@ -1,5 +1,5 @@
 """
-Canonical language-independent IR (V1.3).
+Canonical language-independent IR (V1.4).
 
 Pure data boundary for future Rust core engine: no parser, verifier, or runtime logic.
 """
@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 # --- Frozen handoff contract (Rust migration boundary) -----------------------------------------
 
-CANONICAL_IR_VERSION = "1.3"
+CANONICAL_IR_VERSION = "1.4"
 
 # --- Mandatory IR metadata (included in serialized IR) ----------------------------------------
 
@@ -608,6 +608,37 @@ def validate_ir(ir_goal: IRGoal) -> List[str]:
             f"got {ir_goal.metadata.get('ir_version')!r}."
         )
 
+    return errors
+
+
+def validate_bundle_envelope(data: Dict[str, Any]) -> List[str]:
+    """Optional top-level keys (ecosystem): ``library_refs``."""
+    errors: List[str] = []
+    if not isinstance(data, dict):
+        return ["Bundle envelope must be a JSON object."]
+    allowed = frozenset({"ir_goal", "library_refs"})
+    for k in data.keys():
+        if k not in allowed:
+            errors.append(f"Bundle envelope: unknown top-level key {k!r}.")
+    refs = data.get("library_refs")
+    if refs is None:
+        return errors
+    if not isinstance(refs, list):
+        errors.append("Bundle envelope: library_refs must be an array.")
+        return errors
+    for i, r in enumerate(refs):
+        if not isinstance(r, dict):
+            errors.append(f"Bundle envelope: library_refs[{i}] must be an object.")
+            continue
+        name = r.get("name")
+        if not name or not isinstance(name, str):
+            errors.append(f"Bundle envelope: library_refs[{i}].name must be a non-empty string.")
+        ver = r.get("version")
+        if not isinstance(ver, str):
+            errors.append(f"Bundle envelope: library_refs[{i}].version must be a string.")
+        fp = r.get("fingerprint")
+        if fp is not None and (not isinstance(fp, str) or not fp.isascii()):
+            errors.append(f"Bundle envelope: library_refs[{i}].fingerprint must be ASCII string if present.")
     return errors
 
 

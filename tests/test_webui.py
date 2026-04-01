@@ -6,12 +6,23 @@ from fastapi.testclient import TestClient
 
 pytest.importorskip("fastapi")
 
+from src.ir.canonical_ir import CANONICAL_IR_VERSION
 from webui.app import app
 
 
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+def test_api_health(client):
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["status"] == "ok"
+    assert data["service"] == "project-x-webui"
+    assert data["canonical_ir_version"] == CANONICAL_IR_VERSION
+    assert "package_version" in data
 
 
 def test_index_html(client):
@@ -40,3 +51,5 @@ def test_run_pipeline_minimal(client):
     body = r.json()
     assert body.get("ir_valid") is True
     assert "artifacts" in body["orchestrator"]
+    assert "execution_trace" in body
+    assert body["execution_trace"].get("source") in ("rust", "python_fallback", "none")

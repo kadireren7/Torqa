@@ -20,7 +20,12 @@ def schema():
     [
         "valid_minimal_flow.json",
         "valid_login_flow.json",
+        "valid_start_session_flow.json",
+        "valid_bundle_with_library_refs.json",
+        "valid_strings_equal_flow.json",
+        "demo_multi_surface_flow.json",
         "invalid_empty_goal.json",
+        "invalid_duplicate_condition_id.json",
     ],
 )
 def test_example_validates_against_json_schema(schema, filename):

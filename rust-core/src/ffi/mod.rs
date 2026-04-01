@@ -44,13 +44,16 @@ pub fn run_rust_pipeline(ir_bundle_json: &str) -> Result<Value, String> {
     let sem_report = build_semantic_report(&n, &sem_errors, &sem_warns);
     let fp = compute_ir_fingerprint(&n).ok();
     let context = parse_context(v.get("context"));
-    let exec_plan = build_execution_plan(&n);
-    let exec = if val_errors.is_empty() && sem_errors.is_empty() {
+    let exec_plan_pending = build_execution_plan(&n);
+    let (exec_plan_value, exec) = if val_errors.is_empty() && sem_errors.is_empty() {
         let mut ctx = ExecutionContext::new(context.inputs);
         ctx.world_state = context.world_state;
         let runtime: RuntimeMap = RuntimeMap::new();
-        Some(execute(&n, &mut ctx, &runtime))
-    } else { None };
+        let (res, final_plan) = execute(&n, &mut ctx, &runtime);
+        (json!(final_plan), Some(res))
+    } else {
+        (json!(exec_plan_pending), None)
+    };
 
     if action == "validate_ir" {
         return Ok(json!({
@@ -75,7 +78,7 @@ pub fn run_rust_pipeline(ir_bundle_json: &str) -> Result<Value, String> {
             "validation_errors": val_errors,
             "semantic_errors": sem_errors,
             "semantic_warnings": sem_warns,
-            "execution_plan": exec_plan,
+            "execution_plan": exec_plan_value.clone(),
             "execution_result": exec,
             "fingerprint": fp,
         }));
@@ -89,7 +92,7 @@ pub fn run_rust_pipeline(ir_bundle_json: &str) -> Result<Value, String> {
         fingerprint: fp,
         projection_plan: plan,
         semantic_report: sem_report,
-        execution_plan: Some(json!(exec_plan)),
+        execution_plan: Some(exec_plan_value),
         execution_result: exec,
     })
     .map_err(|e| e.to_string())

@@ -1,63 +1,158 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-app-lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Project-X Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
-<body>
-  <header class="top">
-    <h1>Project-X Console</h1>
-    <p class="sub">
-      Core IR is the source of truth. This UI validates, runs the engine path, and previews generated projections.
-    </p>
+<body class="app">
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">PX</span>
+      <div class="brand-text">
+        <h1>Project-X Console</h1>
+        <p class="tagline">Core IR is the source of truth · validate · run engine · preview projections</p>
+        <p class="tagline-sub" lang="tr">Özet akış: örnek yükle → doğrula → motor + projeksiyon · üretilen dosyalar asıl kaynak değildir</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="env-hint">Local tool</span>
+      <span class="link-doc" title="Open docs/CORE_SPEC.md in your repo">IR contract</span>
+    </div>
   </header>
 
-  <main class="grid">
-    <section class="panel">
-      <h2>Examples</h2>
-      <ul id="example-list" class="examples"></ul>
-      <button type="button" id="btn-load-example" class="primary">Load selected example</button>
-    </section>
+  <nav class="workflow-strip" aria-label="Guided workflow">
+    <ol class="workflow-steps">
+      <li class="workflow-step active" data-wf="1" title="Load a golden example into the editor">
+        <span class="wf-num">1</span>
+        <span class="wf-text">Load <span class="wf-tr">· Yükle</span></span>
+      </li>
+      <li class="workflow-step" data-wf="2" title="Full diagnostics (verifier-first)">
+        <span class="wf-num">2</span>
+        <span class="wf-text">Diagnose <span class="wf-tr">· Tanı</span></span>
+      </li>
+      <li class="workflow-step" data-wf="3" title="Run engine + projection orchestrator">
+        <span class="wf-num">3</span>
+        <span class="wf-text">Run <span class="wf-tr">· Çalıştır</span></span>
+      </li>
+      <li class="workflow-step" data-wf="4" title="Review validation, engine, artifacts">
+        <span class="wf-num">4</span>
+        <span class="wf-text">Review <span class="wf-tr">· İncele</span></span>
+      </li>
+    </ol>
+    <button type="button" id="btn-guided" class="btn btn-secondary btn-guided">Guided: diagnose → run</button>
+  </nav>
 
-    <section class="panel wide">
-      <h2>IR bundle (JSON)</h2>
-      <textarea id="ir-editor" spellcheck="false" rows="22" placeholder='{"ir_goal": { ... }}'></textarea>
-      <div class="row">
-        <label>Demo inputs (JSON object) <input type="text" id="demo-inputs" value="{}" class="mono" /></label>
-        <label>Engine
-          <select id="engine-mode">
-            <option value="rust_preferred" selected>rust_preferred</option>
-            <option value="python_only">python_only</option>
-            <option value="rust_only">rust_only</option>
-          </select>
-        </label>
-        <button type="button" id="btn-run" class="primary">Run pipeline</button>
+  <div class="app-body">
+    <aside class="sidebar" aria-label="Examples">
+      <div class="side-card">
+        <h2 class="side-title">Examples</h2>
+        <p class="side-desc">Load a golden bundle into the editor</p>
+        <ul id="example-list" class="example-list"></ul>
+        <button type="button" id="btn-load-example" class="btn btn-primary btn-block">Load selected</button>
       </div>
-    </section>
+    </aside>
 
-    <section class="panel full">
-      <h2>Results</h2>
-      <div id="status" class="status"></div>
-      <div class="tabs">
-        <button type="button" class="tab active" data-tab="validation">Validation</button>
-        <button type="button" class="tab" data-tab="semantic">Semantic</button>
-        <button type="button" class="tab" data-tab="engine">Engine</button>
-        <button type="button" class="tab" data-tab="artifacts">Artifacts</button>
-        <button type="button" class="tab" data-tab="raw">Raw JSON</button>
-      </div>
-      <pre id="out-validation" class="out active"></pre>
-      <pre id="out-semantic" class="out"></pre>
-      <pre id="out-engine" class="out"></pre>
-      <pre id="out-artifacts" class="out"></pre>
-      <pre id="out-raw" class="out"></pre>
-    </section>
-  </main>
+    <main class="workspace">
+      <section class="panel-editor" aria-label="IR bundle editor">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">IR bundle</h2>
+            <p class="panel-sub">JSON envelope <code class="inline-code">{"ir_goal": { … }}</code></p>
+          </div>
+          <div class="panel-head-actions">
+            <button type="button" id="btn-format-ir" class="btn btn-ghost" title="Pretty-print JSON">Format</button>
+          </div>
+        </div>
+        <div id="monaco-ir" class="monaco-host" role="textbox" aria-label="IR JSON editor"></div>
+        <textarea id="ir-editor-fallback" class="textarea-fallback ir-editor-fallback" hidden spellcheck="false" aria-label="IR JSON fallback editor"></textarea>
+        <p id="editor-parse-hint" class="parse-hint" hidden></p>
 
-  <footer class="foot">
-    <span>Read <code>docs/CORE_SPEC.md</code> for the IR contract. Generated files are projections only.</span>
+        <div class="toolbar">
+          <div class="toolbar-grid">
+            <div class="field">
+              <label for="demo-inputs">Demo inputs</label>
+              <input type="text" id="demo-inputs" class="input-styled mono" value="{}" placeholder='{"username":"alice","password":"x"}' spellcheck="false" />
+            </div>
+            <div class="field field-narrow">
+              <label for="engine-mode">Engine</label>
+              <select id="engine-mode" class="select-styled">
+                <option value="rust_preferred" selected>rust_preferred</option>
+                <option value="python_only">python_only</option>
+                <option value="rust_only">rust_only</option>
+              </select>
+            </div>
+            <div class="toolbar-buttons">
+              <button type="button" id="btn-diagnostics" class="btn btn-secondary">Full diagnostics</button>
+              <button type="button" id="btn-run" class="btn btn-primary">Run pipeline</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <details class="accordion" id="accordion-advanced">
+        <summary class="accordion-summary">
+          <span>Controlled edits &amp; AI</span>
+          <span class="accordion-hint">Optional · mutations stay on the core, not generated files</span>
+        </summary>
+        <div class="accordion-body">
+          <div class="accordion-block">
+            <h3 class="block-title">Mutations</h3>
+            <p class="block-desc">JSON array of mutation objects · applied server-side</p>
+            <div id="monaco-mutations" class="monaco-host monaco-host-sm" aria-label="Mutations JSON"></div>
+            <textarea id="mutations-fallback" class="textarea-fallback mutations-fallback" hidden rows="6" spellcheck="false">[]</textarea>
+            <div class="accordion-actions">
+              <button type="button" id="btn-preview-patch" class="btn btn-secondary">Preview patch</button>
+              <button type="button" id="btn-patch" class="btn btn-primary">Apply to IR</button>
+            </div>
+          </div>
+          <div class="accordion-block">
+            <h3 class="block-title">AI suggest</h3>
+            <p class="block-desc">Requires <code class="inline-code">OPENAI_API_KEY</code> on the server process</p>
+            <textarea id="ai-prompt" class="textarea-styled" rows="3" placeholder="Describe workflow intent in plain English…" spellcheck="true"></textarea>
+            <button type="button" id="btn-ai" class="btn btn-secondary">Request bundle</button>
+          </div>
+        </div>
+      </details>
+
+      <section class="panel-results" aria-label="Pipeline results">
+        <div class="results-head">
+          <h2 class="panel-title">Results</h2>
+          <div id="status" class="status-pill" role="status"></div>
+        </div>
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" role="tab" data-tab="validation" aria-selected="true">Validation</button>
+          <button type="button" class="tab" role="tab" data-tab="diagnostics" aria-selected="false">Diagnostics</button>
+          <button type="button" class="tab" role="tab" data-tab="semantic" aria-selected="false">Semantic</button>
+          <button type="button" class="tab" role="tab" data-tab="engine" aria-selected="false">Engine</button>
+          <button type="button" class="tab" role="tab" data-tab="artifacts" aria-selected="false">Artifacts</button>
+          <button type="button" class="tab" role="tab" data-tab="execution-trace" aria-selected="false">Trace</button>
+          <button type="button" class="tab" role="tab" data-tab="patch-preview" aria-selected="false">Patch preview</button>
+          <button type="button" class="tab" role="tab" data-tab="raw" aria-selected="false">Raw</button>
+        </div>
+        <div class="out-scroll">
+          <pre id="out-validation" class="out active" role="tabpanel"></pre>
+          <pre id="out-diagnostics" class="out" role="tabpanel"></pre>
+          <pre id="out-semantic" class="out" role="tabpanel"></pre>
+          <pre id="out-engine" class="out" role="tabpanel"></pre>
+          <pre id="out-artifacts" class="out" role="tabpanel"></pre>
+          <pre id="out-execution-trace" class="out" role="tabpanel"></pre>
+          <pre id="out-patch-preview" class="out" role="tabpanel"></pre>
+          <pre id="out-raw" class="out" role="tabpanel"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <span>Generated projections are not the source of truth · see <code class="inline-code">docs/CORE_SPEC.md</code></span>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

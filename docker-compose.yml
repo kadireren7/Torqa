@@ -1,0 +1,8 @@
+services:
+  console:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PROJECT_X_HOST: "0.0.0.0"
+      PROJECT_X_PORT: "8000"

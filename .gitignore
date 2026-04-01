@@ -24,3 +24,7 @@ Thumbs.db
 # Local env
 .env
 .env.local
+
+# CI / local demo output
+.ci_out/
+demo_out/

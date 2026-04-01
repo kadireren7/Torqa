@@ -47,6 +47,23 @@ def test_valid_login_semantic_ok():
     assert rep["semantic_ok"] is True, rep["errors"]
 
 
+def test_demo_multi_surface_semantic_ok():
+    raw = _load("demo_multi_surface_flow.json")
+    g = ir_goal_from_json(raw)
+    assert not validate_ir(g)
+    rep = build_ir_semantic_report(g, default_ir_function_registry())
+    assert rep["semantic_ok"] is True, rep["errors"]
+
+
+def test_valid_start_session_semantic_ok():
+    raw = _load("valid_start_session_flow.json")
+    g = ir_goal_from_json(raw)
+    assert not validate_ir(g)
+    assert not validate_ir_handoff_compatibility(g)
+    rep = build_ir_semantic_report(g, default_ir_function_registry())
+    assert rep["semantic_ok"] is True, rep["errors"]
+
+
 def test_invalid_empty_goal_fails_ir_validation():
     raw = _load("invalid_empty_goal.json")
     g = ir_goal_from_json(raw)
@@ -82,4 +99,4 @@ def test_orchestrator_produces_artifacts():
 
 
 def test_ir_version_constant_matches_spec_docs():
-    assert CANONICAL_IR_VERSION == "1.3"
+    assert CANONICAL_IR_VERSION == "1.4"

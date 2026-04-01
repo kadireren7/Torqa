@@ -25,6 +25,15 @@ uvicorn webui.app:app --reload --host 127.0.0.1 --port 8000
 
 Open `http://127.0.0.1:8000`.
 
+Optional AI features require `OPENAI_API_KEY` in the environment where uvicorn runs.
+
+## CLI (editable install)
+
+```bash
+pip install -e ".[dev]"
+project-x --help
+```
+
 ## IR contract
 
 Authoritative description: `docs/CORE_SPEC.md`. Machine-readable shape: `spec/IR_BUNDLE.schema.json`. Add or change golden files under `examples/core/` and extend tests when you evolve the contract.

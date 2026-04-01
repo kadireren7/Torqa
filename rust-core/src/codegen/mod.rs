@@ -102,7 +102,7 @@ mod tests {
             transitions: vec![],
             postconditions: vec![],
             result: Some("OK".to_string()),
-            metadata: json!({"ir_version":"1.3","source":"test","canonical_language":"english"}),
+            metadata: json!({"ir_version":"1.4","source":"test","canonical_language":"english"}),
         }
     }
 

@@ -18,11 +18,23 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Pytest
         run: python -m pytest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Vite build (generated webapp from golden IR)
+        run: python scripts/ci_build_generated_webapp.py
 
   rust:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python deps
+        run: pip install -r requirements-dev.txt
       - name: Cargo test
         run: cargo test --manifest-path rust-core/Cargo.toml
+      - name: Engine parity (Python vs Rust on golden IR)
+        run: python -m pytest tests/test_engine_parity_ci.py -q

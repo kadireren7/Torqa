@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::ir::expr::IrExpr;
 use crate::ir::goal::IrGoal;
 
-pub const CANONICAL_IR_VERSION: &str = "1.3";
+pub const CANONICAL_IR_VERSION: &str = "1.4";
 
 pub fn validate_ir(goal: &IrGoal) -> Vec<String> {
     let mut errors: Vec<String> = Vec::new();

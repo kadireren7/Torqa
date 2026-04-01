@@ -93,6 +93,7 @@ def default_ir_function_registry() -> Dict[str, IRFunctionSignature]:
             writes=["session_user"],
             guarantees_after=[IRAfterGuaranteeSpec(0, "exists")],
         ),
+        "strings_equal": IRFunctionSignature("strings_equal", [T, T], B),
     }
 
 

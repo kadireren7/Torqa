@@ -1,0 +1,33 @@
+{
+  "ir_goal": {
+    "goal": "StringsEqualDemo",
+    "inputs": [
+      { "name": "a", "type": "text" },
+      { "name": "b", "type": "text" }
+    ],
+    "preconditions": [
+      {
+        "condition_id": "c_req_0001",
+        "kind": "require",
+        "expr": {
+          "type": "call",
+          "name": "strings_equal",
+          "arguments": [
+            { "type": "identifier", "name": "a" },
+            { "type": "identifier", "name": "b" }
+          ]
+        }
+      }
+    ],
+    "forbids": [],
+    "transitions": [],
+    "postconditions": [],
+    "result": "Match",
+    "metadata": {
+      "ir_version": "1.4",
+      "source": "python_prototype",
+      "canonical_language": "english",
+      "source_map": { "available": true, "prototype_only": true }
+    }
+  }
+}
