@@ -4,6 +4,15 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 from src.ir.canonical_ir import IRGoal
 from src.projection.projection_strategy import ProjectionPlan, ProjectionTarget
+from src.codegen.ir_to_projection import (
+    ir_goal_cpp_projection,
+    ir_goal_go_projection,
+    ir_goal_python_projection,
+    ir_goal_rust_projection,
+    ir_goal_server_typescript_stub,
+    ir_goal_sql_projection,
+    ir_goal_typescript_index_projection,
+)
 
 
 WEBSITE_GENERATION_PROFILE: Dict[str, bool] = {
@@ -116,30 +125,35 @@ def build_generation_plan(ir_goal: IRGoal, projection_plan: ProjectionPlan) -> D
 
 
 def generate_stub_artifact(goal: IRGoal, target: ProjectionTarget) -> Dict[str, Any]:
-    lang = target.language
+    lang = target.language.lower()
     purpose = target.purpose
     if lang == "rust":
         files = [
             (
                 "generated/rust/main.rs",
-                f"// {goal.goal} [{purpose}] stub\nfn main() {{\n    // TODO\n}}\n",
+                ir_goal_rust_projection(goal),
             )
         ]
     elif lang == "python":
         files = [
             (
                 "generated/python/main.py",
-                f"# {goal.goal} [{purpose}] stub\n\ndef main():\n    pass\n",
+                ir_goal_python_projection(goal),
             )
         ]
     elif lang == "sql":
-        files = [("generated/sql/schema.sql", "-- TODO storage projection\n")]
+        files = [("generated/sql/schema.sql", ir_goal_sql_projection(goal))]
     elif lang == "typescript":
-        files = [("generated/typescript/index.ts", "// TODO frontend projection\n")]
+        files = [
+            (
+                "generated/typescript/index.ts",
+                ir_goal_typescript_index_projection(goal),
+            )
+        ]
     elif lang == "go":
-        files = [("generated/go/main.go", "package main\n\nfunc main() {}\n")]
+        files = [("generated/go/main.go", ir_goal_go_projection(goal))]
     else:
-        files = [("generated/cpp/main.cpp", "// TODO systems projection\nint main(){return 0;}\n")]
+        files = [("generated/cpp/main.cpp", ir_goal_cpp_projection(goal))]
     return {
         "target_language": lang,
         "purpose": purpose,
@@ -281,10 +295,7 @@ input { margin-left: 0.5rem; }
         files.append(
             (
                 "generated/webapp/src/server_stub.ts",
-                """export function runServerStub(): string {
-  return "server stub ready";
-}
-""",
+                ir_goal_server_typescript_stub(goal),
             )
         )
     return {

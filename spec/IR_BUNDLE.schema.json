@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-x.local/spec/ir-bundle-1.3.json",
+  "title": "Project-X IR bundle (handoff envelope)",
+  "description": "Canonical JSON envelope for IRGoal. Source of truth is the structured core; this schema documents the wire format.",
+  "type": "object",
+  "required": ["ir_goal"],
+  "additionalProperties": false,
+  "properties": {
+    "ir_goal": { "$ref": "#/$defs/ir_goal" }
+  },
+  "$defs": {
+    "ir_goal": {
+      "type": "object",
+      "required": [
+        "goal",
+        "inputs",
+        "preconditions",
+        "forbids",
+        "transitions",
+        "postconditions",
+        "metadata"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "goal": { "type": "string" },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["text", "number", "boolean", "void", "unknown"]
+              }
+            }
+          }
+        },
+        "preconditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "forbids": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } },
+        "postconditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "result": { "type": ["string", "null"] },
+        "metadata": { "type": "object" }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["condition_id", "kind", "expr"],
+      "additionalProperties": false,
+      "properties": {
+        "condition_id": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": ["require", "forbid", "postcondition"]
+        },
+        "expr": { "$ref": "#/$defs/expr" }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "required": [
+        "transition_id",
+        "effect_name",
+        "arguments",
+        "from_state",
+        "to_state"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "transition_id": { "type": "string" },
+        "effect_name": { "type": "string" },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/expr" }
+        },
+        "from_state": { "type": "string", "enum": ["before", "after"] },
+        "to_state": { "type": "string", "enum": ["before", "after"] }
+      }
+    },
+    "expr": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "name"],
+          "additionalProperties": true,
+          "properties": {
+            "type": { "const": "identifier" },
+            "name": { "type": "string" },
+            "semantic_type": {
+              "type": "string",
+              "enum": ["text", "number", "boolean", "void", "unknown"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "string_literal" },
+            "value": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "number_literal" },
+            "value": { "type": ["number", "integer"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "boolean_literal" },
+            "value": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "name", "arguments"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "call" },
+            "name": { "type": "string" },
+            "arguments": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/expr" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "operator", "left", "right"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "binary" },
+            "operator": { "type": "string" },
+            "left": { "$ref": "#/$defs/expr" },
+            "right": { "$ref": "#/$defs/expr" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "operator", "left", "right"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "logical" },
+            "operator": { "type": "string" },
+            "left": { "$ref": "#/$defs/expr" },
+            "right": { "$ref": "#/$defs/expr" }
+          }
+        }
+      ]
+    }
+  }
+}

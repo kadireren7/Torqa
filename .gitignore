@@ -1,5 +1,26 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
-build/
+venv/
+*.egg-info/
 dist/
+build/
+
+# Rust
+rust-core/target/
+**/target/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local env
+.env
+.env.local

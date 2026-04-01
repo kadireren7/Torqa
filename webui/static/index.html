@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project-X Console</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="top">
+    <h1>Project-X Console</h1>
+    <p class="sub">
+      Core IR is the source of truth. This UI validates, runs the engine path, and previews generated projections.
+    </p>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <h2>Examples</h2>
+      <ul id="example-list" class="examples"></ul>
+      <button type="button" id="btn-load-example" class="primary">Load selected example</button>
+    </section>
+
+    <section class="panel wide">
+      <h2>IR bundle (JSON)</h2>
+      <textarea id="ir-editor" spellcheck="false" rows="22" placeholder='{"ir_goal": { ... }}'></textarea>
+      <div class="row">
+        <label>Demo inputs (JSON object) <input type="text" id="demo-inputs" value="{}" class="mono" /></label>
+        <label>Engine
+          <select id="engine-mode">
+            <option value="rust_preferred" selected>rust_preferred</option>
+            <option value="python_only">python_only</option>
+            <option value="rust_only">rust_only</option>
+          </select>
+        </label>
+        <button type="button" id="btn-run" class="primary">Run pipeline</button>
+      </div>
+    </section>
+
+    <section class="panel full">
+      <h2>Results</h2>
+      <div id="status" class="status"></div>
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="validation">Validation</button>
+        <button type="button" class="tab" data-tab="semantic">Semantic</button>
+        <button type="button" class="tab" data-tab="engine">Engine</button>
+        <button type="button" class="tab" data-tab="artifacts">Artifacts</button>
+        <button type="button" class="tab" data-tab="raw">Raw JSON</button>
+      </div>
+      <pre id="out-validation" class="out active"></pre>
+      <pre id="out-semantic" class="out"></pre>
+      <pre id="out-engine" class="out"></pre>
+      <pre id="out-artifacts" class="out"></pre>
+      <pre id="out-raw" class="out"></pre>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Read <code>docs/CORE_SPEC.md</code> for the IR contract. Generated files are projections only.</span>
+  </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>

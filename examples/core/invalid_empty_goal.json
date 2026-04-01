@@ -1,0 +1,17 @@
+{
+  "ir_goal": {
+    "goal": "",
+    "inputs": [],
+    "preconditions": [],
+    "forbids": [],
+    "transitions": [],
+    "postconditions": [],
+    "result": null,
+    "metadata": {
+      "ir_version": "1.3",
+      "source": "python_prototype",
+      "canonical_language": "english",
+      "source_map": { "available": true, "prototype_only": true }
+    }
+  }
+}

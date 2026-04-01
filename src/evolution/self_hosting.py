@@ -16,6 +16,7 @@ from src.ir.canonical_ir import (
 from src.execution.ir_execution import IRExecutionContext, default_ir_runtime_impls, execute_ir_goal
 from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_function_registry
 from src.projection.projection_strategy import ProjectionContext, ProjectionPlan, choose_projection_targets
+from src.codegen.ir_to_projection import ir_goal_python_projection, ir_goal_rust_projection
 from src.orchestrator.system_orchestrator import SystemOrchestrator
 
 
@@ -182,7 +183,7 @@ def project_internal_ir_library(ir_library: Dict[str, IRGoal]) -> Dict[str, Any]
             "files": [
                 {
                     "filename": f"generated/internal/{key}/rust/main.rs",
-                    "content": f"// internal {goal.goal} rust stub\nfn main() {{}}\n",
+                    "content": ir_goal_rust_projection(goal),
                 }
             ],
         }
@@ -192,7 +193,7 @@ def project_internal_ir_library(ir_library: Dict[str, IRGoal]) -> Dict[str, Any]
             "files": [
                 {
                     "filename": f"generated/internal/{key}/python/main.py",
-                    "content": f"# internal {goal.goal} python stub\n\ndef main():\n    pass\n",
+                    "content": ir_goal_python_projection(goal),
                 }
             ],
         }
