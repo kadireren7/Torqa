@@ -1,0 +1,56 @@
+```ebnf
+(* Kural v0 Dilbilgisi Taslağı (EBNF) *)
+
+program        = { statement } .
+
+statement      = goal_decl
+               | input_decl
+               | requires_decl
+               | forbid_decl
+               | effects_decl
+               | result_decl
+               .
+
+goal_decl      = "hedef" ":" IDENTIFIER "." .
+
+input_decl     = "girdi" ":" { input_item } .
+input_item     = IDENTIFIER ":" TYPE "." .
+TYPE           = "metin" | "sayi" | "boolean" .
+
+requires_decl  = "gerektirir" ":" { condition } .
+forbid_decl    = "yasaklar" ":" { condition } .
+
+condition      = expression "." .
+expression     = term { ( "ve" | "veya" ) term } .
+term           = factor { ( "==" | "!=" | ">" | "<" | ">=" | "<=" ) factor } .
+factor         = IDENTIFIER
+               | NUMBER
+               | STRING
+               | function_call
+               | "(" expression ")"
+               | "mevcut" IDENTIFIER
+               .
+
+function_call  = IDENTIFIER "(" [ arg_list ] ")" .
+arg_list       = argument { "," argument } .
+argument       = IDENTIFIER | NUMBER | STRING .
+
+effects_decl   = "etkiler" ":" { effect } .
+effect         = assignment | function_call .
+assignment     = IDENTIFIER "=" ( IDENTIFIER | NUMBER | STRING | function_call | arithmetic_expression ) "." .
+arithmetic_expression = ( IDENTIFIER | NUMBER | function_call ) ( "+" | "-" | "*" | "/" ) ( IDENTIFIER | NUMBER | function_call ) .
+
+result_decl    = "sonuç" ":" STRING "." .
+
+(* Temel Token Tanımları *)
+IDENTIFIER     = LETTER { LETTER | DIGIT | "_" } .
+NUMBER         = DIGIT { DIGIT } [ "." DIGIT { DIGIT } ] .
+STRING         = "\"" { CHAR - "\"" } "\"" .
+LETTER         = "a" | ... | "z" | "A" | ... | "Z" .
+DIGIT          = "0" | ... | "9" .
+CHAR           = (* herhangi bir karakter *)
+
+(* Yorumlar ve Boşluklar *)
+WHITESPACE     = { " " | "\t" | "\n" | "\r" } .
+COMMENT        = "(*" { CHAR - "*)" } "*)" .
+```
