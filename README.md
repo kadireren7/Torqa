@@ -21,19 +21,32 @@ pip install -e .
 **Materialize** (writes artifacts under `generated_out/` relative to `--root`; exact paths depend on the bundle, often including `generated/webapp/` when a webapp is emitted):
 
 ```bash
-torqa project --root . --source examples/workspace_minimal/app.tq --out generated_out --engine-mode python_only
+torqa build examples/workspace_minimal/app.tq
+```
+
+Same engine as `project` (default `python_only`, no Rust needed; use `torqa --json build …` for machine JSON):
+
+```bash
+torqa project --root . --source examples/workspace_minimal/app.tq --out generated_out
 ```
 
 **Optional — compile `.tq` to IR JSON on disk**, then project from that file (same parser as `project` uses for `.tq`):
 
 ```bash
 torqa surface examples/workspace_minimal/app.tq --out ir_bundle.json
-torqa project --root . --source ir_bundle.json --out generated_out --engine-mode python_only
+torqa project --root . --source ir_bundle.json --out generated_out
 ```
 
 If `torqa` is not on `PATH`, use `python -m src.cli.main` instead of `torqa` (same entrypoint as `pyproject.toml` `[project.scripts]`).
 
 ### Validate (JSON IR bundle only)
+
+| Command | Input | What it does |
+|---------|--------|----------------|
+| `torqa surface` | `.tq` / `.pxir` | Compile to IR bundle JSON (+ diagnostics on stdout/stderr) |
+| `torqa validate` | `.json` IR bundle only | Full diagnostic report (not for `.tq`; use `surface` or `project` first) |
+| `torqa build` | `.json` / `.tq` / `.pxir` | Same as `project` with one required source path (shorthand) |
+| `torqa project` | `.json` / `.tq` / `.pxir` | Validate + write artifact tree under `--root` / `--out` |
 
 `torqa validate` and `python scripts/validate_bundle.py` read **IR bundle JSON**, not `.tq`.
 

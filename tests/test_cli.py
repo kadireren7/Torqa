@@ -30,6 +30,72 @@ def test_cli_validate_invalid():
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["ok"] is False
+    assert data.get("suggested_next")
+
+
+def test_cli_validate_rejects_tq_with_guidance():
+    p = REPO / "examples" / "workspace_minimal" / "app.tq"
+    r = _run("validate", str(p))
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert data.get("suggested_next")
+    joined = " ".join(data["suggested_next"]).lower()
+    assert "surface" in joined or "project" in joined
+    msg = (data.get("issues") or [{}])[0].get("message", "")
+    assert "json" in msg.lower() or "surface" in msg.lower()
+
+
+def test_cli_validate_ir_shape_invalid():
+    bad = {
+        "ir_goal": {
+            "goal": "G",
+            "inputs": [],
+            "preconditions": [{"condition_id": "c_req_0001", "kind": "require"}],
+            "forbids": [],
+            "transitions": [],
+            "postconditions": [],
+            "result": None,
+            "metadata": {
+                "ir_version": "1.4",
+                "source": "test",
+                "canonical_language": "english",
+            },
+        }
+    }
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False, encoding="utf-8"
+    ) as f:
+        json.dump(bad, f)
+        fpath = f.name
+    try:
+        r = _run("validate", fpath)
+        assert r.returncode == 1
+        data = json.loads(r.stdout)
+        assert data["ok"] is False
+        assert data.get("issues")
+        assert data.get("suggested_next")
+    finally:
+        Path(fpath).unlink(missing_ok=True)
+
+
+def test_cli_surface_tq_unknown_step_has_hint():
+    bad_tq = (
+        "module x\nintent user_x\nrequires username, password, ip_address\nflow:\n"
+        "  totally_unknown_step\n"
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".tq", delete=False, encoding="utf-8") as f:
+        f.write(bad_tq)
+        fpath = f.name
+    try:
+        r = _run("surface", fpath)
+        assert r.returncode == 1
+        data = json.loads(r.stderr)
+        assert data.get("hint")
+        assert data.get("suggested_next")
+        assert data.get("code") == "PX_TQ_UNKNOWN_FLOW_STEP"
+    finally:
+        Path(fpath).unlink(missing_ok=True)
 
 
 def test_cli_language():
@@ -109,3 +175,56 @@ def test_cli_ai_suggest_resilient():
             "PX_AI_MAX_RETRIES",
             "PX_AI_HTTP",
         )
+
+
+def test_cli_build_json_matches_project(tmp_path):
+    """build is orchestration-only: same payload as project --source for the same file."""
+    src = REPO / "examples" / "core" / "valid_minimal_flow.json"
+    rb = _run(
+        "--json",
+        "build",
+        str(src),
+        "--root",
+        str(tmp_path),
+        "--out",
+        "g",
+        "--engine-mode",
+        "python_only",
+    )
+    rp = _run(
+        "--json",
+        "project",
+        "--root",
+        str(tmp_path),
+        "--source",
+        str(src),
+        "--out",
+        "g2",
+        "--engine-mode",
+        "python_only",
+    )
+    assert rb.returncode == 0, rb.stderr + rb.stdout
+    assert rp.returncode == 0, rp.stderr + rp.stdout
+    jb = json.loads(rb.stdout)
+    jp = json.loads(rp.stdout)
+    assert sorted(jb.get("written") or []) == sorted(jp.get("written") or [])
+
+
+def test_cli_project_human_success_summary(tmp_path):
+    src = REPO / "examples" / "core" / "valid_minimal_flow.json"
+    r = _run(
+        "project",
+        "--root",
+        str(tmp_path),
+        "--source",
+        str(src),
+        "--out",
+        "h",
+        "--engine-mode",
+        "python_only",
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "SUCCESS" in r.stdout
+    assert "Output:" in r.stdout
+    assert "Next:" in r.stdout
+    assert not r.stdout.strip().startswith("{")

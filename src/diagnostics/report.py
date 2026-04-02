@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from src.diagnostics.formal_phases import annotate_with_formal
+from src.diagnostics import codes as diag_codes
+from src.diagnostics.formal_phases import annotate_with_formal, formal_phase_for_issue
 from src.ir.canonical_ir import (
     IRGoal,
     validate_ir,
@@ -57,4 +58,26 @@ def build_full_diagnostic_report(
         "issues": issues,
         "warnings": warnings,
         "semantic_report": semantic,
+    }
+
+
+def build_ir_shape_error_report(exc: BaseException) -> Dict[str, Any]:
+    """
+    When ``ir_goal_from_json`` fails (KeyError/TypeError), emit the same top-level
+    shape as ``build_full_diagnostic_report`` for CLI/web consumers.
+    """
+    code = diag_codes.PX_PARSE_FAILED
+    issue = augment_issue(
+        {
+            "code": code,
+            "phase": "structural",
+            "formal_phase": formal_phase_for_issue(code, "structural"),
+            "message": f"Bundle IR shape invalid ({type(exc).__name__}): {exc}",
+        }
+    )
+    return {
+        "ok": False,
+        "issues": [issue],
+        "warnings": [],
+        "semantic_report": {"errors": [], "warnings": []},
     }

@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from src.diagnostics.report import build_full_diagnostic_report
+from src.diagnostics.report import build_full_diagnostic_report, build_ir_shape_error_report
+from src.diagnostics.user_hints import suggested_next_from_report
 from src.ir.canonical_ir import ir_goal_from_json, validate_bundle_envelope
 from src.orchestrator.system_orchestrator import SystemOrchestrator
 from src.projection.projection_strategy import ProjectionContext
@@ -117,9 +118,11 @@ def materialize_project(
     """
     dest_root = dest_root.resolve()
     env_e = validate_bundle_envelope(bundle)
-    g = ir_goal_from_json(bundle)
-    rep = build_full_diagnostic_report(g, bundle_envelope_errors=env_e)
-    if not rep["ok"]:
+    try:
+        g = ir_goal_from_json(bundle)
+    except (KeyError, TypeError) as ex:
+        rep = build_ir_shape_error_report(ex)
+        rep["suggested_next"] = suggested_next_from_report(rep)
         err_msgs = [str(i.get("message", "")) for i in rep.get("issues", [])]
         return (
             False,
@@ -129,6 +132,25 @@ def materialize_project(
                 "errors": err_msgs,
                 "written_under": str(dest_root),
                 "consistency_errors": [],
+                "suggested_next": rep["suggested_next"],
+            },
+            [],
+        )
+    rep = build_full_diagnostic_report(g, bundle_envelope_errors=env_e)
+    if not rep["ok"]:
+        err_msgs = [str(i.get("message", "")) for i in rep.get("issues", [])]
+        sn = suggested_next_from_report(rep)
+        rep = dict(rep)
+        rep["suggested_next"] = sn
+        return (
+            False,
+            {
+                "diagnostics": rep,
+                "written": [],
+                "errors": err_msgs,
+                "written_under": str(dest_root),
+                "consistency_errors": [],
+                "suggested_next": sn,
             },
             [],
         )

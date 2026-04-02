@@ -73,6 +73,7 @@ def test_workspace_minimal_surface_cli_writes_valid_bundle(tmp_path):
 def test_workspace_minimal_project_e2e_determinism_and_tree(tmp_path):
     expected_written = sorted(json.loads(PROJECT_WRITTEN_GOLDEN.read_text(encoding="utf-8")))
     r1 = _run_cli(
+        "--json",
         "project",
         "--root",
         str(tmp_path),
@@ -90,6 +91,7 @@ def test_workspace_minimal_project_e2e_determinism_and_tree(tmp_path):
     assert w1 == expected_written, w1
 
     r2 = _run_cli(
+        "--json",
         "project",
         "--root",
         str(tmp_path),
@@ -114,6 +116,7 @@ def test_workspace_minimal_project_e2e_determinism_and_tree(tmp_path):
 
 def test_workspace_minimal_project_webapp_content_matches_golden(tmp_path):
     r = _run_cli(
+        "--json",
         "project",
         "--root",
         str(tmp_path),
@@ -139,6 +142,7 @@ def test_workspace_minimal_project_cli_smoke_torqa_or_module(tmp_path):
     if torqa:
         cmd = [
             torqa,
+            "--json",
             "project",
             "--root",
             str(tmp_path),
@@ -154,6 +158,7 @@ def test_workspace_minimal_project_cli_smoke_torqa_or_module(tmp_path):
             sys.executable,
             "-m",
             "src.cli.main",
+            "--json",
             "project",
             "--root",
             str(tmp_path),

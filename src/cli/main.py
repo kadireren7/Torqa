@@ -1,7 +1,7 @@
 """
 ``torqa`` CLI entrypoint (``pyproject.toml`` console script → ``main()``).
 
-Primary flows: ``project`` (materialize to disk), ``surface`` (.tq/.pxir → IR JSON + diagnostics),
+Primary flow: ``build`` (then ``project``) materialize to disk; ``surface`` (.tq/.pxir -> IR JSON + diagnostics),
 ``validate`` / ``bundle-lint`` (IR bundle JSON only). Other subcommands are tooling (run, patch,
 AI, maintainer checks).
 """
@@ -17,7 +17,9 @@ from typing import Any, Dict, List
 from src.ai.adapter import suggest_ir_bundle_from_prompt
 from src.control.ir_mutation_json import try_apply_ir_mutations_from_json
 from src.control.patch_preview import build_patch_preview_report
-from src.diagnostics.report import build_full_diagnostic_report
+from src.diagnostics import codes as diag_codes
+from src.diagnostics.formal_phases import formal_phase_for_issue
+from src.diagnostics.report import build_full_diagnostic_report, build_ir_shape_error_report
 from src.diagnostics.system_health import build_system_health_report
 from src.execution.engine_routing import run_rust_pipeline_with_fallback
 from src.ir.canonical_ir import ir_goal_from_json, ir_goal_to_json, validate_bundle_envelope
@@ -33,6 +35,12 @@ from src.evolution.ai_proposal_gate import evaluate_ai_proposal
 from src.language.authoring_prompt import language_reference_payload, minimal_valid_bundle_json
 from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_function_registry
 from src.project_materialize import load_bundle_from_source, materialize_project
+from src.diagnostics.user_hints import (
+    augment_issue,
+    suggested_next_for_surface_or_project_fail,
+    suggested_next_from_report,
+    tq_parse_extras,
+)
 
 
 def _load_bundle(path: Path) -> Dict[str, Any]:
@@ -44,6 +52,193 @@ def _emit(obj: Any, args: argparse.Namespace, *, stream=None) -> None:
     stream = stream or sys.stdout
     indent = None if getattr(args, "json", False) else 2
     stream.write(json.dumps(obj, indent=indent, default=str) + "\n")
+
+
+def _open_json_bundle_file(path: Path) -> tuple[Dict[str, Any] | None, Dict[str, Any] | None]:
+    """
+    For ``validate`` / ``bundle-lint``: only ``.json`` IR bundles.
+    Returns (bundle, error_report); error_report is emit-ready diagnostic shape.
+    """
+    suf = path.suffix.lower()
+    if suf in (".tq", ".pxir"):
+        rel = path.name
+        rep = {
+            "ok": False,
+            "issues": [
+                augment_issue(
+                    {
+                        "code": diag_codes.PX_PARSE_FAILED,
+                        "phase": "structural",
+                        "formal_phase": formal_phase_for_issue(diag_codes.PX_PARSE_FAILED, "structural"),
+                        "message": (
+                            "torqa validate expects an IR bundle .json file; "
+                            f"{rel!r} looks like a surface file ({suf!r}). "
+                            "Use: torqa surface … --out bundle.json  OR  torqa project --source …"
+                        ),
+                    }
+                )
+            ],
+            "warnings": [],
+            "semantic_report": {"errors": [], "warnings": []},
+            "suggested_next": [
+                f"torqa surface {path} --out ir_bundle.json",
+                f"torqa build {path}",
+            ],
+        }
+        return None, rep
+    if suf != ".json":
+        rep = {
+            "ok": False,
+            "issues": [
+                augment_issue(
+                    {
+                        "code": diag_codes.PX_PARSE_FAILED,
+                        "phase": "structural",
+                        "formal_phase": formal_phase_for_issue(diag_codes.PX_PARSE_FAILED, "structural"),
+                        "message": (
+                            f"torqa validate expects a .json IR bundle path; got extension {suf!r}. "
+                            "Use .json, or use torqa surface / torqa project for .tq / .pxir."
+                        ),
+                    }
+                )
+            ],
+            "warnings": [],
+            "semantic_report": {"errors": [], "warnings": []},
+            "suggested_next": [
+                "torqa surface FILE.tq --out ir_bundle.json",
+                "torqa build FILE.tq",
+            ],
+        }
+        return None, rep
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as ex:
+        rep = {
+            "ok": False,
+            "issues": [
+                augment_issue(
+                    {
+                        "code": diag_codes.PX_PARSE_FAILED,
+                        "phase": "structural",
+                        "formal_phase": formal_phase_for_issue(diag_codes.PX_PARSE_FAILED, "structural"),
+                        "message": f"Not valid JSON: {ex}",
+                    }
+                )
+            ],
+            "warnings": [],
+            "semantic_report": {"errors": [], "warnings": []},
+            "suggested_next": ["torqa language --minimal-json", "spec/IR_BUNDLE.schema.json"],
+        }
+        return None, rep
+    if not isinstance(data, dict):
+        rep = {
+            "ok": False,
+            "issues": [
+                augment_issue(
+                    {
+                        "code": diag_codes.PX_PARSE_FAILED,
+                        "phase": "structural",
+                        "formal_phase": formal_phase_for_issue(diag_codes.PX_PARSE_FAILED, "structural"),
+                        "message": "Bundle root must be a JSON object.",
+                    }
+                )
+            ],
+            "warnings": [],
+            "semantic_report": {"errors": [], "warnings": []},
+            "suggested_next": ["torqa language --minimal-json"],
+        }
+        return None, rep
+    return data, None
+
+
+def _project_payload_to_human(payload: Dict[str, Any]) -> str:
+    """ASCII-only summary for project/build when not using --json."""
+    diag = payload.get("diagnostics")
+    if diag is not None and not diag.get("ok", True):
+        issues: List[dict] = list(diag.get("issues") or [])
+        first = issues[0] if issues else {}
+        lines = ["ERROR", "  Diagnostics failed", f"  Reason: {first.get('message', 'unknown')}"]
+        if first.get("code"):
+            lines.append(f"  Code: {first['code']}")
+        sn = list(payload.get("suggested_next") or diag.get("suggested_next") or [])
+        if sn:
+            lines.append("  Next:")
+            for s in sn[:6]:
+                lines.append(f"    - {s}")
+        return "\n".join(lines)
+
+    written = list(payload.get("written") or [])
+    if payload.get("ok") is False and not written:
+        err = (payload.get("errors") or ["unknown"])[0]
+        lines = ["ERROR", "  Could not materialize", f"  Reason: {err}"]
+        if payload.get("code"):
+            lines.append(f"  Code: {payload['code']}")
+        if payload.get("hint"):
+            lines.append(f"  Hint: {payload['hint']}")
+        sn = list(payload.get("suggested_next") or [])
+        if sn:
+            lines.append("  Next:")
+            for s in sn[:6]:
+                lines.append(f"    - {s}")
+        return "\n".join(lines)
+
+    if payload.get("ok") is False:
+        lines = ["ERROR", "  Orchestrator consistency check failed"]
+        for e in (payload.get("errors") or [])[:8]:
+            lines.append(f"  - {e}")
+        lines.append("  Next: torqa --json project ... for full JSON payload")
+        return "\n".join(lines)
+
+    wu = payload.get("written_under") or "(unknown)"
+    lines = ["SUCCESS", "", "Output:", f"  {wu}", "", "Next:"]
+    lw = payload.get("local_webapp")
+    if lw and isinstance(lw, dict):
+        url = lw.get("default_dev_url", "http://localhost:5173")
+        if sys.platform == "win32":
+            cmd = lw.get("commands_powershell") or lw.get("commands_posix") or lw.get(
+                "commands_from_materialize_root", ""
+            )
+        else:
+            cmd = lw.get("commands_posix") or lw.get("commands_from_materialize_root", "")
+        abs_web = lw.get("webapp_dir_absolute")
+        if cmd:
+            lines.append(f"  Web UI (install Node.js if needed): {cmd}")
+            lines.append(f"  Then open {url} in a browser (port may differ).")
+        elif abs_web:
+            lines.append(f"  Web UI folder: {abs_web}")
+            lines.append(f"  Run: npm install && npm run dev  then open {url}")
+        else:
+            lines.append("  Generated webapp paths are under Output/generated/webapp (see torqa --json build for details).")
+    else:
+        lines.append("  Browse the Output folder for generated sources (SQL, stubs, etc.).")
+        lines.append("  Full file list: torqa --json build SOURCE")
+    return "\n".join(lines)
+
+
+def _emit_project_payload(args: argparse.Namespace, payload: Dict[str, Any], stream) -> None:
+    if getattr(args, "json", False):
+        _emit(payload, args, stream=stream)
+    else:
+        stream.write(_project_payload_to_human(payload) + "\n")
+
+
+def _project_load_suggested_next(exc: BaseException, resolved_src: Path) -> List[str]:
+    if isinstance(exc, FileNotFoundError):
+        return [
+            f"Resolved source path: {resolved_src}",
+            "torqa build examples/workspace_minimal/app.tq",
+        ]
+    if isinstance(exc, json.JSONDecodeError):
+        return ["torqa language --minimal-json", f"Fix JSON in: {resolved_src}"]
+    if isinstance(exc, UnicodeDecodeError):
+        return [f"File must be UTF-8: {resolved_src}"]
+    if isinstance(exc, ValueError) and "Unsupported source extension" in str(exc):
+        return [
+            "Use .json, .tq, or .pxir as the source extension.",
+            "torqa surface FILE.pxir --out bundle.json",
+        ]
+    return ["torqa surface FILE.tq --out ir_bundle.json", "torqa language"]
 
 
 def _write_artifacts(artifacts: List[Dict[str, Any]], root: Path) -> None:
@@ -59,10 +254,23 @@ def _write_artifacts(artifacts: List[Dict[str, Any]], root: Path) -> None:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    bundle = _load_bundle(Path(args.file))
+    path = Path(args.file)
+    bundle, open_err = _open_json_bundle_file(path)
+    if open_err is not None:
+        _emit(open_err, args)
+        return 1
     env_e = validate_bundle_envelope(bundle)
-    g = ir_goal_from_json(bundle)
+    try:
+        g = ir_goal_from_json(bundle)
+    except (KeyError, TypeError) as ex:
+        rep = build_ir_shape_error_report(ex)
+        rep["suggested_next"] = suggested_next_from_report(rep)
+        _emit(rep, args)
+        return 1
     rep = build_full_diagnostic_report(g, bundle_envelope_errors=env_e)
+    if not rep["ok"]:
+        rep = dict(rep)
+        rep["suggested_next"] = suggested_next_from_report(rep)
     _emit(rep, args)
     return 0 if rep["ok"] else 1
 
@@ -94,11 +302,16 @@ def cmd_strategy_explain(args: argparse.Namespace) -> int:
 def cmd_project(args: argparse.Namespace) -> int:
     src_arg = getattr(args, "source", None) or args.file
     if not src_arg:
-        _emit(
-            {"written": [], "errors": ["missing source: pass a bundle file or --source PATH"], "ok": False},
-            args,
-            stream=sys.stderr,
-        )
+        miss = {
+            "written": [],
+            "errors": ["missing source: pass a bundle file or --source PATH"],
+            "ok": False,
+            "suggested_next": [
+                "torqa build examples/workspace_minimal/app.tq",
+                "torqa project --root . --source examples/workspace_minimal/app.tq",
+            ],
+        }
+        _emit_project_payload(args, miss, sys.stderr)
         return 1
     src_path = Path(src_arg)
     if not src_path.is_absolute():
@@ -106,13 +319,31 @@ def cmd_project(args: argparse.Namespace) -> int:
     try:
         bundle = load_bundle_from_source(src_path)
     except (OSError, ValueError, json.JSONDecodeError, UnicodeDecodeError) as ex:
-        _emit({"written": [], "errors": [str(ex)], "ok": False}, args, stream=sys.stderr)
+        _emit_project_payload(
+            args,
+            {
+                "written": [],
+                "errors": [str(ex)],
+                "ok": False,
+                "suggested_next": _project_load_suggested_next(ex, src_path),
+            },
+            sys.stderr,
+        )
         return 1
     except TQParseError as ex:
-        _emit(
-            {"written": [], "errors": [str(ex)], "ok": False, "code": ex.code},
+        extra = tq_parse_extras(ex.code)
+        _emit_project_payload(
             args,
-            stream=sys.stderr,
+            {
+                "written": [],
+                "errors": [str(ex)],
+                "ok": False,
+                "code": ex.code,
+                "hint": extra.get("hint"),
+                "doc": extra.get("doc"),
+                "suggested_next": suggested_next_for_surface_or_project_fail(),
+            },
+            sys.stderr,
         )
         return 1
 
@@ -126,14 +357,29 @@ def cmd_project(args: argparse.Namespace) -> int:
         "consistency_errors": summary.get("consistency_errors", []),
         "local_webapp": summary.get("local_webapp"),
     }
+    if summary.get("suggested_next"):
+        payload["suggested_next"] = summary["suggested_next"]
     diag = summary.get("diagnostics")
     if diag is not None:
         payload["diagnostics"] = diag
     if diag is not None and not diag.get("ok", False):
-        _emit(payload, args, stream=sys.stderr)
+        _emit_project_payload(args, payload, sys.stderr)
         return 1
-    _emit(payload, args)
+    _emit_project_payload(args, payload, sys.stdout)
     return 0 if ok else 2
+
+
+def cmd_build(args: argparse.Namespace) -> int:
+    """Shorthand for ``project`` with a single required source file (same engine and defaults)."""
+    inner = argparse.Namespace(
+        file=None,
+        source=args.file,
+        root=args.root,
+        out=args.out,
+        engine_mode=args.engine_mode,
+        json=getattr(args, "json", False),
+    )
+    return cmd_project(inner)
 
 
 def cmd_demo(args: argparse.Namespace) -> int:
@@ -238,9 +484,40 @@ def cmd_language(args: argparse.Namespace) -> int:
 
 def cmd_bundle_lint(args: argparse.Namespace) -> int:
     """Summarize diagnostic issue counts by formal_phase; exit 1 if not ok."""
-    bundle = _load_bundle(Path(args.file))
+    path = Path(args.file)
+    bundle, open_err = _open_json_bundle_file(path)
+    if open_err is not None:
+        n = len(open_err.get("issues") or [])
+        _emit(
+            {
+                "ok": False,
+                "issue_count": n,
+                "warning_count": 0,
+                "by_formal_phase": {"syntax": n} if n else {},
+                "suggested_next": open_err.get("suggested_next", []),
+                "message": (open_err.get("issues") or [{}])[0].get("message", "load failed"),
+            },
+            args,
+        )
+        return 1
     env_e = validate_bundle_envelope(bundle)
-    g = ir_goal_from_json(bundle)
+    try:
+        g = ir_goal_from_json(bundle)
+    except (KeyError, TypeError) as ex:
+        rep = build_ir_shape_error_report(ex)
+        sn = suggested_next_from_report(rep)
+        _emit(
+            {
+                "ok": False,
+                "issue_count": 1,
+                "warning_count": 0,
+                "by_formal_phase": {"syntax": 1},
+                "suggested_next": sn,
+                "message": rep["issues"][0]["message"],
+            },
+            args,
+        )
+        return 1
     rep = build_full_diagnostic_report(g, bundle_envelope_errors=env_e)
     by_phase: Dict[str, int] = {}
     for i in rep.get("issues") or []:
@@ -252,6 +529,8 @@ def cmd_bundle_lint(args: argparse.Namespace) -> int:
         "warning_count": len(rep.get("warnings") or []),
         "by_formal_phase": dict(sorted(by_phase.items())),
     }
+    if not rep["ok"]:
+        summary["suggested_next"] = suggested_next_from_report(rep)
     _emit(summary, args)
     return 0 if rep["ok"] else 1
 
@@ -266,14 +545,38 @@ def cmd_surface(args: argparse.Namespace) -> int:
         else:
             bundle = parse_pxir_source(raw)
     except TQParseError as ex:
-        err_obj = {"ok": False, "code": ex.code, "message": str(ex)}
+        extra = tq_parse_extras(ex.code)
+        err_obj = {
+            "ok": False,
+            "code": ex.code,
+            "message": str(ex),
+            "hint": extra.get("hint"),
+            "doc": extra.get("doc"),
+            "suggested_next": suggested_next_for_surface_or_project_fail(),
+        }
         _emit(err_obj, args, stream=sys.stderr)
         return 1
-    g = ir_goal_from_json(bundle)
+    try:
+        g = ir_goal_from_json(bundle)
+    except (KeyError, TypeError) as ex:
+        rep = build_ir_shape_error_report(ex)
+        rep["suggested_next"] = suggested_next_from_report(rep)
+        _emit(
+            {"ok": False, "diagnostics": rep, "suggested_next": rep["suggested_next"]},
+            args,
+            stream=sys.stderr,
+        )
+        return 1
     rep = build_full_diagnostic_report(g)
+    if not rep["ok"]:
+        rep = dict(rep)
+        rep["suggested_next"] = suggested_next_from_report(rep)
     if args.out:
         Path(args.out).write_text(json.dumps(bundle, indent=2), encoding="utf-8")
-    _emit({"ok": rep["ok"], "diagnostics": rep, "ir_bundle": bundle}, args)
+    out = {"ok": rep["ok"], "diagnostics": rep, "ir_bundle": bundle}
+    if not rep["ok"]:
+        out["suggested_next"] = rep["suggested_next"]
+    _emit(out, args)
     return 0 if rep["ok"] else 1
 
 
@@ -364,13 +667,17 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="torqa",
         description=(
-            "TORQA toolchain. Default happy path: torqa project --source <.tq|bundle.json> "
-            "(materialize under --root/--out). validate/bundle-lint/guided/check/run take IR bundle JSON only, "
-            "not .tq; use surface or project for .tq."
+            "TORQA toolchain.\n\n"
+            "Primary:  build    -> one command: validate + materialize from .json / .tq / .pxir (default engine: python_only).\n"
+            "Secondary: project -> same as build with optional --source and positional file.\n"
+            "           surface -> compile .tq / .pxir to IR JSON; validate -> IR .json diagnostics only.\n\n"
+            "Other subcommands (demo, run, guided, check, ...) are advanced tooling. "
+            "For .tq files use build or project; validate expects bundle JSON only."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Examples:\n"
-        "  torqa project --root . --source examples/workspace_minimal/app.tq --out generated_out --engine-mode python_only\n"
+        "  torqa build examples/workspace_minimal/app.tq\n"
+        "  torqa project --root . --source examples/workspace_minimal/app.tq\n"
         "  torqa surface examples/workspace_minimal/app.tq --out ir_bundle.json\n"
         "  torqa --json validate examples/core/valid_minimal_flow.json\n"
         "  torqa bundle-lint examples/core/valid_minimal_flow.json\n"
@@ -378,7 +685,7 @@ def main(argv: list[str] | None = None) -> int:
         "  torqa check examples/core/valid_minimal_flow.json --inputs-json '{\"username\":\"a\"}'\n"
         "  torqa demo\n"
         "  torqa surface examples/surface/minimal.pxir --out bundle.json\n"
-        "  torqa project --root . --source examples/core/valid_minimal_flow.json --out generated_out --engine-mode python_only\n"
+        "  torqa project --root . --source examples/core/valid_minimal_flow.json\n"
         "  torqa language --minimal-json\n"
         "  torqa migrate old.json --from-version 1.3 --to-version 1.4 --out new.json\n"
         "  torqa proposal-gate bundle.json\n"
@@ -392,13 +699,76 @@ def main(argv: list[str] | None = None) -> int:
 
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    def add_engine_mode(ap: argparse.ArgumentParser) -> None:
+    def add_engine_mode(ap: argparse.ArgumentParser, *, default_engine: str = "rust_preferred") -> None:
         ap.add_argument(
             "--engine-mode",
             type=str,
-            default="rust_preferred",
+            default=default_engine,
             choices=["rust_preferred", "python_only", "rust_only"],
         )
+
+    pbuild = sub.add_parser(
+        "build",
+        help=(
+            "Validate + materialize from one source file (.json / .tq / .pxir). Primary CLI entry; "
+            "defaults to python_only engine (no Rust required). Use torqa --json build ... for machine JSON."
+        ),
+    )
+    pbuild.add_argument(
+        "file",
+        type=str,
+        metavar="SOURCE",
+        help="Path to bundle JSON, .tq, or .pxir",
+    )
+    pbuild.add_argument(
+        "--root",
+        type=str,
+        default=".",
+        help="Project root directory (default: current directory)",
+    )
+    pbuild.add_argument(
+        "--out",
+        type=str,
+        default="generated_out",
+        help="Subdirectory under --root for materialized paths (default: generated_out)",
+    )
+    add_engine_mode(pbuild, default_engine="python_only")
+    pbuild.set_defaults(func=cmd_build)
+
+    pp = sub.add_parser(
+        "project",
+        help=(
+            "Same as build with optional positional file and --source. "
+            "Human-readable summary by default; use torqa --json project ... for machine JSON."
+        ),
+    )
+    pp.add_argument(
+        "file",
+        type=str,
+        nargs="?",
+        default=None,
+        help="Path to bundle JSON, .tq, or .pxir (optional if --source is set)",
+    )
+    pp.add_argument(
+        "--source",
+        type=str,
+        default=None,
+        help="Explicit source path (same formats as positional file)",
+    )
+    pp.add_argument(
+        "--root",
+        type=str,
+        default=".",
+        help="Project root directory (default: current directory)",
+    )
+    pp.add_argument(
+        "--out",
+        type=str,
+        default="generated_out",
+        help="Subdirectory under --root for materialized paths (default: generated_out)",
+    )
+    add_engine_mode(pp, default_engine="python_only")
+    pp.set_defaults(func=cmd_project)
 
     pv = sub.add_parser(
         "validate",
@@ -433,43 +803,11 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("file", type=str, metavar="BUNDLE.json", help="IR bundle JSON path")
     ps.set_defaults(func=cmd_strategy_explain)
 
-    pp = sub.add_parser(
-        "project",
-        help="Validate bundle (.json / .tq / .pxir), run orchestrator, write artifact tree under --root/--out",
-    )
-    pp.add_argument(
-        "file",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Path to bundle JSON, .tq, or .pxir (optional if --source is set)",
-    )
-    pp.add_argument(
-        "--source",
-        type=str,
-        default=None,
-        help="Explicit source path (same formats as positional file)",
-    )
-    pp.add_argument(
-        "--root",
-        type=str,
-        default=".",
-        help="Project root directory (default: current directory)",
-    )
-    pp.add_argument(
-        "--out",
-        type=str,
-        default="generated_out",
-        help="Subdirectory under --root for materialized paths (default: generated_out)",
-    )
-    add_engine_mode(pp)
-    pp.set_defaults(func=cmd_project)
-
     pdemo = sub.add_parser(
         "demo",
         help=(
             "Alternate demo writer: JSON bundle to flat --out tree (default sample bundle). "
-            "For F1 materialize with --root/--out, prefer project."
+            "For normal materialize, prefer build or project."
         ),
     )
     pdemo.add_argument(

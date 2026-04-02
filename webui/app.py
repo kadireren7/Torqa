@@ -20,7 +20,8 @@ from pydantic import BaseModel, Field
 from src.ai.adapter import suggest_ir_bundle_from_prompt
 from src.control.ir_mutation_json import try_apply_ir_mutations_from_json
 from src.control.patch_preview import build_patch_preview_report
-from src.diagnostics.report import build_full_diagnostic_report
+from src.diagnostics.report import build_full_diagnostic_report, build_ir_shape_error_report
+from src.diagnostics.user_hints import suggested_next_from_report, tq_parse_extras
 from src.diagnostics.system_health import build_system_health_report
 from src.ir.canonical_ir import (
     CANONICAL_IR_VERSION,
@@ -247,22 +248,27 @@ def api_compile_tq(body: TqCompileRequest):
     try:
         bundle = parse_tq_source(body.source)
     except TQParseError as ex:
+        extra = tq_parse_extras(ex.code)
         return {
             "ok": False,
             "code": ex.code,
             "message": str(ex),
+            "hint": extra.get("hint"),
+            "doc": extra.get("doc"),
             "ir_bundle": None,
             "diagnostics": None,
         }
     try:
         ir_goal = ir_goal_from_json(bundle)
-    except Exception as ex:
+    except (KeyError, TypeError) as ex:
+        rep = build_ir_shape_error_report(ex)
+        rep["suggested_next"] = suggested_next_from_report(rep)
         return {
             "ok": False,
-            "code": "PX_TQ_IR_BUILD",
-            "message": str(ex),
+            "code": "PX_PARSE_FAILED",
+            "message": rep["issues"][0]["message"],
             "ir_bundle": bundle,
-            "diagnostics": None,
+            "diagnostics": rep,
         }
     rep = build_full_diagnostic_report(
         ir_goal,

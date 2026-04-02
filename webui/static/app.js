@@ -137,6 +137,30 @@ async function fetchJSON(url, options) {
   return res.json();
 }
 
+/** Diagnostics tab: show hint/doc + suggested_next above raw JSON when present. */
+function formatDiagnosticsPanelText(diag) {
+  if (diag == null || typeof diag !== "object") {
+    return JSON.stringify(diag, null, 2);
+  }
+  const issues = Array.isArray(diag.issues) ? diag.issues : [];
+  const lines = [];
+  for (const i of issues) {
+    if (i.hint || i.doc) {
+      lines.push(`[${i.code || "?"}] ${i.message || ""}`);
+      if (i.hint) lines.push(`  hint: ${i.hint}`);
+      if (i.doc) lines.push(`  doc:  ${i.doc}`);
+      lines.push("");
+    }
+  }
+  if (diag.suggested_next && Array.isArray(diag.suggested_next) && diag.suggested_next.length) {
+    lines.push("suggested_next:");
+    for (const s of diag.suggested_next) lines.push(`  - ${s}`);
+    lines.push("");
+  }
+  const head = lines.length ? `${lines.join("\n")}---\n\n` : "";
+  return head + JSON.stringify(diag, null, 2);
+}
+
 function fillPipelineOutputPanels(out) {
   $("out-validation").textContent = JSON.stringify(
     {
@@ -148,7 +172,7 @@ function fillPipelineOutputPanels(out) {
     null,
     2
   );
-  $("out-diagnostics").textContent = JSON.stringify(out.diagnostics || {}, null, 2);
+  $("out-diagnostics").textContent = formatDiagnosticsPanelText(out.diagnostics || {});
   $("out-semantic").textContent = JSON.stringify(out.semantic, null, 2);
   $("out-engine").textContent = JSON.stringify(out.engine, null, 2);
   const arts = out.orchestrator.artifacts || [];
@@ -410,10 +434,13 @@ if (_bCtq) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source: src }),
       });
-      $("out-diagnostics").textContent = JSON.stringify(j, null, 2);
+      $("out-diagnostics").textContent = j.diagnostics
+        ? formatDiagnosticsPanelText(j.diagnostics)
+        : JSON.stringify(j, null, 2);
       setTab("diagnostics");
       if (!j.ok) {
-        setStatus(`${j.code || "tq"}: ${j.message || "compile failed"}`, "bad");
+        const hint = j.hint ? ` · ${j.hint}` : "";
+        setStatus(`${j.code || "tq"}: ${j.message || "compile failed"}${hint}`, "bad");
         return;
       }
       savedIrText = JSON.stringify(j.ir_bundle, null, 2);
@@ -560,7 +587,7 @@ $("btn-diagnostics").addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ir_bundle: ir.data }),
     });
-    $("out-diagnostics").textContent = JSON.stringify(out, null, 2);
+    $("out-diagnostics").textContent = formatDiagnosticsPanelText(out);
     setStatus(out.ok ? "Diagnostics clean" : "Issues found · see Diagnostics tab", out.ok ? "ok" : "bad");
     setTab("diagnostics");
     advanceWorkflow(3);
@@ -626,7 +653,7 @@ $("btn-patch").addEventListener("click", async () => {
       body: JSON.stringify({ ir_bundle: ir.data, mutations: mut.data }),
     });
     setIrText(JSON.stringify(out.ir_bundle, null, 2));
-    $("out-diagnostics").textContent = JSON.stringify(out.diagnostics, null, 2);
+    $("out-diagnostics").textContent = formatDiagnosticsPanelText(out.diagnostics);
     setStatus(
       out.ok ? "Mutations applied · IR updated" : "Applied · diagnostics still failing",
       out.ok ? "ok" : "bad"
@@ -687,7 +714,7 @@ $("btn-guided").addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ir_bundle: ir.data }),
     });
-    $("out-diagnostics").textContent = JSON.stringify(diag, null, 2);
+    $("out-diagnostics").textContent = formatDiagnosticsPanelText(diag);
     setTab("diagnostics");
     advanceWorkflow(3);
     if (!diag.ok) {

@@ -11,13 +11,13 @@ torqa surface app.tq --out ir_bundle.json
 **2)** Materialize (idempotent; overwrites same paths):
 
 ```bash
-torqa project --root . --source ir_bundle.json --out generated_out --engine-mode python_only
+torqa project --root . --source ir_bundle.json --out generated_out
 ```
 
 Or one step from the surface file:
 
 ```bash
-torqa project --root . --source app.tq --out generated_out --engine-mode python_only
+torqa build app.tq
 ```
 
 See also [`docs/TORQA_NIHAI_VISION_ROADMAP.md`](../../docs/TORQA_NIHAI_VISION_ROADMAP.md) (F1).
