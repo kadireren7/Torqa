@@ -1,0 +1,8 @@
+{
+  "name": "torqa/pkg-shared",
+  "version": "0.1.0",
+  "ir_version": "1.4",
+  "exports": {
+    "correlation_context": "exports/correlation_context.json"
+  }
+}

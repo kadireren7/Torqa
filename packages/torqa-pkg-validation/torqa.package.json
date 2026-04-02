@@ -1,0 +1,8 @@
+{
+  "name": "torqa/pkg-validation",
+  "version": "0.1.0",
+  "ir_version": "1.4",
+  "exports": {
+    "checkout_required_fields": "exports/checkout_required_fields.json"
+  }
+}

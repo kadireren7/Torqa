@@ -1,5 +1,7 @@
 # TORQA — current maturity
 
+**New to the repo?** Start with **[`docs/QUICKSTART.md`](docs/QUICKSTART.md)** (install + first build), then [`docs/FIRST_PROJECT.md`](docs/FIRST_PROJECT.md).
+
 **What is real:** Canonical IR interchange (v1.4), Python + Rust verification/execution, orchestrator, multi-target codegen (TORQA.web / TORQA.db–style projections today), golden tests, diagnostics with formal phases, web console (Monaco), CLI (`torqa`), patch preview, system health report, CI, bundle envelope checks, 1.3→1.4 migration, transitional `.pxir` surface subset, optional `library_refs`, third-party projection env hook (`TORQA_PROJECTION_MODULE`).
 
 **What is partial:** Native `.tq` parser pipeline vs JSON IR, Rust toolchain on all dev machines, execution trace richness, full editor session/undo, enterprise security, deep multi-domain projection families.

@@ -6,8 +6,17 @@ Grouped entry points. **Normative** technical contracts are marked.
 
 | Document | Role |
 |----------|------|
-| [README.md](../README.md) | Install, happy path, CLI / `torqa_public` entry surfaces |
+| [README.md](../README.md) | What / why / status + links to Quick Start |
+| [QUICKSTART.md](QUICKSTART.md) | **Canonical** install + first build (5 min) |
+| [FIRST_PROJECT.md](FIRST_PROJECT.md) | After Quick Start: own a `.tq`, optional packages |
+| [examples/torqa_self/README.md](../examples/torqa_self/README.md) | **Self-host policy:** grouped `.tq` bundles (hints, caps, ordering, language ref); registry + drift |
+| [SELF_HOST_MAP.md](SELF_HOST_MAP.md) | **P17:** one-page map + `torqa --json language --self-host-catalog` |
+| [RELEASE_AND_VERSIONING.md](RELEASE_AND_VERSIONING.md) | Tags, changelog, stability wording |
 | [examples/workspace_minimal/README.md](../examples/workspace_minimal/README.md) | Minimal `.tq` + `project` |
+| [examples/torqa/templates/README.md](../examples/torqa/templates/README.md) | Copy-paste `.tq` starters |
+| [USING_PACKAGES.md](USING_PACKAGES.md) | **IR packages:** canonical 5-step flow; TQ file include vs IR compose disambiguation |
+| [PACKAGE_DISTRIBUTION.md](PACKAGE_DISTRIBUTION.md) | **Publish/fetch:** minimal registry, `ref:` lock forms, `torqa package` |
+| [examples/package_demo/README.md](../examples/package_demo/README.md) | Runnable tree for [USING_PACKAGES.md](USING_PACKAGES.md) |
 | [MAINTAINER_VERIFY.md](MAINTAINER_VERIFY.md) | Maintainer smoke commands |
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution process |

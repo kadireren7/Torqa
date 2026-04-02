@@ -54,7 +54,7 @@ def test_compile_tq_signin_flow_ok(client):
 def test_compile_tq_unless_rejected(client):
     r = client.post(
         "/api/compile-tq",
-        json={"source": "unless x\nintent a\nrequires u, p, i\nflow:\n  create session\n"},
+        json={"source": "unless x\nintent a\nrequires u, p, i\nresult OK\nflow:\n  create session\n"},
     )
     assert r.status_code == 200
     body = r.json()

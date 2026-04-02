@@ -1,0 +1,3 @@
+# Shared login inputs + forbid locked (included after intent by parent .tq files).
+requires username, password, ip_address
+forbid locked

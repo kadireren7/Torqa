@@ -1,0 +1,15 @@
+# TORQA-authored presence/order of short prose refs for diagnostics + AEM in language_reference_payload (P14.1).
+# Two slugs after session inputs; full strings mapped in Python. Slug identity selects payload field, not position.
+# Regenerate:
+#   torqa surface examples/torqa_self/language_reference_prose_refs.tq --out examples/torqa_self/language_reference_prose_refs_bundle.json
+
+module torqa.self.language_reference_prose_refs
+
+intent language_reference_prose_refs
+requires username, password, ip_address, ref_diag_issue_shape, ref_aem_execution
+
+result OK
+
+flow:
+  create session
+  emit login_success

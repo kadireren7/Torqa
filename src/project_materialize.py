@@ -28,7 +28,7 @@ def load_bundle_from_source(path: Path) -> Dict[str, Any]:
     suf = path.suffix.lower()
     raw = path.read_text(encoding="utf-8")
     if suf == ".tq":
-        return parse_tq_source(raw)
+        return parse_tq_source(raw, tq_path=path)
     if suf == ".pxir":
         return parse_pxir_source(raw)
     if suf == ".json":

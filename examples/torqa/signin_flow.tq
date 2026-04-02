@@ -7,9 +7,5 @@ ensures session.created
 result Sign-in completed
 
 flow:
-  validate username
-  validate password
-  find user by username
-  verify password
   create session
   emit login_success

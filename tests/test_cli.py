@@ -1,7 +1,9 @@
+import io
 import json
 import subprocess
 import sys
 import tempfile
+from argparse import Namespace
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -14,6 +16,17 @@ def _run(*args: str):
         capture_output=True,
         text=True,
     )
+
+
+def test_cli_module_shim_torqa_invocation():
+    r = subprocess.run(
+        [sys.executable, "-m", "torqa", "--help"],
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "build" in r.stdout
 
 
 def test_cli_validate_ok():
@@ -81,14 +94,14 @@ def test_cli_validate_ir_shape_invalid():
 
 def test_cli_surface_tq_unknown_step_has_hint():
     bad_tq = (
-        "module x\nintent user_x\nrequires username, password, ip_address\nflow:\n"
+        "module x\nintent user_x\nrequires username, password, ip_address\nresult OK\nflow:\n"
         "  totally_unknown_step\n"
     )
     with tempfile.NamedTemporaryFile(mode="w", suffix=".tq", delete=False, encoding="utf-8") as f:
         f.write(bad_tq)
         fpath = f.name
     try:
-        r = _run("surface", fpath)
+        r = _run("--json", "surface", fpath)
         assert r.returncode == 1
         data = json.loads(r.stderr)
         assert data.get("hint")
@@ -96,6 +109,35 @@ def test_cli_surface_tq_unknown_step_has_hint():
         assert data.get("code") == "PX_TQ_UNKNOWN_FLOW_STEP"
     finally:
         Path(fpath).unlink(missing_ok=True)
+
+
+def test_cli_surface_human_next_respects_display_cap(monkeypatch, tmp_path):
+    """Human-mode surface stderr \"Next:\" uses suggested_next_display_cap (P15.1)."""
+    from src.cli import main as cli_main
+
+    monkeypatch.setattr(cli_main, "suggested_next_display_cap", lambda **kw: 2)
+    bad_tq = tmp_path / "bad.tq"
+    bad_tq.write_text(
+        "module x\nintent user_x\nrequires username, password, ip_address\nresult OK\nflow:\n"
+        "  totally_unknown_step\n",
+        encoding="utf-8",
+    )
+    err = io.StringIO()
+    monkeypatch.setattr(sys, "stderr", err)
+    rc = cli_main.cmd_surface(Namespace(file=str(bad_tq), json=False, out=None))
+    assert rc == 1
+    assert err.getvalue().count("  - ") == 2
+
+
+def test_cli_language_self_host_catalog():
+    r = _run("--json", "language", "--self-host-catalog")
+    assert r.returncode == 0, r.stderr
+    data = json.loads(r.stdout)
+    assert data.get("ok") is True
+    assert data.get("single_flow")
+    assert data.get("group_blurbs")
+    assert isinstance(data.get("entries"), list)
+    assert len(data["entries"]) >= 10
 
 
 def test_cli_language():

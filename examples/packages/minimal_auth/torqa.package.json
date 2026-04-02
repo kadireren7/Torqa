@@ -1,0 +1,8 @@
+{
+  "name": "torqa/minimal-auth",
+  "version": "1.0.0",
+  "ir_version": "1.4",
+  "exports": {
+    "email_fragment": "exports/email_input.json"
+  }
+}

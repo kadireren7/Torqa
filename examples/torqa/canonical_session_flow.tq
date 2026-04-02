@@ -1,0 +1,14 @@
+# Canonical .tq — state + action: session, audit effect, forbid, postcondition, explicit result.
+# IR: start_session + log_successful_login transitions; forbids; postconditions; result string.
+
+module auth.session
+
+intent user_login
+requires username, password, ip_address
+forbid locked
+ensures session.created
+result Login completed
+
+flow:
+  create session
+  emit login_success

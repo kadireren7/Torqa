@@ -1,0 +1,14 @@
+# Canonical .tq — same IR shape as session flow; view boundary is only module (tq_v1 has no view: keyword).
+# IR: metadata.source_map.tq_module names the UI surface; rest matches canonical_session_flow.tq.
+
+module web.views.login
+
+intent user_login
+requires username, password, ip_address
+forbid locked
+ensures session.created
+result Signed in
+
+flow:
+  create session
+  emit login_success

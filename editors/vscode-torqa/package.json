@@ -23,6 +23,12 @@
         "scopeName": "source.torqa",
         "path": "./syntaxes/torqa.tmLanguage.json"
       }
+    ],
+    "snippets": [
+      {
+        "language": "torqa",
+        "path": "./snippets/torqa.json"
+      }
     ]
   }
 }

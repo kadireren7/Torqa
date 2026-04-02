@@ -1,0 +1,16 @@
+# TORQA-authored emission order for language_reference_payload.condition_id_patterns (P14).
+# After username, password, ip_address: four condpat_* slugs; JSON key + pattern text mapped in Python.
+# Any permutation of the four slugs is valid; dict insertion order follows bundle input order.
+# Regenerate:
+#   torqa surface examples/torqa_self/language_reference_condition_patterns.tq --out examples/torqa_self/language_reference_condition_patterns_bundle.json
+
+module torqa.self.language_reference_condition_patterns
+
+intent language_reference_condition_patterns
+requires username, password, ip_address, condpat_preconditions, condpat_forbids, condpat_postconditions, condpat_transitions
+
+result OK
+
+flow:
+  create session
+  emit login_success

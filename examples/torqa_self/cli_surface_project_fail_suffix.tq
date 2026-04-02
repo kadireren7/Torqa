@@ -1,0 +1,17 @@
+# TORQA-authored suffix lines after the onboarding prefix when surface/project fails (P11.1).
+# Order of `surface_fail_*` names in `requires` defines merge order after CLI onboarding hints.
+# Regenerate JSON after edits:
+#   torqa surface examples/torqa_self/cli_surface_project_fail_suffix.tq --out examples/torqa_self/cli_surface_project_fail_suffix_bundle.json
+#
+# Slug → human line mapping: src/torqa_self/surface_fail_hints_ir.py
+
+module torqa.self.cli_surface_project_fail_suffix
+
+intent surface_project_fail_hints
+requires username, password, ip_address, surface_fail_surface_cmd, surface_fail_packages_doc, surface_fail_language_cmd
+
+result OK
+
+flow:
+  create session
+  emit login_success

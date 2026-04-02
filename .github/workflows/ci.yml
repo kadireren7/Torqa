@@ -20,6 +20,8 @@ jobs:
           pip install -e .
       - name: Pytest
         run: python -m pytest
+      - name: Self-host TORQA bundles (drift)
+        run: python scripts/validate_self_host_bundles.py
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

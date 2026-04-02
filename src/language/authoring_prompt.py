@@ -11,6 +11,11 @@ from typing import Any, Dict, List, Optional
 
 from src.ir.canonical_ir import CANONICAL_IR_VERSION
 from src.semantics.ir_semantics import IRFunctionSignature, default_ir_function_registry
+from src.torqa_self.language_reference_condition_patterns_ir import condition_id_patterns_with_fallback
+from src.torqa_self.language_reference_prose_refs_ir import language_reference_prose_refs_with_fallback
+from src.torqa_self.language_reference_taxonomy_ir import language_reference_taxonomy_lists_with_fallback
+from src.torqa_self.language_reference_rules_ir import language_reference_rules_list_with_fallback
+from src.torqa_self.layered_authoring_passes_ir import layered_authoring_passes_list_with_fallback
 
 # Golden minimal shape (must stay consistent with examples/core/valid_minimal_flow.json).
 _MINIMAL_BUNDLE: Dict[str, Any] = {
@@ -72,6 +77,11 @@ def _registry_rows(reg: Dict[str, IRFunctionSignature]) -> List[Dict[str, Any]]:
 def language_reference_payload() -> Dict[str, Any]:
     """Structured reference for CLI, tooling, and documentation generators."""
     reg = default_ir_function_registry()
+    tax = language_reference_taxonomy_lists_with_fallback()
+    layers = layered_authoring_passes_list_with_fallback()
+    rules = language_reference_rules_list_with_fallback()
+    condpat = condition_id_patterns_with_fallback()
+    prose_refs = language_reference_prose_refs_with_fallback()
     return {
         "name": "TORQA core IR (canonical interchange)",
         "design": "verifier_first_ai_native",
@@ -81,52 +91,28 @@ def language_reference_payload() -> Dict[str, Any]:
             "source": "python_prototype",
             "canonical_language": "english",
         },
-        "input_types": ["text", "number", "boolean", "void", "unknown"],
-        "condition_id_patterns": {
-            "preconditions": "c_req_NNNN (four digits, unique)",
-            "forbids": "c_forbid_NNNN",
-            "postconditions": "c_post_NNNN",
-            "transitions": "t_NNNN",
-        },
-        "transition_states": ["before", "after"],
-        "expr_json_types": [
-            "identifier",
-            "string_literal",
-            "number_literal",
-            "boolean_literal",
-            "call",
-            "binary",
-            "logical",
-        ],
-        "binary_operators": ["==", "!=", "<", ">", "<=", ">="],
-        "logical_operators": ["and", "or"],
+        "input_types": tax["input_types"],
+        "condition_id_patterns": condpat,
+        "transition_states": tax["transition_states"],
+        "expr_json_types": tax["expr_json_types"],
+        "binary_operators": tax["binary_operators"],
+        "logical_operators": tax["logical_operators"],
         "identifiers": "ASCII [A-Za-z_][A-Za-z0-9_]* for goal, inputs, calls, effect_name",
         "json_object_keys": "ASCII snake_case [a-z][a-z0-9_]*",
         "builtins": _registry_rows(reg),
-        "formal_validation_phases": ["syntax", "kind_type", "wellformed", "policy"],
-        "diagnostics_issue_shape": "Each issue includes legacy phase plus formal_phase (FORMAL_CORE §2); repair loops should group by formal_phase.",
-        "layered_authoring_passes": [
-            "A — skeleton (goal, inputs, metadata, empty arrays)",
-            "B — preconditions / forbids",
-            "C — transitions (void effects; σ must match from_state → to_state per AEM)",
-            "D — postconditions; final full diagnostic",
-        ],
-        "aem_execution": "Reference Python and Rust executors enforce control state σ (before|after) and AEM_* halt codes; see docs/AEM_SPEC.md.",
-        "rules": [
-            "See docs/AI_GENERATION_PROFILE.md and docs/SELF_EVOLUTION_PIPELINE.md: validate-then-expand, minimal diff on repair, proposal-gate before merge.",
-            "Output exactly one JSON object with top-level key ir_goal (and optional envelope keys only as in schema).",
-            "Use only listed builtins by name; match arity. Predicates in conditions; void builtins as transition effect_name only.",
-            "Every condition_id and transition_id must be globally unique within ir_goal.",
-            "Chained transitions: after the first before→after step, later transitions must use from_state \"after\" when σ is already after (AEM).",
-            "Passing full diagnostics requires structural + handoff + determinism + semantic checks (no verifier bypass).",
-            "Multi-surface: valid IR is not website-only — orchestration emits generated/webapp (Vite) plus stubs such as generated/sql/schema.sql, generated/rust/main.rs, generated/python/main.py; logging-like effects raise SQL relevance.",
-        ],
+        "formal_validation_phases": tax["formal_validation_phases"],
+        "diagnostics_issue_shape": prose_refs["diagnostics_issue_shape"],
+        "layered_authoring_passes": layers,
+        "aem_execution": prose_refs["aem_execution"],
+        "rules": rules,
         "minimal_valid_bundle": _MINIMAL_BUNDLE,
     }
 
 
 def build_ai_authoring_system_prompt() -> str:
     reg = default_ir_function_registry()
+    tax = language_reference_taxonomy_lists_with_fallback()
+    input_type_alt = "|".join(tax["input_types"])
     builtins_lines: List[str] = []
     for row in _registry_rows(reg):
         a = ", ".join(row["arguments"])
@@ -152,7 +138,7 @@ Top-level must be: {{"ir_goal": {{...}}}}. No markdown fences, no commentary out
 
 ## Structural rules
 - goal: non-empty PascalCase ASCII identifier describing the workflow (e.g. UserLoginFlow).
-- inputs: unique names; type one of text|number|boolean|void|unknown.
+- inputs: unique names; type one of {input_type_alt}.
 - preconditions: kind "require", ids c_req_0001, c_req_0002, ...
 - forbids: kind "forbid", ids c_forbid_0001, ...
 - postconditions: kind "postcondition", ids c_post_0001, ...

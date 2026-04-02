@@ -4,11 +4,8 @@ intent user_login
 requires username, password, ip_address
 forbid locked
 ensures session.created
+result Login Successful
 
 flow:
-  validate username
-  validate password
-  find user by username
-  verify password
   create session
   emit login_success

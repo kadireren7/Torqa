@@ -1,6 +1,8 @@
 # Minimal workspace (F1)
 
-From **repository root**, paths are `examples/workspace_minimal/app.tq` (see root [`README.md`](../../README.md) Happy path). From **this directory**, use `app.tq` below.
+**Start here if you have not installed yet:** [`docs/QUICKSTART.md`](../../docs/QUICKSTART.md).
+
+From **repository root**, paths are `examples/workspace_minimal/app.tq` (see root [`README.md`](../../README.md)). From **this directory**, use `app.tq` below.
 
 **1)** Compile `.tq` to IR bundle JSON:
 

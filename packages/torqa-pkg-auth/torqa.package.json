@@ -1,0 +1,8 @@
+{
+  "name": "torqa/pkg-auth",
+  "version": "0.1.0",
+  "ir_version": "1.4",
+  "exports": {
+    "session_required": "exports/session_required.json"
+  }
+}

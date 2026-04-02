@@ -1,0 +1,10 @@
+{
+  "primary": "primary.json",
+  "fragments": [
+    "../../packages/torqa-pkg-auth/exports/session_required.json",
+    "../../packages/torqa-pkg-validation/exports/checkout_required_fields.json",
+    "../../packages/torqa-pkg-shared/exports/correlation_context.json"
+  ],
+  "library_refs_from_lock": true,
+  "lock": "torqa.lock.json"
+}

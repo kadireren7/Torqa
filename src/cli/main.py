@@ -37,10 +37,15 @@ from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_func
 from src.project_materialize import load_bundle_from_source, materialize_project
 from src.diagnostics.user_hints import (
     augment_issue,
+    format_tq_cli_error,
+    merge_onboarding_suggested_next,
+    onboarding_suggested_next_prefix,
     suggested_next_for_surface_or_project_fail,
     suggested_next_from_report,
     tq_parse_extras,
 )
+from src.packages.cli_hints import format_package_cli_error
+from src.torqa_self.suggested_next_merge_cap_ir import suggested_next_display_cap
 
 
 def _load_bundle(path: Path) -> Dict[str, Any]:
@@ -164,22 +169,34 @@ def _project_payload_to_human(payload: Dict[str, Any]) -> str:
         sn = list(payload.get("suggested_next") or diag.get("suggested_next") or [])
         if sn:
             lines.append("  Next:")
-            for s in sn[:6]:
+            for s in sn[:8]:
                 lines.append(f"    - {s}")
         return "\n".join(lines)
 
     written = list(payload.get("written") or [])
     if payload.get("ok") is False and not written:
         err = (payload.get("errors") or ["unknown"])[0]
+        code = payload.get("code")
+        if isinstance(code, str) and code.startswith("PX_TQ_"):
+            tq_p = payload.get("source_path")
+            tp = Path(tq_p) if isinstance(tq_p, str) else None
+            lines = [format_tq_cli_error(code, err, tq_path=tp)]
+            sn = list(payload.get("suggested_next") or [])
+            if sn:
+                lines.append("")
+                lines.append("Next:")
+                for s in sn[:8]:
+                    lines.append(f"  - {s}")
+            return "\n".join(lines)
         lines = ["ERROR", "  Could not materialize", f"  Reason: {err}"]
-        if payload.get("code"):
-            lines.append(f"  Code: {payload['code']}")
+        if code:
+            lines.append(f"  Code: {code}")
         if payload.get("hint"):
             lines.append(f"  Hint: {payload['hint']}")
         sn = list(payload.get("suggested_next") or [])
         if sn:
             lines.append("  Next:")
-            for s in sn[:6]:
+            for s in sn[:8]:
                 lines.append(f"    - {s}")
         return "\n".join(lines)
 
@@ -188,6 +205,8 @@ def _project_payload_to_human(payload: Dict[str, Any]) -> str:
         for e in (payload.get("errors") or [])[:8]:
             lines.append(f"  - {e}")
         lines.append("  Next: torqa --json project ... for full JSON payload")
+        for item in onboarding_suggested_next_prefix():
+            lines.append(f"  {item}")
         return "\n".join(lines)
 
     wu = payload.get("written_under") or "(unknown)"
@@ -225,20 +244,21 @@ def _emit_project_payload(args: argparse.Namespace, payload: Dict[str, Any], str
 
 def _project_load_suggested_next(exc: BaseException, resolved_src: Path) -> List[str]:
     if isinstance(exc, FileNotFoundError):
-        return [
-            f"Resolved source path: {resolved_src}",
-            "torqa build examples/workspace_minimal/app.tq",
-        ]
+        return merge_onboarding_suggested_next([f"Resolved source path: {resolved_src}"])
     if isinstance(exc, json.JSONDecodeError):
-        return ["torqa language --minimal-json", f"Fix JSON in: {resolved_src}"]
+        return merge_onboarding_suggested_next(
+            ["torqa language --minimal-json", f"Fix JSON in: {resolved_src}"]
+        )
     if isinstance(exc, UnicodeDecodeError):
-        return [f"File must be UTF-8: {resolved_src}"]
+        return merge_onboarding_suggested_next([f"File must be UTF-8: {resolved_src}"])
     if isinstance(exc, ValueError) and "Unsupported source extension" in str(exc):
-        return [
-            "Use .json, .tq, or .pxir as the source extension.",
-            "torqa surface FILE.pxir --out bundle.json",
-        ]
-    return ["torqa surface FILE.tq --out ir_bundle.json", "torqa language"]
+        return merge_onboarding_suggested_next(
+            [
+                "Use .json, .tq, or .pxir as the source extension.",
+                "torqa surface FILE.pxir --out bundle.json",
+            ]
+        )
+    return merge_onboarding_suggested_next(["torqa surface FILE.tq --out ir_bundle.json", "torqa language"])
 
 
 def _write_artifacts(artifacts: List[Dict[str, Any]], root: Path) -> None:
@@ -306,10 +326,9 @@ def cmd_project(args: argparse.Namespace) -> int:
             "written": [],
             "errors": ["missing source: pass a bundle file or --source PATH"],
             "ok": False,
-            "suggested_next": [
-                "torqa build examples/workspace_minimal/app.tq",
-                "torqa project --root . --source examples/workspace_minimal/app.tq",
-            ],
+            "suggested_next": merge_onboarding_suggested_next(
+                ["torqa project --root . --source examples/workspace_minimal/app.tq"]
+            ),
         }
         _emit_project_payload(args, miss, sys.stderr)
         return 1
@@ -341,6 +360,7 @@ def cmd_project(args: argparse.Namespace) -> int:
                 "code": ex.code,
                 "hint": extra.get("hint"),
                 "doc": extra.get("doc"),
+                "source_path": str(src_path),
                 "suggested_next": suggested_next_for_surface_or_project_fail(),
             },
             sys.stderr,
@@ -478,6 +498,23 @@ def cmd_language(args: argparse.Namespace) -> int:
         ind = None if getattr(args, "json", False) else 2
         sys.stdout.write(minimal_valid_bundle_json(indent=ind) + "\n")
         return 0
+    if getattr(args, "self_host_catalog", False):
+        from src.torqa_self.bundle_registry import (
+            SINGLE_FLOW_LINE,
+            self_host_catalog,
+            self_host_group_blurbs,
+        )
+
+        _emit(
+            {
+                "ok": True,
+                "single_flow": SINGLE_FLOW_LINE,
+                "group_blurbs": self_host_group_blurbs(),
+                "entries": self_host_catalog(),
+            },
+            args,
+        )
+        return 0
     _emit(language_reference_payload(), args)
     return 0
 
@@ -541,20 +578,28 @@ def cmd_surface(args: argparse.Namespace) -> int:
     raw = path.read_text(encoding="utf-8")
     try:
         if path.suffix.lower() == ".tq":
-            bundle = parse_tq_source(raw)
+            bundle = parse_tq_source(raw, tq_path=path.resolve())
         else:
             bundle = parse_pxir_source(raw)
     except TQParseError as ex:
         extra = tq_parse_extras(ex.code)
-        err_obj = {
-            "ok": False,
-            "code": ex.code,
-            "message": str(ex),
-            "hint": extra.get("hint"),
-            "doc": extra.get("doc"),
-            "suggested_next": suggested_next_for_surface_or_project_fail(),
-        }
-        _emit(err_obj, args, stream=sys.stderr)
+        if getattr(args, "json", False):
+            err_obj = {
+                "ok": False,
+                "code": ex.code,
+                "message": str(ex),
+                "hint": extra.get("hint"),
+                "doc": extra.get("doc"),
+                "suggested_next": suggested_next_for_surface_or_project_fail(),
+            }
+            _emit(err_obj, args, stream=sys.stderr)
+        else:
+            block = format_tq_cli_error(ex.code, str(ex), tq_path=path.resolve())
+            sys.stderr.write(block + "\n\n")
+            sys.stderr.write("Next:\n")
+            _n = suggested_next_display_cap()
+            for s in suggested_next_for_surface_or_project_fail()[:_n]:
+                sys.stderr.write(f"  - {s}\n")
         return 1
     try:
         g = ir_goal_from_json(bundle)
@@ -663,11 +708,176 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 0 if ok else 3
 
 
+def cmd_vendor(args: argparse.Namespace) -> int:
+    from src.packages.errors import PackageError
+    from src.packages.vendor import vendor_packages
+
+    lock = Path(args.lock)
+    try:
+        dr = Path(args.deps_root) if getattr(args, "deps_root", None) else None
+        rep = vendor_packages(lock, deps_root=dr)
+    except PackageError as ex:
+        if getattr(args, "json", False):
+            sys.stderr.write(f"{ex.code}: {ex}\n")
+        else:
+            sys.stderr.write(format_package_cli_error(ex) + "\n")
+        return 1
+    if getattr(args, "json", False):
+        _emit(rep, args)
+    else:
+        sys.stdout.write(f"OK deps_root={rep['deps_root']}\n")
+        for w in rep["written"]:
+            sys.stdout.write(f"  {w}\n")
+    return 0
+
+
+def cmd_compose(args: argparse.Namespace) -> int:
+    from src.packages.compose_spec import load_bundle_json, load_compose_spec, load_fragment_json
+    from src.packages.errors import PX_PKG_COMPOSE_SPEC, PackageError
+    from src.packages.merge_ir import compose_bundle
+    from src.packages.vendor import load_lock
+
+    spec_path = Path(args.spec).resolve()
+    compose_spec_dir = spec_path.parent
+    try:
+        spec = load_compose_spec(spec_path)
+        root = spec_path.parent
+
+        def _p(rel: str) -> Path:
+            q = Path(rel)
+            return q.resolve() if q.is_absolute() else (root / q).resolve()
+
+        primary = load_bundle_json(_p(spec["primary"]))
+        frags: List[Dict[str, Any]] = []
+        for rel in spec.get("fragments") or []:
+            if not isinstance(rel, str):
+                raise PackageError(PX_PKG_COMPOSE_SPEC, "Each fragment path must be a string.")
+            frags.append(load_fragment_json(_p(rel)))
+        lib_refs: List[Dict[str, Any]] | None = None
+        if spec.get("library_refs_from_lock"):
+            lock_rel = spec.get("lock")
+            if not isinstance(lock_rel, str) or not lock_rel.strip():
+                raise PackageError(PX_PKG_COMPOSE_SPEC, "library_refs_from_lock requires string 'lock' path.")
+            lock_data = load_lock(_p(lock_rel))
+            lib_refs = []
+            for p in lock_data.get("packages") or []:
+                if isinstance(p, dict) and isinstance(p.get("name"), str) and isinstance(p.get("version"), str):
+                    lib_refs.append(
+                        {
+                            "name": p["name"],
+                            "version": p["version"],
+                            "fingerprint": p.get("fingerprint") or "",
+                        }
+                    )
+        elif spec.get("library_refs"):
+            lib_refs = spec["library_refs"]
+        out = compose_bundle(primary, frags, library_refs=lib_refs)
+        out_path = Path(args.out).resolve()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(out, indent=2, sort_keys=True, default=str) + "\n",
+            encoding="utf-8",
+        )
+    except PackageError as ex:
+        if getattr(args, "json", False):
+            sys.stderr.write(f"{ex.code}: {ex}\n")
+        else:
+            sys.stderr.write(format_package_cli_error(ex, compose_spec_dir=compose_spec_dir) + "\n")
+        return 1
+    if getattr(args, "json", False):
+        _emit({"ok": True, "out": str(Path(args.out).resolve())}, args)
+    else:
+        sys.stdout.write(f"Wrote {args.out}\n")
+    return 0
+
+
+def cmd_package_fingerprint(args: argparse.Namespace) -> int:
+    from src.packages.errors import PackageError
+    from src.packages.fingerprint import compute_package_fingerprint
+
+    try:
+        fp = compute_package_fingerprint(Path(args.dir))
+    except PackageError as ex:
+        if getattr(args, "json", False):
+            sys.stderr.write(f"{ex.code}: {ex}\n")
+        else:
+            sys.stderr.write(format_package_cli_error(ex) + "\n")
+        return 1
+    if getattr(args, "json", False):
+        _emit({"fingerprint": fp}, args)
+    else:
+        sys.stdout.write(fp + "\n")
+    return 0
+
+
+def cmd_package_publish(args: argparse.Namespace) -> int:
+    from src.packages.errors import PackageError
+    from src.packages.publish_fetch import publish_package
+
+    try:
+        rep = publish_package(Path(args.dir), Path(args.registry))
+    except PackageError as ex:
+        if getattr(args, "json", False):
+            sys.stderr.write(f"{ex.code}: {ex}\n")
+        else:
+            sys.stderr.write(format_package_cli_error(ex) + "\n")
+        return 1
+    if getattr(args, "json", False):
+        _emit(rep, args)
+    else:
+        sys.stdout.write(f"Published {rep['name']}@{rep['version']}\n")
+        sys.stdout.write(f"  fingerprint: {rep['fingerprint']}\n")
+        sys.stdout.write(f"  artifact: {rep['artifact']}\n")
+        sys.stdout.write(f"  registry: {rep['registry']}\n")
+    return 0
+
+
+def cmd_package_fetch(args: argparse.Namespace) -> int:
+    from src.packages.errors import PackageError
+    from src.packages.publish_fetch import fetch_package
+
+    try:
+        rep = fetch_package(args.name, args.version, args.registry, Path(args.out))
+    except PackageError as ex:
+        if getattr(args, "json", False):
+            sys.stderr.write(f"{ex.code}: {ex}\n")
+        else:
+            sys.stderr.write(format_package_cli_error(ex) + "\n")
+        return 1
+    if getattr(args, "json", False):
+        _emit(rep, args)
+    else:
+        sys.stdout.write(f"Fetched {rep['name']}@{rep['version']}\n")
+        sys.stdout.write(f"  path: {rep['path']}\n")
+        sys.stdout.write(f"  fingerprint: {rep['fingerprint']}\n")
+    return 0
+
+
+def cmd_package_list(args: argparse.Namespace) -> int:
+    from src.packages.errors import PackageError
+    from src.packages.publish_fetch import list_registry_packages
+
+    try:
+        rows = list_registry_packages(args.registry)
+    except PackageError as ex:
+        if getattr(args, "json", False):
+            sys.stderr.write(f"{ex.code}: {ex}\n")
+        else:
+            sys.stderr.write(format_package_cli_error(ex) + "\n")
+        return 1
+    if getattr(args, "json", False):
+        _emit({"packages": rows}, args)
+    else:
+        for r in rows:
+            sys.stdout.write(f"{r.get('name')}@{r.get('version')}\t{r.get('fingerprint', '')}\n")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="torqa",
         description=(
-            "TORQA toolchain.\n\n"
+            "TORQA toolchain. New users: docs/QUICKSTART.md\n\n"
             "Primary:  build    -> one command: validate + materialize from .json / .tq / .pxir (default engine: python_only).\n"
             "Secondary: project -> same as build with optional --source and positional file.\n"
             "           surface -> compile .tq / .pxir to IR JSON; validate -> IR .json diagnostics only.\n\n"
@@ -687,9 +897,17 @@ def main(argv: list[str] | None = None) -> int:
         "  torqa surface examples/surface/minimal.pxir --out bundle.json\n"
         "  torqa project --root . --source examples/core/valid_minimal_flow.json\n"
         "  torqa language --minimal-json\n"
+        "  torqa --json language --self-host-catalog\n"
         "  torqa migrate old.json --from-version 1.3 --to-version 1.4 --out new.json\n"
         "  torqa proposal-gate bundle.json\n"
-        "  torqa preview-patch bundle.json mutations.json\n",
+        "  torqa preview-patch bundle.json mutations.json\n"
+        "  torqa vendor --lock examples/package_demo/torqa.lock.json\n"
+        "  torqa compose examples/package_demo/compose.json --out composed.json\n"
+        "  torqa package-fingerprint examples/packages/minimal_auth\n"
+        "  torqa package publish examples/packages/minimal_auth --registry ./registry\n"
+        "  torqa package fetch torqa/minimal-auth 1.0.0 --registry ./registry --out ./fetched\n"
+        "  torqa package list --registry ./registry\n"
+        "\nSee docs/QUICKSTART.md for install and first build.\n",
     )
     p.add_argument(
         "--json",
@@ -710,8 +928,10 @@ def main(argv: list[str] | None = None) -> int:
     pbuild = sub.add_parser(
         "build",
         help=(
-            "Validate + materialize from one source file (.json / .tq / .pxir). Primary CLI entry; "
-            "defaults to python_only engine (no Rust required). Use torqa --json build ... for machine JSON."
+            "Primary flow: one command from spec to artifacts — torqa build <your.tq|.json|.pxir>. "
+            "Validates and materializes under --out. "
+            "Try: torqa build examples/workspace_minimal/app.tq — see docs/QUICKSTART.md. "
+            "Default engine python_only; torqa --json build … for machine JSON."
         ),
     )
     pbuild.add_argument(
@@ -843,12 +1063,20 @@ def main(argv: list[str] | None = None) -> int:
 
     plang = sub.add_parser(
         "language",
-        help="Core IR language reference (builtins, handoff rules, minimal bundle) for authors and LLMs",
+        help=(
+            "Core IR language reference (builtins, handoff rules, minimal bundle) for authors and LLMs. "
+            "Use --self-host-catalog for a grouped index of policy .tq bundles (debug / demos)."
+        ),
     )
     plang.add_argument(
         "--minimal-json",
         action="store_true",
         help="Print only minimal valid ir_goal bundle JSON (stable sort_keys); pair with --json for one line",
+    )
+    plang.add_argument(
+        "--self-host-catalog",
+        action="store_true",
+        help="Print grouped self-host .tq/bundle index + single-flow line (no language reference payload)",
     )
     plang.set_defaults(func=cmd_language)
 
@@ -858,6 +1086,89 @@ def main(argv: list[str] | None = None) -> int:
     )
     plint.add_argument("file", type=str, metavar="BUNDLE.json", help="IR bundle JSON path")
     plint.set_defaults(func=cmd_bundle_lint)
+
+    pvend = sub.add_parser(
+        "vendor",
+        help="Materialize torqa.lock.json into .torqa/deps (legacy path or ref: path:/file:/https:; verify fingerprint)",
+    )
+    pvend.add_argument("--lock", type=str, default="torqa.lock.json", help="Path to torqa.lock.json")
+    pvend.add_argument(
+        "--deps-root",
+        type=str,
+        default=None,
+        help="Override output root (default: <lock-parent>/.torqa/deps)",
+    )
+    pvend.set_defaults(func=cmd_vendor)
+
+    pcomp = sub.add_parser(
+        "compose",
+        help=(
+            "IR package compose: merge primary IR bundle + JSON fragments (compose.json). "
+            "Not the same as TQ file include in .tq — see docs/USING_PACKAGES.md. Deterministic output."
+        ),
+    )
+    pcomp.add_argument("spec", type=str, metavar="COMPOSE.json", help="compose.json path")
+    pcomp.add_argument("--out", type=str, required=True, help="Write merged bundle JSON here")
+    pcomp.set_defaults(func=cmd_compose)
+
+    pfp = sub.add_parser(
+        "package-fingerprint",
+        help="Print sha256 fingerprint for a package directory (torqa.package.json + exports)",
+    )
+    pfp.add_argument("dir", type=str, metavar="PACKAGE_DIR", help="Package root containing torqa.package.json")
+    pfp.set_defaults(func=cmd_package_fingerprint)
+
+    ppack = sub.add_parser(
+        "package",
+        help="Minimal IR registry: publish | fetch | list (see docs/PACKAGE_DISTRIBUTION.md)",
+    )
+    pkg_sp = ppack.add_subparsers(dest="pkg_action", required=True)
+
+    ppub = pkg_sp.add_parser(
+        "publish",
+        help="Pack a package directory to .tgz and update torqa-registry.json under --registry",
+    )
+    ppub.add_argument("dir", type=str, metavar="PACKAGE_DIR", help="Package root (contains torqa.package.json)")
+    ppub.add_argument(
+        "--registry",
+        type=str,
+        required=True,
+        metavar="DIR",
+        help="Registry directory (creates torqa-registry.json + .tgz artifacts here)",
+    )
+    ppub.set_defaults(func=cmd_package_publish)
+
+    pfet = pkg_sp.add_parser(
+        "fetch",
+        help="Install name@version from a registry index (local dir or URL to torqa-registry.json)",
+    )
+    pfet.add_argument("name", type=str, metavar="NAME", help="Package name from manifest, e.g. torqa/minimal-auth")
+    pfet.add_argument("version", type=str, metavar="VERSION", help="Exact version string (no ranges)")
+    pfet.add_argument(
+        "--registry",
+        type=str,
+        required=True,
+        metavar="SPEC",
+        help="Registry directory, path to torqa-registry.json, or https URL to the index JSON",
+    )
+    pfet.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        metavar="DIR",
+        help="Output directory; package is extracted to <out>/<sanitized-name-version>/",
+    )
+    pfet.set_defaults(func=cmd_package_fetch)
+
+    plst = pkg_sp.add_parser("list", help="List packages in a registry index")
+    plst.add_argument(
+        "--registry",
+        type=str,
+        required=True,
+        metavar="SPEC",
+        help="Registry directory, path to torqa-registry.json, or https URL to the index JSON",
+    )
+    plst.set_defaults(func=cmd_package_list)
 
     psurf = sub.add_parser(
         "surface",

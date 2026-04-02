@@ -1,0 +1,15 @@
+# Full sign-in shape: module, forbid, ensures, result, then flow: with two steps only.
+# Each flow line = exactly two ASCII spaces + create session OR emit login_success (lowercase).
+# Rename module and result text; keep requires including ip_address if you use emit login_success.
+
+module your.namespace.here
+
+intent user_login
+requires username, password, ip_address
+forbid locked
+ensures session.created
+result Login completed
+
+flow:
+  create session
+  emit login_success

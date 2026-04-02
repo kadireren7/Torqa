@@ -1,0 +1,11 @@
+{
+  "packages": [
+    {
+      "name": "torqa/minimal-auth",
+      "version": "1.0.0",
+      "source": "path",
+      "source_path": "../packages/minimal_auth",
+      "fingerprint": "sha256:1b24ed9c8b6a4377520cdbbc6e44adb17ced3c33b8e42d97eaff72856a188583"
+    }
+  ]
+}

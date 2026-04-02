@@ -1,0 +1,26 @@
+{
+  "inputs": [
+    { "name": "payment_method_id", "type": "text" },
+    { "name": "shipping_address_id", "type": "text" }
+  ],
+  "preconditions": [
+    {
+      "condition_id": "c_req_0003",
+      "kind": "require",
+      "expr": {
+        "type": "call",
+        "name": "exists",
+        "arguments": [{ "type": "identifier", "name": "shipping_address_id" }]
+      }
+    },
+    {
+      "condition_id": "c_req_0004",
+      "kind": "require",
+      "expr": {
+        "type": "call",
+        "name": "exists",
+        "arguments": [{ "type": "identifier", "name": "payment_method_id" }]
+      }
+    }
+  ]
+}

@@ -31,9 +31,12 @@ from src.project_materialize import (
 from src.surface.parse_tq import parse_tq_source
 
 
-def parse_tq(text: str) -> Dict[str, Any]:
-    """Parse `.tq` surface text to a bundle envelope ``{"ir_goal": ...}``."""
-    return parse_tq_source(text)
+def parse_tq(text: str, *, source_path: Path | None = None) -> Dict[str, Any]:
+    """Parse `.tq` surface text to a bundle envelope ``{"ir_goal": ...}``.
+
+    Pass ``source_path`` when the text uses ``include "…"`` so relative paths resolve.
+    """
+    return parse_tq_source(text, tq_path=source_path)
 
 
 def load_bundle_from_path(path: str | Path) -> Dict[str, Any]:

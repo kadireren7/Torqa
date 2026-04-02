@@ -2,7 +2,6 @@ module demo.minimal
 
 intent hello_demo
 requires username, password
+result OK
 
 flow:
-  validate username
-  validate password

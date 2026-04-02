@@ -38,7 +38,7 @@ def _run_cli(*args: str):
 
 
 def test_workspace_minimal_bundle_shape_stable():
-    bundle = parse_tq_source(APP_TQ.read_text(encoding="utf-8"))
+    bundle = parse_tq_source(APP_TQ.read_text(encoding="utf-8"), tq_path=APP_TQ)
     assert list(bundle.keys()) == ["ir_goal"]
     ig = bundle["ir_goal"]
     assert set(ig.keys()) == _IR_GOAL_SECTIONS
@@ -53,7 +53,7 @@ def test_workspace_minimal_bundle_shape_stable():
 
 def test_workspace_minimal_app_tq_parse_bundle_and_diagnostics_ok():
     raw = APP_TQ.read_text(encoding="utf-8")
-    bundle = parse_tq_source(raw)
+    bundle = parse_tq_source(raw, tq_path=APP_TQ)
     assert bundle["ir_goal"]["goal"] == "HelloDemo"
     env_e = validate_bundle_envelope(bundle)
     g = ir_goal_from_json(bundle)
@@ -66,7 +66,7 @@ def test_workspace_minimal_surface_cli_writes_valid_bundle(tmp_path):
     rc = main(["surface", str(APP_TQ), "--out", str(out)])
     assert rc == 0, out
     from_disk = json.loads(out.read_text(encoding="utf-8"))
-    expected = parse_tq_source(APP_TQ.read_text(encoding="utf-8"))
+    expected = parse_tq_source(APP_TQ.read_text(encoding="utf-8"), tq_path=APP_TQ)
     assert json.dumps(from_disk, sort_keys=True) == json.dumps(expected, sort_keys=True)
 
 

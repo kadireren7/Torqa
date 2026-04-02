@@ -39,7 +39,7 @@ torqa-desktop = "desktop.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*", "webui*", "desktop*", "compat*"]
+include = ["src*", "webui*", "desktop*", "compat*", "torqa*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

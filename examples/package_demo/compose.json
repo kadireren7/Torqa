@@ -1,0 +1,6 @@
+{
+  "primary": "../core/valid_minimal_flow.json",
+  "fragments": ["../packages/minimal_auth/exports/email_input.json"],
+  "library_refs_from_lock": true,
+  "lock": "torqa.lock.json"
+}

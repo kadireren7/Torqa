@@ -1,5 +1,9 @@
 # Contributing — TORQA
 
+If you have not run the toolchain yet, do **[docs/QUICKSTART.md](docs/QUICKSTART.md)** once from a clean checkout.
+
+If you edit TORQA self-host sources under **[examples/torqa_self/](examples/torqa_self/)**, regenerate the matching `*_bundle.json` with `torqa surface …` (see [examples/torqa_self/README.md](examples/torqa_self/README.md)), update **`src/torqa_self/bundle_registry.py`** if you add or rename a pair, and run **`python scripts/validate_self_host_bundles.py`** (or full `pytest`) so committed bundles do not drift from `.tq`.
+
 ## Canonical code layout
 
 - **Libraries and pipelines** live under `src/`. Import from the `src.*` package (e.g. `from src.ir.canonical_ir import IRGoal`).

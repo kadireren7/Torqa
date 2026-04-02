@@ -1,0 +1,16 @@
+# TORQA-authored order of all seven language_reference_payload.rules lines (P13.2 completes self-host).
+# Relative order of policy_rule_* in `requires` controls emission (any permutation of the seven slugs is valid).
+# Slugs map to full prose in Python (src/torqa_self/language_reference_rules_ir.py).
+# Regenerate:
+#   torqa surface examples/torqa_self/language_reference_rules_prefix.tq --out examples/torqa_self/language_reference_rules_prefix_bundle.json
+
+module torqa.self.language_reference_rules_prefix
+
+intent language_reference_rules_prefix
+requires username, password, ip_address, policy_rule_profile, policy_rule_output_shape, policy_rule_builtins, policy_rule_unique_ids, policy_rule_aem_chain, policy_rule_diagnostics_full, policy_rule_multi_surface
+
+result OK
+
+flow:
+  create session
+  emit login_success
