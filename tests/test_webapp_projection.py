@@ -19,6 +19,15 @@ _REQUIRED_SURFACE_KEYS = frozenset(
 )
 
 
+def test_infer_ui_profile_from_goal_text():
+    from src.codegen.artifact_builder import infer_ui_profile
+
+    assert infer_ui_profile("AdminAnalyticsDashboard") == "dashboard"
+    assert infer_ui_profile("Acme SaaS onboarding") == "startup"
+    assert infer_ui_profile("Minimal modern sign in") == "modern"
+    assert infer_ui_profile("HelloDemo") == "default"
+
+
 def test_minimal_tq_produces_required_webapp_files(tmp_path):
     from src.codegen.artifact_builder import WEBAPP_CORE_RELATIVE_PATHS
     from src.project_materialize import materialize_project, parse_stage

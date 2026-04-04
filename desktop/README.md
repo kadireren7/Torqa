@@ -46,6 +46,16 @@ npm run test
 
 Python CLI shapes the UI relies on are also checked in-repo: `pytest tests/test_desktop_torqa_contract.py`.
 
+## Prompt → `.tq` (P76)
+
+With a workspace open, the **prompt strip** calls `torqa --json generate-tq --workspace <ws> --prompt-stdin` (stdin = your text). Core runs `src.ai.tq_adapter.suggest_tq_from_prompt`: OpenAI → JSON `{"tq": "..."}` → **parse + full diagnostics** loop (same rules as `torqa surface`). Output is saved as `generated_<timestamp>.tq`. Requires **`OPENAI_API_KEY`** (repo `.env` is loaded by the Python process).
+
+CLI only:
+
+```bash
+echo "minimal login flow" | torqa --json generate-tq --workspace /path/to/ws --prompt-stdin
+```
+
 ## First-run samples
 
 With a folder open: **Quick demo (sample + validate)**, **Load minimal sample**, or **Load flagship sample** — copies repo examples into `<workspace>/torqa_samples/` and opens the `.tq` file (core-only checks).

@@ -1,5 +1,5 @@
 """
-``torqa`` CLI entrypoint (``pyproject.toml`` console script → ``main()``).
+``torqa`` CLI entrypoint (``pyproject.toml`` console script -> ``main()``).
 
 Primary flow: ``build`` (then ``project``) materialize to disk; ``surface`` (.tq/.pxir -> IR JSON + diagnostics),
 ``validate`` / ``bundle-lint`` (IR bundle JSON only). Other subcommands are tooling (run, patch,
@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from src.ai.adapter import suggest_ir_bundle_from_prompt
+from src.ai.tq_adapter import suggest_tq_from_prompt
 from src.control.ir_mutation_json import try_apply_ir_mutations_from_json
 from src.control.patch_preview import build_patch_preview_report
 from src.diagnostics import codes as diag_codes
@@ -85,7 +86,7 @@ def _open_json_bundle_file(path: Path) -> tuple[Dict[str, Any] | None, Dict[str,
                         "message": (
                             "torqa validate expects an IR bundle .json file; "
                             f"{rel!r} looks like a surface file ({suf!r}). "
-                            "Use: torqa surface … --out bundle.json  OR  torqa project --source …"
+                            "Use: torqa surface ... --out bundle.json  OR  torqa project --source ..."
                         ),
                     }
                 )
@@ -538,6 +539,246 @@ def cmd_ai_suggest(args: argparse.Namespace) -> int:
     return 0 if res.get("ok") else 1
 
 
+def cmd_generate_tq(args: argparse.Namespace) -> int:
+    """P76: stdin prompt -> validated ``.tq`` text (JSON)."""
+    if getattr(args, "prompt_stdin", False):
+        prompt = sys.stdin.read()
+    else:
+        prompt = getattr(args, "prompt", "") or ""
+    prompt = (prompt or "").strip()
+    if not prompt:
+        _emit(
+            {"ok": False, "failure_axis": "setup", "issues": [{"message": "empty prompt (use --prompt-stdin)"}]},
+            args,
+            stream=sys.stderr,
+        )
+        return 1
+    root = Path(args.workspace).resolve()
+    if not root.is_dir():
+        _emit(
+            {
+                "ok": False,
+                "failure_axis": "setup",
+                "issues": [{"message": f"workspace is not a directory: {root}"}],
+            },
+            args,
+            stream=sys.stderr,
+        )
+        return 1
+    gc = getattr(args, "gen_category", None)
+    res = suggest_tq_from_prompt(
+        prompt,
+        workspace_root=root,
+        max_retries=int(getattr(args, "max_retries", 3) or 3),
+        model=getattr(args, "model", None),
+        gen_category=gc.strip() if isinstance(gc, str) and gc.strip() else None,
+    )
+    if res.get("ok") and isinstance(res.get("tq_text"), str):
+        from src.benchmarks.token_estimate import estimate_tokens
+
+        tq_body = str(res["tq_text"])
+        pt_est = estimate_tokens(prompt)
+        tq_est = estimate_tokens(tq_body)
+        out = dict(res)
+        out["token_hint"] = {
+            "prompt_token_estimate": pt_est,
+            "tq_token_estimate": tq_est,
+            "reduction_percent": round(100.0 * (1.0 - tq_est / max(1, pt_est)), 2),
+        }
+        res = out
+    if not res.get("ok"):
+        res = dict(res)
+        res.setdefault("failure_axis", "gpt")
+    _emit(res, args, stream=sys.stdout if res.get("ok") else sys.stderr)
+    return 0 if res.get("ok") else 1
+
+
+def cmd_prompt_app(args: argparse.Namespace) -> int:
+    """
+    P80 product pipeline: natural-language prompt -> validated ``.tq`` on disk -> materialize (``project``).
+
+    Use ``torqa --json app ...`` for a single machine-readable payload (desktop / automation).
+    IR bundle execution remains ``torqa run BUNDLE.json``.
+    """
+    from datetime import datetime, timezone
+
+    from src.benchmarks.token_estimate import estimate_tokens
+
+    prompt = (getattr(args, "prompt", "") or "").strip()
+    if getattr(args, "prompt_stdin", False):
+        prompt = sys.stdin.read().strip()
+    if not prompt:
+        _emit(
+            {
+                "ok": False,
+                "failure_axis": "setup",
+                "stage": "invalid_prompt",
+                "message": "empty prompt; pass PROMPT as an argument or use --prompt-stdin",
+            },
+            args,
+            stream=sys.stderr,
+        )
+        return 1
+
+    root = Path(args.workspace).resolve()
+    if not root.is_dir():
+        _emit(
+            {
+                "ok": False,
+                "failure_axis": "setup",
+                "stage": "bad_workspace",
+                "message": f"not a directory: {root}",
+            },
+            args,
+            stream=sys.stderr,
+        )
+        return 1
+
+    stages: Dict[str, Any] = {}
+    use_json = bool(getattr(args, "json", False))
+
+    gc = getattr(args, "gen_category", None)
+    gen = suggest_tq_from_prompt(
+        prompt,
+        workspace_root=root,
+        max_retries=int(getattr(args, "max_retries", 3) or 3),
+        model=getattr(args, "model", None),
+        gen_category=gc.strip() if isinstance(gc, str) and gc.strip() else None,
+    )
+    stages["generate"] = {
+        "ok": bool(gen.get("ok")),
+        "attempts": gen.get("attempts", []),
+        "tq_gen_intent": gen.get("tq_gen_intent"),
+        "api_metrics": gen.get("api_metrics"),
+    }
+    if not gen.get("ok"):
+        err_body = {k: v for k, v in gen.items() if k != "tq_text"}
+        err_body["failure_axis"] = "gpt"
+        _emit({"ok": False, "stages": stages, **err_body}, args, stream=sys.stderr)
+        return 1
+
+    tq_text = str(gen["tq_text"])
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    rel_name = f"app_prompt_{ts}.tq"
+    tq_path = (root / rel_name).resolve()
+    tq_path.write_text(tq_text, encoding="utf-8")
+
+    pt_est = estimate_tokens(prompt)
+    tq_est = estimate_tokens(tq_text)
+    stages["write_tq"] = {"ok": True, "relative_path": rel_name.replace("\\", "/")}
+    stages["token_hint"] = {
+        "prompt_token_estimate": pt_est,
+        "tq_token_estimate": tq_est,
+        "reduction_percent": round(100.0 * (1.0 - tq_est / max(1, pt_est)), 2),
+    }
+
+    pipeline_trace: List[Dict[str, Any]] | None = [] if use_json else None
+    bundle, perr, parse_info = parse_stage(tq_path)
+    if pipeline_trace is not None:
+        pipeline_trace.append(parse_info)
+
+    if perr is not None:
+        stages["parse"] = {"ok": False}
+        if isinstance(perr, TQParseError):
+            extra = tq_parse_extras(perr.code)
+            payload = {
+                "ok": False,
+                "failure_axis": "torqa",
+                "stages": stages,
+                "errors": [str(perr)],
+                "code": perr.code,
+                "hint": extra.get("hint"),
+                "doc": extra.get("doc"),
+                "source_path": str(tq_path),
+            }
+            _merge_pipeline_json(payload, args, pipeline_trace)
+            _emit(payload, args, stream=sys.stderr)
+            return 1
+        payload = {
+            "ok": False,
+            "failure_axis": "torqa",
+            "stages": stages,
+            "errors": [str(perr)],
+            "suggested_next": _project_load_suggested_next(perr, tq_path),
+        }
+        _merge_pipeline_json(payload, args, pipeline_trace)
+        _emit(payload, args, stream=sys.stderr)
+        return 1
+
+    stages["parse"] = {"ok": True}
+    assert bundle is not None
+
+    dest_root = root / Path(args.out)
+    ok_mat, summary, _written = materialize_project(
+        bundle,
+        dest_root,
+        engine_mode=args.engine_mode,
+        pipeline_trace=pipeline_trace,
+    )
+    stages["materialize"] = {"ok": ok_mat, "written_under": summary.get("written_under")}
+
+    payload = {
+        "ok": ok_mat,
+        "written": summary.get("written", []),
+        "errors": summary.get("errors", []),
+        "written_under": summary.get("written_under"),
+        "consistency_errors": summary.get("consistency_errors", []),
+        "local_webapp": summary.get("local_webapp"),
+        "stages": stages,
+        "prompt_pipeline": True,
+    }
+    if summary.get("suggested_next"):
+        payload["suggested_next"] = summary["suggested_next"]
+    diag = summary.get("diagnostics")
+    if diag is not None:
+        payload["diagnostics"] = diag
+    if pipeline_trace is not None:
+        _merge_pipeline_json(payload, args, pipeline_trace)
+    if use_json and summary.get("projection_surfaces") is not None:
+        payload["projection_surfaces"] = summary.get("projection_surfaces")
+
+    diag_ok = True if diag is None else bool(diag.get("ok", False))
+    final_ok = bool(ok_mat and diag_ok)
+    payload["ok"] = final_ok
+    if not final_ok:
+        payload["failure_axis"] = "torqa"
+
+    if not use_json:
+        sys.stdout.write("TORQA app pipeline\n")
+        sys.stdout.write(f"  generate: ok  wrote {rel_name}\n")
+        th = stages.get("token_hint") or {}
+        if th:
+            sys.stdout.write(
+                f"  tokens (est.): prompt={th.get('prompt_token_estimate')}  "
+                f".tq={th.get('tq_token_estimate')}  "
+                f"reduction ~ {th.get('reduction_percent')}%\n",
+            )
+        gen_stage = stages.get("generate") or {}
+        am = gen_stage.get("api_metrics")
+        if isinstance(am, dict) and am.get("http_calls"):
+            sys.stdout.write(
+                f"  openai: calls={am.get('http_calls')} retries={am.get('retry_count')} "
+                f"latency_ms={am.get('latency_ms_total')} "
+                f"usage={am.get('usage')} "
+                f"est_cost_usd={am.get('estimated_cost_usd')}\n",
+            )
+        sys.stdout.write(f"  materialize: {'ok' if ok_mat else 'failed'}\n")
+        if summary.get("written_under"):
+            sys.stdout.write(f"  output: {summary.get('written_under')}\n")
+        lw = summary.get("local_webapp")
+        if isinstance(lw, dict) and lw.get("commands_powershell"):
+            sys.stdout.write(f"  preview: {lw.get('commands_powershell')}\n")
+
+    if diag is not None and not diag_ok:
+        _emit(payload, args, stream=sys.stderr)
+        return 1
+    if use_json:
+        _emit(payload, args)
+    elif not diag_ok:
+        return 1
+    return 0 if ok_mat else 2
+
+
 def cmd_language(args: argparse.Namespace) -> int:
     """Emit machine-readable core language reference (builtins, rules, minimal bundle)."""
     if getattr(args, "minimal_json", False):
@@ -927,7 +1168,7 @@ def main(argv: list[str] | None = None) -> int:
             "Primary:  build    -> one command: validate + materialize from .json / .tq / .pxir (default engine: python_only).\n"
             "Secondary: project -> same as build with optional --source and positional file.\n"
             "           surface -> compile .tq / .pxir to IR JSON; validate -> IR .json diagnostics only.\n\n"
-            "demo: flagship path (no args) or demo verify / demo benchmark / demo emit; other subcommands (run, guided, check, …) are advanced tooling. "
+            "demo: flagship path (no args) or demo verify / demo benchmark / demo emit; other subcommands (run, guided, check, ...) are advanced tooling. "
             "For .tq files use build or project; validate expects bundle JSON only."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -942,6 +1183,8 @@ def main(argv: list[str] | None = None) -> int:
         "  torqa demo                    # flagship first-trial steps (same as torqa-flagship)\n"
         "  torqa demo verify\n"
         "  torqa demo benchmark\n"
+        "  torqa quick \"describe your app\"          # P80: prompt -> .tq -> materialize (needs OPENAI_API_KEY)\n"
+        "  torqa app \"...\" --workspace ./myproj       # same with explicit folder\n"
         "  torqa demo emit --out demo_out --engine-mode python_only\n"
         "  torqa surface examples/surface/minimal.pxir --out bundle.json\n"
         "  torqa project --root . --source examples/core/valid_minimal_flow.json\n"
@@ -977,10 +1220,10 @@ def main(argv: list[str] | None = None) -> int:
     pbuild = sub.add_parser(
         "build",
         help=(
-            "Primary flow: one command from spec to artifacts — torqa build <your.tq|.json|.pxir>. "
+            "Primary flow: one command from spec to artifacts - torqa build <your.tq|.json|.pxir>. "
             "Validates and materializes under --out. "
-            "Try: torqa build examples/workspace_minimal/app.tq — see docs/QUICKSTART.md. "
-            "Default engine python_only; torqa --json build … for machine JSON."
+            "Try: torqa build examples/workspace_minimal/app.tq - see docs/QUICKSTART.md. "
+            "Default engine python_only; torqa --json build ... for machine JSON."
         ),
     )
     pbuild.add_argument(
@@ -1170,7 +1413,7 @@ def main(argv: list[str] | None = None) -> int:
         "compose",
         help=(
             "IR package compose: merge primary IR bundle + JSON fragments (compose.json). "
-            "Not the same as TQ file include in .tq — see docs/USING_PACKAGES.md. Deterministic output."
+            "Not the same as TQ file include in .tq - see docs/USING_PACKAGES.md. Deterministic output."
         ),
     )
     pcomp.add_argument("spec", type=str, metavar="COMPOSE.json", help="compose.json path")
@@ -1266,6 +1509,90 @@ def main(argv: list[str] | None = None) -> int:
     pa.add_argument("--max-retries", type=int, default=3)
     pa.add_argument("--model", type=str, default=None)
     pa.set_defaults(func=cmd_ai_suggest)
+
+    papp = sub.add_parser(
+        "app",
+        help=(
+            "P80: Prompt -> validated .tq on disk -> materialize in one command (OPENAI_API_KEY). "
+            "Use torqa --json app ... for machine-readable output. IR engine execution: torqa run BUNDLE.json"
+        ),
+    )
+    papp.add_argument(
+        "prompt",
+        nargs="?",
+        default="",
+        help="Natural-language intent (or use --prompt-stdin)",
+    )
+    papp.add_argument(
+        "--workspace",
+        type=str,
+        required=True,
+        metavar="DIR",
+        help="Workspace / project root (written .tq and output tree live here)",
+    )
+    papp.add_argument("--prompt-stdin", action="store_true", help="Read prompt from stdin (UTF-8)")
+    papp.add_argument("--max-retries", type=int, default=3)
+    papp.add_argument("--model", type=str, default=None)
+    papp.add_argument(
+        "--gen-category",
+        type=str,
+        default=None,
+        choices=["landing", "crud", "automation"],
+        help="Force .tq generation profile (overrides heuristic intent from prompt text)",
+    )
+    papp.add_argument(
+        "--out",
+        type=str,
+        default="torqa_generated_out",
+        help="Materialize under <workspace>/<out> (default: torqa_generated_out)",
+    )
+    add_engine_mode(papp)
+    papp.set_defaults(func=cmd_prompt_app)
+
+    pquick = sub.add_parser(
+        "quick",
+        help=(
+            "P80: Same as `torqa app` with default --workspace . (current directory). "
+            "Example: torqa quick \"minimal sign-in flow\"  |  echo prompt | torqa quick --prompt-stdin"
+        ),
+    )
+    pquick.add_argument("prompt", nargs="?", default="", help="Natural-language intent (or --prompt-stdin)")
+    pquick.add_argument("--workspace", type=str, default=".", metavar="DIR", help="Project root (default: .)")
+    pquick.add_argument("--prompt-stdin", action="store_true", help="Read prompt from stdin (UTF-8)")
+    pquick.add_argument("--max-retries", type=int, default=3)
+    pquick.add_argument("--model", type=str, default=None)
+    pquick.add_argument(
+        "--gen-category",
+        type=str,
+        default=None,
+        choices=["landing", "crud", "automation"],
+        help="Force .tq generation profile (overrides heuristic intent from prompt text)",
+    )
+    pquick.add_argument(
+        "--out",
+        type=str,
+        default="torqa_generated_out",
+        help="Materialize under <workspace>/<out> (default: torqa_generated_out)",
+    )
+    add_engine_mode(pquick)
+    pquick.set_defaults(func=cmd_prompt_app)
+
+    pgen = sub.add_parser(
+        "generate-tq",
+        help="P76: LLM -> valid .tq text (parse + diagnostics; needs OPENAI_API_KEY; use --prompt-stdin)",
+    )
+    pgen.add_argument("--workspace", type=str, required=True, metavar="DIR", help="Workspace dir (for validation path)")
+    pgen.add_argument("--prompt-stdin", action="store_true", help="Read natural-language prompt from stdin (UTF-8)")
+    pgen.add_argument("--max-retries", type=int, default=3)
+    pgen.add_argument("--model", type=str, default=None)
+    pgen.add_argument(
+        "--gen-category",
+        type=str,
+        default=None,
+        choices=["landing", "crud", "automation"],
+        help="Force .tq generation profile (overrides heuristic intent from prompt text)",
+    )
+    pgen.set_defaults(func=cmd_generate_tq)
 
     ppatch = sub.add_parser("patch", help="Apply JSON mutations to an IR bundle JSON file")
     ppatch.add_argument("file", type=str, metavar="BUNDLE.json", help="IR bundle JSON path")

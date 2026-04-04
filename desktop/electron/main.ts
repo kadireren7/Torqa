@@ -1,6 +1,11 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
+import { execFile, spawn } from "node:child_process";
+import fs from "node:fs";
+import http from "node:http";
+import net from "node:net";
 import { homedir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import * as fsSafe from "./fsSafe";
 import { resolvePythonExe, resolveRepoRoot } from "./paths";
@@ -8,7 +13,122 @@ import { runTorqa } from "./torqaSpawn";
 import { seedSampleTq } from "./demoSeed";
 import type { TorqaRequest } from "./torqaTypes";
 
+const execFileAsync = promisify(execFile);
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function npmCmd(): string {
+  return process.platform === "win32" ? "npm.cmd" : "npm";
+}
+
+const VITE_PORT_FIRST = 5173;
+const VITE_PORT_LAST = 5228;
+
+/** Pick a free TCP port on loopback (OS-assigned) when 5173–5228 are all busy. */
+function allocateLocalPort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.unref();
+    srv.on("error", reject);
+    srv.listen(0, "127.0.0.1", () => {
+      const addr = srv.address();
+      if (addr && typeof addr === "object" && typeof addr.port === "number") {
+        const p = addr.port;
+        srv.close(() => resolve(p));
+      } else {
+        srv.close(() => reject(new Error("Could not read ephemeral port")));
+      }
+    });
+  });
+}
+
+/** True if nothing is listening on 127.0.0.1:port (we can bind). */
+function isLoopbackPortFree(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const srv = net.createServer();
+    srv.unref();
+    srv.once("error", () => resolve(false));
+    srv.listen(port, "127.0.0.1", () => {
+      srv.close(() => resolve(true));
+    });
+  });
+}
+
+/** Prefer Vite defaults: 5173, 5174, … until a free slot is found. */
+async function pickPreviewPort(): Promise<number> {
+  for (let p = VITE_PORT_FIRST; p <= VITE_PORT_LAST; p++) {
+    if (await isLoopbackPortFree(p)) return p;
+  }
+  return allocateLocalPort();
+}
+
+/** Single GET / with short timeout (Vite dev answers 200 on /). */
+function httpPingOnce(baseUrl: string, timeoutMs: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(ok);
+    };
+    try {
+      const u = new URL(baseUrl);
+      const req = http.request(
+        {
+          hostname: u.hostname,
+          port: u.port ? Number(u.port) : 80,
+          path: "/",
+          method: "GET",
+          timeout: timeoutMs,
+          headers: { Connection: "close", Accept: "*/*" },
+        },
+        (res) => {
+          res.resume();
+          const code = res.statusCode ?? 0;
+          finish(code >= 200 && code < 500);
+        },
+      );
+      req.on("error", () => finish(false));
+      req.on("timeout", () => {
+        req.destroy();
+        finish(false);
+      });
+      req.end();
+    } catch {
+      finish(false);
+    }
+  });
+}
+
+/** Poll until dev server responds or deadline (preview ready detection). */
+async function waitForDevServerReady(
+  baseUrl: string,
+  totalMs: number,
+  intervalMs: number,
+): Promise<boolean> {
+  const deadline = Date.now() + totalMs;
+  while (Date.now() < deadline) {
+    if (await httpPingOnce(baseUrl, Math.min(2500, intervalMs + 2000))) return true;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
+function npmMissingFallbackMessage(webappDir: string): string {
+  const sep = process.platform === "win32" ? "\\" : "/";
+  const d = webappDir.replace(/\\/g, sep);
+  return [
+    "npm was not found (Node.js is missing or not on PATH).",
+    "",
+    "Fallback — run the preview yourself:",
+    `  cd "${d}"`,
+    "  npm install",
+    "  npm run dev -- --host 127.0.0.1 --port 5173",
+    "",
+    "Install Node.js LTS: https://nodejs.org/",
+    "Then fully quit and restart TORQA Desktop so it picks up PATH.",
+  ].join("\n");
+}
 
 let mainWindow: BrowserWindow | null = null;
 let workspaceRoot: string | null = null;
@@ -181,6 +301,109 @@ ipcMain.handle("fs:write", async (_, root: string, relPath: string, content: str
 });
 
 ipcMain.handle("torqa:run", async (_, req: TorqaRequest) => runTorqa(req));
+
+ipcMain.handle("shell:openExternal", async (_, raw: string) => {
+  const u = String(raw ?? "").trim();
+  if (!/^https?:\/\//i.test(u)) {
+    return { ok: false as const, error: "Only http(s) URLs can be opened from the app." };
+  }
+  try {
+    await shell.openExternal(u);
+    return { ok: true as const };
+  } catch (e) {
+    return { ok: false as const, error: String(e) };
+  }
+});
+
+/**
+ * P82: npm check, port 5173→5228 fallback, spawn Vite, HTTP health ping.
+ * Embedded preview loads the URL in the renderer iframe; optional openExternal for system browser.
+ */
+ipcMain.handle(
+  "preview:startVite",
+  async (_, webappAbsolute: string, opts?: { openExternal?: boolean }) => {
+  const dir = path.resolve(webappAbsolute);
+  const pkg = path.join(dir, "package.json");
+  if (!fs.existsSync(pkg)) {
+    return {
+      ok: false as const,
+      error: "No package.json in this folder — build may not have produced generated/webapp. Run Build from prompt again.",
+    };
+  }
+  const npm = npmCmd();
+  try {
+    await execFileAsync(npm, ["-v"], {
+      cwd: dir,
+      windowsHide: true,
+      maxBuffer: 1024 * 1024,
+    });
+  } catch {
+    return {
+      ok: false as const,
+      error: npmMissingFallbackMessage(dir),
+    };
+  }
+  const nm = path.join(dir, "node_modules");
+  if (!fs.existsSync(nm)) {
+    try {
+      await execFileAsync(npm, ["install"], {
+        cwd: dir,
+        windowsHide: true,
+        maxBuffer: 64 * 1024 * 1024,
+      });
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: `npm install failed (network or registry). Try in a terminal: cd "${dir}" && npm install\n\n${String(e)}`,
+      };
+    }
+  }
+  let port: number;
+  try {
+    port = await pickPreviewPort();
+  } catch (e) {
+    return { ok: false as const, error: `Could not pick a free port: ${String(e)}` };
+  }
+  const url = `http://127.0.0.1:${port}`;
+  try {
+    const child = spawn(
+      npm,
+      ["run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
+      { cwd: dir, detached: true, stdio: "ignore", windowsHide: true },
+    );
+    child.unref();
+  } catch (e) {
+    return { ok: false as const, error: `Could not start Vite: ${String(e)}` };
+  }
+
+  const ready = await waitForDevServerReady(url, 45_000, 280);
+  if (!ready) {
+    return {
+      ok: false as const,
+      url,
+      error: [
+        "Dev server health check timed out (no HTTP response on /).",
+        `URL tried: ${url}`,
+        "The server may still be starting, or `npm run dev` failed. Check a terminal in that folder, or open the URL manually.",
+      ].join("\n"),
+    };
+  }
+
+  if (opts?.openExternal) {
+    try {
+      await shell.openExternal(url);
+    } catch (e) {
+      return {
+        ok: false as const,
+        url,
+        error: `Server responded but the browser could not be opened: ${String(e)}\nOpen manually: ${url}`,
+      };
+    }
+  }
+
+  return { ok: true as const, url, ready: true as const, port };
+  },
+);
 
 ipcMain.handle(
   "demo:seedTq",

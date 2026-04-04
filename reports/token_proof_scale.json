@@ -1,0 +1,258 @@
+{
+  "estimator_id": "utf8_bytes_div_4_v1",
+  "estimator_method_en": "Token count := ceil_utf8_bytes(text) / 4 using integer arithmetic (n+3)//4; empty string -> 0; non-empty -> max(1, (utf8_byte_len + 3) // 4).",
+  "manifest_relative": "examples/benchmarks/scale/manifest.json",
+  "monotonicity": {
+    "baseline_code_tokens_non_decreasing": true,
+    "prompt_tokens_non_decreasing": true,
+    "sorted_by_size_rank": [
+      "10k",
+      "50k",
+      "100k",
+      "500k",
+      "1m"
+    ]
+  },
+  "notes": [
+    "scale_results are ordered by size_rank (10k → 1m).",
+    "Synthetic NL/code: TASK.md + BASELINE_CODE.txt headers on disk, body = repeated _shared units until token floors.",
+    "compression_ratio = prompt_tokens / max(1, torqa_tokens).",
+    "compression_ratio_combined = (prompt_tokens + baseline_code_tokens) / max(1, torqa_tokens).",
+    "reduction_percent = (prompt_tokens - torqa_tokens) / prompt_tokens * 100.",
+    "torqa_tokens is nearly constant across tiers (same minimal flow shape); ratios grow with synthetic NL size.",
+    "ratio_stability: TORQA surface token count and ir_to_torqa_ratio should be stable; compression ratios should increase monotonically with scale."
+  ],
+  "ratio_stability": {
+    "combined_compression_ratio_monotonic_non_decreasing": true,
+    "compression_ratio_monotonic_non_decreasing": true,
+    "compression_ratio_range_across_tiers": 13748.777778,
+    "interpretation_en": "Stable TORQA surface: torqa_tokens and ir_to_torqa_ratio should not drift across tiers (same app.tq). compression_ratio and combined ratio should grow monotonically as synthetic prompt/baseline size grows — predictable scaling, not random drift.",
+    "ir_expansion_ratio_stable_across_scale": true,
+    "ir_to_torqa_ratio_spread_across_tiers": 0.0,
+    "passing_tier_count": 5,
+    "torqa_surface_token_stable_across_scale": true,
+    "torqa_tokens_coefficient_of_variation": 0.0,
+    "torqa_tokens_max": 72,
+    "torqa_tokens_min": 72,
+    "torqa_tokens_spread": 0,
+    "torqa_tokens_std_population": 0.0
+  },
+  "scale_mode": true,
+  "scale_results": [
+    {
+      "baseline_code_tokens": 12649,
+      "compression_ratio": 140.152778,
+      "compression_ratio_combined": 315.833333,
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "prompt_tokens": 10091,
+      "reduction_percent": 99.286493,
+      "size": "10k",
+      "size_rank": 1,
+      "target_prompt_tokens_floor": 10000,
+      "torqa_tokens": 72
+    },
+    {
+      "baseline_code_tokens": 62642,
+      "compression_ratio": 696.263889,
+      "compression_ratio_combined": 1566.291667,
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "prompt_tokens": 50131,
+      "reduction_percent": 99.856376,
+      "size": "50k",
+      "size_rank": 2,
+      "target_prompt_tokens_floor": 50000,
+      "torqa_tokens": 72
+    },
+    {
+      "baseline_code_tokens": 125110,
+      "compression_ratio": 1389.763889,
+      "compression_ratio_combined": 3127.402778,
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "prompt_tokens": 100063,
+      "reduction_percent": 99.928045,
+      "size": "100k",
+      "size_rank": 3,
+      "target_prompt_tokens_floor": 100000,
+      "torqa_tokens": 72
+    },
+    {
+      "baseline_code_tokens": 625020,
+      "compression_ratio": 6945.569444,
+      "compression_ratio_combined": 15626.402778,
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "prompt_tokens": 500081,
+      "reduction_percent": 99.985602,
+      "size": "500k",
+      "size_rank": 4,
+      "target_prompt_tokens_floor": 500000,
+      "torqa_tokens": 72
+    },
+    {
+      "baseline_code_tokens": 1250025,
+      "compression_ratio": 13888.930556,
+      "compression_ratio_combined": 31250.388889,
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "prompt_tokens": 1000003,
+      "reduction_percent": 99.9928,
+      "size": "1m",
+      "size_rank": 5,
+      "target_prompt_tokens_floor": 1000000,
+      "torqa_tokens": 72
+    }
+  ],
+  "scenarios": [
+    {
+      "category": "scale 10k intent equivalent",
+      "compression_ratio_combined_per_torqa": 315.833333,
+      "compression_ratio_prompt_per_torqa": 140.152778,
+      "errors": [],
+      "id": "scale_10k",
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "relative_dir": "examples/benchmarks/scale/10k_workflow",
+      "sources": {
+        "app_tq": "examples/benchmarks/scale/10k_workflow/app.tq",
+        "baseline_code": "examples/benchmarks/scale/10k_workflow/BASELINE_CODE.txt",
+        "task_md": "examples/benchmarks/scale/10k_workflow/TASK.md"
+      },
+      "synthetic": {
+        "enabled": true,
+        "synthetic_pattern_version": 1,
+        "target_baseline_tokens_floor": 12500,
+        "target_prompt_tokens_floor": 10000
+      },
+      "token_counts": {
+        "baseline_code_tokens": 12649,
+        "combined_nl_and_code_tokens": 22740,
+        "ir_tokens": 392,
+        "prompt_tokens": 10091,
+        "torqa_tokens": 72
+      }
+    },
+    {
+      "category": "scale 50k intent equivalent",
+      "compression_ratio_combined_per_torqa": 1566.291667,
+      "compression_ratio_prompt_per_torqa": 696.263889,
+      "errors": [],
+      "id": "scale_50k",
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "relative_dir": "examples/benchmarks/scale/50k_workflow",
+      "sources": {
+        "app_tq": "examples/benchmarks/scale/50k_workflow/app.tq",
+        "baseline_code": "examples/benchmarks/scale/50k_workflow/BASELINE_CODE.txt",
+        "task_md": "examples/benchmarks/scale/50k_workflow/TASK.md"
+      },
+      "synthetic": {
+        "enabled": true,
+        "synthetic_pattern_version": 1,
+        "target_baseline_tokens_floor": 62500,
+        "target_prompt_tokens_floor": 50000
+      },
+      "token_counts": {
+        "baseline_code_tokens": 62642,
+        "combined_nl_and_code_tokens": 112773,
+        "ir_tokens": 392,
+        "prompt_tokens": 50131,
+        "torqa_tokens": 72
+      }
+    },
+    {
+      "category": "scale 100k intent equivalent",
+      "compression_ratio_combined_per_torqa": 3127.402778,
+      "compression_ratio_prompt_per_torqa": 1389.763889,
+      "errors": [],
+      "id": "scale_100k",
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "relative_dir": "examples/benchmarks/scale/100k_workflow",
+      "sources": {
+        "app_tq": "examples/benchmarks/scale/100k_workflow/app.tq",
+        "baseline_code": "examples/benchmarks/scale/100k_workflow/BASELINE_CODE.txt",
+        "task_md": "examples/benchmarks/scale/100k_workflow/TASK.md"
+      },
+      "synthetic": {
+        "enabled": true,
+        "synthetic_pattern_version": 1,
+        "target_baseline_tokens_floor": 125000,
+        "target_prompt_tokens_floor": 100000
+      },
+      "token_counts": {
+        "baseline_code_tokens": 125110,
+        "combined_nl_and_code_tokens": 225173,
+        "ir_tokens": 392,
+        "prompt_tokens": 100063,
+        "torqa_tokens": 72
+      }
+    },
+    {
+      "category": "scale 500k intent equivalent",
+      "compression_ratio_combined_per_torqa": 15626.402778,
+      "compression_ratio_prompt_per_torqa": 6945.569444,
+      "errors": [],
+      "id": "scale_500k",
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "relative_dir": "examples/benchmarks/scale/500k_workflow",
+      "sources": {
+        "app_tq": "examples/benchmarks/scale/500k_workflow/app.tq",
+        "baseline_code": "examples/benchmarks/scale/500k_workflow/BASELINE_CODE.txt",
+        "task_md": "examples/benchmarks/scale/500k_workflow/TASK.md"
+      },
+      "synthetic": {
+        "enabled": true,
+        "synthetic_pattern_version": 1,
+        "target_baseline_tokens_floor": 625000,
+        "target_prompt_tokens_floor": 500000
+      },
+      "token_counts": {
+        "baseline_code_tokens": 625020,
+        "combined_nl_and_code_tokens": 1125101,
+        "ir_tokens": 392,
+        "prompt_tokens": 500081,
+        "torqa_tokens": 72
+      }
+    },
+    {
+      "category": "scale 1m intent equivalent",
+      "compression_ratio_combined_per_torqa": 31250.388889,
+      "compression_ratio_prompt_per_torqa": 13888.930556,
+      "errors": [],
+      "id": "scale_1m",
+      "ir_to_torqa_ratio": 5.444444,
+      "ok": true,
+      "relative_dir": "examples/benchmarks/scale/1m_workflow",
+      "sources": {
+        "app_tq": "examples/benchmarks/scale/1m_workflow/app.tq",
+        "baseline_code": "examples/benchmarks/scale/1m_workflow/BASELINE_CODE.txt",
+        "task_md": "examples/benchmarks/scale/1m_workflow/TASK.md"
+      },
+      "synthetic": {
+        "enabled": true,
+        "synthetic_pattern_version": 1,
+        "target_baseline_tokens_floor": 1250000,
+        "target_prompt_tokens_floor": 1000000
+      },
+      "token_counts": {
+        "baseline_code_tokens": 1250025,
+        "combined_nl_and_code_tokens": 2250028,
+        "ir_tokens": 392,
+        "prompt_tokens": 1000003,
+        "torqa_tokens": 72
+      }
+    }
+  ],
+  "schema_version": 2,
+  "suite_id": "token_proof_scale_v1",
+  "summary": {
+    "failed_count": 0,
+    "passed_count": 5,
+    "scenario_count": 5
+  },
+  "synthetic_token_estimation": true
+}

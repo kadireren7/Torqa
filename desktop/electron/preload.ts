@@ -32,6 +32,12 @@ contextBridge.exposeInMainWorld("torqaShell", {
       { ok: true } | { ok: false; error: string }
     >,
   torqaRun: (req: TorqaRequest) => ipcRenderer.invoke("torqa:run", req),
+  startVitePreview: (webappAbsolute: string, opts?: { openExternal?: boolean }) =>
+    ipcRenderer.invoke("preview:startVite", webappAbsolute, opts ?? {}) as Promise<
+      { ok: true; url: string; ready: true; port: number } | { ok: false; error: string; url?: string }
+    >,
+  openExternalUrl: (url: string) =>
+    ipcRenderer.invoke("shell:openExternal", url) as Promise<{ ok: true } | { ok: false; error: string }>,
   seedSampleTq: (workspace: string, which: "minimal" | "flagship") =>
     ipcRenderer.invoke("demo:seedTq", workspace, which) as Promise<
       { ok: true; relativePath: string } | { ok: false; error: string }

@@ -1,0 +1,10 @@
+# Scale suite: minimal validated .tq (shared across all token floors; NL/baseline expand in memory).
+module benchmark.scale_synthetic_workflow
+
+intent scale_synthetic_workflow
+requires username, password, ip_address
+result ScaleTierComplete
+
+flow:
+  create session
+  emit login_success

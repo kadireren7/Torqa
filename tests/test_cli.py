@@ -272,6 +272,12 @@ def test_cli_build_json_matches_project(tmp_path):
     assert sorted(jb.get("written") or []) == sorted(jp.get("written") or [])
 
 
+def test_cli_quick_empty_prompt_fails():
+    """P80: ``torqa quick`` delegates to ``cmd_prompt_app``; empty prompt exits 1."""
+    r = _run("quick", "--workspace", str(REPO))
+    assert r.returncode == 1
+
+
 def test_cli_project_human_success_summary(tmp_path):
     src = REPO / "examples" / "core" / "valid_minimal_flow.json"
     r = _run(

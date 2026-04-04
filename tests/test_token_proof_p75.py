@@ -1,11 +1,16 @@
-"""P75 token proof: deterministic report and real validation (no fake metrics)."""
+"""P75/P77 token proof: deterministic report, validation gate, and public_summary shape."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from src.benchmarks.token_proof import build_token_proof_report, report_to_canonical_json
+from src.benchmarks.token_proof import (
+    TOKEN_PROOF_PUBLIC_SUITE_ID,
+    TOKEN_PROOF_SCHEMA_VERSION,
+    build_token_proof_report,
+    report_to_canonical_json,
+)
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -14,12 +19,18 @@ def test_token_proof_all_scenarios_pass_and_stable_json():
     r1 = build_token_proof_report(REPO)
     r2 = build_token_proof_report(REPO)
     assert r1 == r2
-    assert r1["schema_version"] == 1
+    assert r1["schema_version"] == TOKEN_PROOF_SCHEMA_VERSION
     assert r1["estimator_id"] == "utf8_bytes_div_4_v1"
     summ = r1["summary"]
     assert summ["scenario_count"] == 5
     assert summ["failed_count"] == 0
     assert summ["passed_count"] == 5
+    pub = r1["public_summary"]
+    assert pub["suite_id"] == TOKEN_PROOF_PUBLIC_SUITE_ID
+    assert pub["passed_scenario_count"] == 5
+    assert pub["failed_scenario_count"] == 0
+    assert pub["failed_scenario_ids"] == []
+    assert isinstance(pub.get("headline_claim_en"), str) and len(pub["headline_claim_en"]) > 40
     for row in r1["scenarios"]:
         assert row["ok"] is True
         assert row["compression_ratio_prompt_per_torqa"] >= 1.0

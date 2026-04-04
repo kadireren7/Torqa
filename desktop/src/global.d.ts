@@ -19,6 +19,16 @@ export type TorqaShellAPI = {
   ) => Promise<{ ok: true; content: string } | { ok: false; error: string }>;
   saveFile: (root: string, relPath: string, content: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   torqaRun: (req: TorqaRequest) => Promise<TorqaRunResult>;
+  /** P80: npm run dev in generated webapp (Electron). Default: no system browser; embed URL in app. */
+  startVitePreview: (
+    webappAbsolute: string,
+    opts?: { openExternal?: boolean },
+  ) => Promise<
+    | { ok: true; url: string; ready: true; port: number }
+    | { ok: false; error: string; url?: string }
+  >;
+  /** Open a preview URL in the system browser (http/https only). */
+  openExternalUrl: (url: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   seedSampleTq: (
     workspace: string,
     which: "minimal" | "flagship",

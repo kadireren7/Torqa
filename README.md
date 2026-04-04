@@ -1,6 +1,6 @@
 # TORQA
 
-**Semantic-first core for describing system behavior** — canonical IR, validation, and projections (web, SQL, stubs) so humans and tools share one structured model. **Trial-ready flagship path:** a real website-style Vite + React demo, **benchmarked semantic compression**, and a **hard validation gate** ([`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md)). Not “another syntax-first language”; **meaning and checks come first**.
+**Semantic-first core for describing system behavior** — canonical IR, validation, and projections (web, SQL, stubs) so humans and tools share one structured model. **Positioning:** TORQA is not another AI tool — it is a **compression-first execution layer** (NL intent → validated `.tq` → materialized artifacts); see **[`docs/EXECUTION_LAYER_PROOF.md`](docs/EXECUTION_LAYER_PROOF.md)**. **Trial-ready flagship path:** a real website-style Vite + React demo, **benchmarked semantic compression**, and a **hard validation gate** ([`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md)). Not “another syntax-first language”; **meaning and checks come first**.
 
 ---
 
@@ -10,6 +10,7 @@
 |--|--|
 | **Maturity** | **Early usable**, **developer-focused** — solid CLI, IR `1.4`, tests, and examples; not a shrink-wrapped product. |
 | **First trials (P37)** | **[`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md)** — flagship path, compression + gate proof, generated web preview; explicit limits. |
+| **Execution layer proof** | **[`docs/EXECUTION_LAYER_PROOF.md`](docs/EXECUTION_LAYER_PROOF.md)** — prompt → app → preview, token/cost proof, GPT · Claude · Gemini vs TORQA framing, demo + video checklist. |
 | **Best for** | Teams and builders who want **validated specs + codegen**, AI-assisted or not. |
 | **Product story** | Deeper direction: [`docs/TORQA_VISION_NORTH_STAR.md`](docs/TORQA_VISION_NORTH_STAR.md) · maturity detail: [`STATUS.md`](STATUS.md) |
 | **Architecture** | TORQA-first layering (vs Python/Rust): [`docs/TORQA_DOMINANCE.md`](docs/TORQA_DOMINANCE.md) (P30 milestone) · [`docs/ARCHITECTURE_RULES.md`](docs/ARCHITECTURE_RULES.md) · [`docs/SURFACE_CLASSIFICATION.md`](docs/SURFACE_CLASSIFICATION.md) |
@@ -59,6 +60,17 @@ torqa build examples/benchmark_flagship/app.tq
 
 **Full walkthrough (metrics, gate, web/desktop, outputs):** **[`docs/FLAGSHIP_DEMO.md`](docs/FLAGSHIP_DEMO.md)**
 
+### Public token proof (workflow benchmark, P77)
+
+**Reusable summary** (deterministic estimator; refresh numbers with `torqa-token-proof` after scenario changes):
+
+- **Suite:** `token_proof_workflow_v1` — five **workflow / automation-shaped** scenarios (forms, approvals, pipelines, logic, small scripts), each with fixed `TASK.md`, `BASELINE_CODE.txt`, and `.tq` that must pass **core validation**.
+- **Latest checked-in run:** **5/5** scenarios passing; **~72%** average prompt-token reduction vs `.tq` (same intent, utf8÷4 token estimate); combined NL+baseline÷TORQA **~8.9×** on average.
+- **Not the headline here:** generated website/UI bundle size — use the **flagship compression** path (`torqa-compression-bench`, `docs/BENCHMARK_COMPRESSION.md`) for that slice.
+- **Inspect:** **[`docs/TOKEN_PROOF.md`](docs/TOKEN_PROOF.md)** · **[`reports/token_proof.json`](reports/token_proof.json)** (`summary` + `public_summary` for copy).
+
+**Product framing (honest):** *In this benchmark set, TORQA expressed the same workflow intent with substantially fewer estimated tokens than the paired natural-language prompts, while the `.tq` surfaces satisfy strict core validation.* See the doc for limits and what is not measured.
+
 ---
 
 ## Why TORQA is different
@@ -77,6 +89,7 @@ torqa build examples/benchmark_flagship/app.tq
 | **Flagship website demo** | [`docs/FIRST_REAL_DEMO.md`](docs/FIRST_REAL_DEMO.md) · [`examples/torqa_demo_site/app.tq`](examples/torqa_demo_site/app.tq) |
 | **P31 benchmark baseline** | [`docs/BENCHMARK_FLAGSHIP.md`](docs/BENCHMARK_FLAGSHIP.md) · [`examples/benchmark_flagship/app.tq`](examples/benchmark_flagship/app.tq) |
 | **P32 compression metrics** | [`docs/BENCHMARK_COMPRESSION.md`](docs/BENCHMARK_COMPRESSION.md) · `torqa-compression-bench` |
+| **P77 token proof (multi-scenario)** | [`docs/TOKEN_PROOF.md`](docs/TOKEN_PROOF.md) · `torqa-token-proof` · [`reports/token_proof.json`](reports/token_proof.json) |
 | **P33 validation gate proof** | [`docs/VALIDATION_GATE.md`](docs/VALIDATION_GATE.md) · `torqa-gate-proof` · [`examples/benchmark_flagship/gate_invalid/`](examples/benchmark_flagship/gate_invalid/) |
 | **P34 Web/Desktop demo** | [`docs/DEMO_SURFACES.md`](docs/DEMO_SURFACES.md) · `torqa-console` · **`torqa-desktop`** (Electron in `desktop/`) |
 | **P36 / P73 UI surfaces** | [`docs/UI_SURFACE_RULES.md`](docs/UI_SURFACE_RULES.md) · `/` marketing site · `/console` → `/` · `/desktop` → desktop pointer · [`docs/P73_PRODUCT_SURFACES.md`](docs/P73_PRODUCT_SURFACES.md) |

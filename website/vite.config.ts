@@ -8,6 +8,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig(({ command }) => ({
   plugins: [react()],
   base: command === "build" ? "/static/site/" : "/",
+  server:
+    command === "serve"
+      ? {
+          proxy: {
+            "/api": { target: "http://127.0.0.1:8000", changeOrigin: true },
+          },
+        }
+      : undefined,
   build: {
     outDir: path.resolve(__dirname, "dist/site"),
     emptyOutDir: true,

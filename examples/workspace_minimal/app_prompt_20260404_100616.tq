@@ -1,0 +1,7 @@
+module generated.login
+
+intent minimal_login
+requires username, password
+result OK
+
+flow:

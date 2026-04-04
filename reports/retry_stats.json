@@ -23,7 +23,7 @@
       "max_retries_configured": 3,
       "measurement_mode": "skipped_no_live_or_no_api_key",
       "path": "examples/benchmarks/approval_workflow/TASK.md",
-      "prompt_char_count": 643,
+      "prompt_char_count": 596,
       "retries_after_first": null,
       "success": null,
       "task_id": "approval_workflow"
@@ -36,7 +36,7 @@
       "max_retries_configured": 3,
       "measurement_mode": "skipped_no_live_or_no_api_key",
       "path": "examples/benchmarks/conditional_logic_flow/TASK.md",
-      "prompt_char_count": 632,
+      "prompt_char_count": 522,
       "retries_after_first": null,
       "success": null,
       "task_id": "conditional_logic_flow"
@@ -49,7 +49,7 @@
       "max_retries_configured": 3,
       "measurement_mode": "skipped_no_live_or_no_api_key",
       "path": "examples/benchmarks/data_transform_pipeline/TASK.md",
-      "prompt_char_count": 602,
+      "prompt_char_count": 524,
       "retries_after_first": null,
       "success": null,
       "task_id": "data_transform_pipeline"
@@ -62,7 +62,7 @@
       "max_retries_configured": 3,
       "measurement_mode": "skipped_no_live_or_no_api_key",
       "path": "examples/benchmarks/multi_step_automation/TASK.md",
-      "prompt_char_count": 589,
+      "prompt_char_count": 514,
       "retries_after_first": null,
       "success": null,
       "task_id": "multi_step_automation"
@@ -75,7 +75,7 @@
       "max_retries_configured": 3,
       "measurement_mode": "skipped_no_live_or_no_api_key",
       "path": "examples/benchmarks/simple_form_flow/TASK.md",
-      "prompt_char_count": 633,
+      "prompt_char_count": 586,
       "retries_after_first": null,
       "success": null,
       "task_id": "simple_form_flow"

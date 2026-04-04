@@ -66,6 +66,24 @@ def test_api_demo_benchmark_report(client):
     assert data["report"].get("metrics")
 
 
+def test_api_demo_try_prompt_ok(client):
+    r = client.post("/api/demo/try-prompt", json={"prompt": "A landing page with hero and email capture"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d.get("ok") is True
+    assert d.get("tq_gen_intent") == "landing"
+    assert "tq_source_preview" in d
+    assert d.get("prompt_token_estimate", 0) > 0
+    assert d.get("tq_token_estimate", 0) > 0
+    assert "disclaimer_en" in d
+
+
+def test_api_demo_try_prompt_whitespace_normalized_empty(client):
+    r = client.post("/api/demo/try-prompt", json={"prompt": " "})
+    assert r.status_code == 200
+    assert r.json().get("ok") is False
+
+
 def test_api_demo_gate_proof_report(client):
     r = client.get("/api/demo/gate-proof-report")
     assert r.status_code == 200

@@ -41,7 +41,7 @@ def test_mock_suggest_aggregates_retries_and_failure_rate() -> None:
 
     def fake_suggest(prompt: str, max_retries: int) -> dict:
         calls.append(prompt[:40])
-        if "expense" in prompt.lower() and "approver" in prompt.lower():
+        if "pending item to approve" in prompt.lower():
             return {
                 "ok": False,
                 "attempts": [{"attempt": i, "fail": True} for i in range(max_retries + 1)],

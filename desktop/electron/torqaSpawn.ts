@@ -15,7 +15,7 @@ function runProcess(
   repoRoot: string,
   pythonExe: string,
   args: string[],
-  options?: { cwd?: string },
+  options?: { cwd?: string; stdinText?: string },
 ): Promise<TorqaRunResult> {
   return new Promise((resolve) => {
     const child = spawn(pythonExe, args, {
@@ -48,6 +48,10 @@ function runProcess(
         stderr: `${stderr}\n${String(err)}`,
       });
     });
+    if (options?.stdinText != null && child.stdin) {
+      child.stdin.write(Buffer.from(options.stdinText, "utf8"));
+      child.stdin.end();
+    }
   });
 }
 
@@ -64,6 +68,53 @@ export async function runTorqa(req: TorqaRequest): Promise<TorqaRunResult> {
   const repoRoot = resolveRepoRoot();
   const pythonExe = resolvePythonExe();
   const mod = ["-m", "torqa"];
+
+  if (req.kind === "generateTq") {
+    const ws = path.resolve(req.workspaceRoot);
+    if (!fs.existsSync(ws) || !fs.statSync(ws).isDirectory()) {
+      return { exitCode: 1, stdout: "", stderr: "generate-tq: workspace is not a directory" };
+    }
+    const args = [
+      ...mod,
+      "--json",
+      "generate-tq",
+      "--workspace",
+      ws,
+      "--prompt-stdin",
+      "--max-retries",
+      String(req.maxRetries ?? 3),
+    ];
+    if (req.genCategory) {
+      args.push("--gen-category", req.genCategory);
+    }
+    return runProcess(repoRoot, pythonExe, args, { stdinText: req.prompt });
+  }
+
+  if (req.kind === "appPipeline") {
+    const ws = path.resolve(req.workspaceRoot);
+    if (!fs.existsSync(ws) || !fs.statSync(ws).isDirectory()) {
+      return { exitCode: 1, stdout: "", stderr: "app: workspace is not a directory" };
+    }
+    const outDir = req.outDir ?? "torqa_generated_out";
+    const args = [
+      ...mod,
+      "--json",
+      "app",
+      "--workspace",
+      ws,
+      "--out",
+      outDir,
+      "--prompt-stdin",
+      "--max-retries",
+      String(req.maxRetries ?? 3),
+      "--engine-mode",
+      req.engineMode ?? "python_only",
+    ];
+    if (req.genCategory) {
+      args.push("--gen-category", req.genCategory);
+    }
+    return runProcess(repoRoot, pythonExe, args, { stdinText: req.prompt });
+  }
 
   if (req.kind === "benchmark") {
     if (req.workspaceRoot && req.relativePath) {

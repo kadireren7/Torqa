@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "suite_id": "token_proof_scale_v1",
+  "description_en": "Synthetic large-intent NL/baseline vs minimal validated .tq (see docs/TOKEN_PROOF_SCALE.md).",
+  "shared_dir_relative": "examples/benchmarks/scale/_shared",
+  "scenarios": [
+    {
+      "id": "scale_10k",
+      "category": "scale 10k intent equivalent",
+      "relative_dir": "examples/benchmarks/scale/10k_workflow",
+      "size": "10k",
+      "size_rank": 1
+    },
+    {
+      "id": "scale_50k",
+      "category": "scale 50k intent equivalent",
+      "relative_dir": "examples/benchmarks/scale/50k_workflow",
+      "size": "50k",
+      "size_rank": 2
+    },
+    {
+      "id": "scale_100k",
+      "category": "scale 100k intent equivalent",
+      "relative_dir": "examples/benchmarks/scale/100k_workflow",
+      "size": "100k",
+      "size_rank": 3
+    },
+    {
+      "id": "scale_500k",
+      "category": "scale 500k intent equivalent",
+      "relative_dir": "examples/benchmarks/scale/500k_workflow",
+      "size": "500k",
+      "size_rank": 4
+    },
+    {
+      "id": "scale_1m",
+      "category": "scale 1m intent equivalent",
+      "relative_dir": "examples/benchmarks/scale/1m_workflow",
+      "size": "1m",
+      "size_rank": 5
+    }
+  ]
+}

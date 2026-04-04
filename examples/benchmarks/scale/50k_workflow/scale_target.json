@@ -1,0 +1,6 @@
+{
+  "size": "50k",
+  "target_prompt_tokens_floor": 50000,
+  "target_baseline_tokens_floor": 62500,
+  "synthetic_pattern_version": 1
+}

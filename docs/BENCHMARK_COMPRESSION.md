@@ -32,12 +32,28 @@ This is a **rough** stand-in for subword tokenization on English/prose and code.
 | `surface_to_ir_ratio` | `ir_bundle / max(1, torqa_source)` — IR expansion factor |
 | `generated_to_surface_ratio` | `generated / max(1, torqa_source)` if measured, else `null` |
 
-## P75 multi-scenario proof
+## P75 / P77 multi-scenario token proof (public)
 
-Five fixed scenarios (NL task + baseline code vs `.tq`) with checked-in aggregates:
+Five fixed **workflow-oriented** scenarios (NL task + baseline code vs `.tq`) with checked-in aggregates and a **`public_summary`** block for product copy:
 
-- Regenerate: `torqa-token-proof` → `reports/token_proof.json` + `docs/TOKEN_PROOF.md`
-- Manifest: `examples/benchmarks/token_proof/manifest.json`
+- **Human doc:** [`TOKEN_PROOF.md`](TOKEN_PROOF.md) — what is / is not measured, estimator limits, reproduction, adding scenarios.
+- **Machine report:** [`reports/token_proof.json`](../reports/token_proof.json) — `schema_version` (currently **2**), `summary`, `public_summary`, per-scenario rows (failures included, excluded from averages).
+- **Regenerate:** `torqa-token-proof` → updates `reports/token_proof.json` + `docs/TOKEN_PROOF.md`
+- **Manifest:** `examples/benchmarks/token_proof/manifest.json`
+
+**Regression tests:** `tests/test_token_proof_p75.py`, `tests/test_token_proof_p77_regression.py` pin scenario ids, passing counts, top-level JSON shape, and that the checked-in JSON matches a live build.
+
+## P78 scale token proof (synthetic large intent)
+
+- **Doc:** [`TOKEN_PROOF_SCALE.md`](TOKEN_PROOF_SCALE.md) — how tiers 10K→1M are simulated without huge on-disk blobs.
+- **Report:** `torqa-token-proof --scale` or `--scale-only` → [`reports/token_proof_scale.json`](../reports/token_proof_scale.json)
+- **Tests:** `tests/test_token_proof_scale.py`
+
+## P79 real tokenizer + cost (offline)
+
+- **Doc:** [`TOKEN_PROOF_REAL.md`](TOKEN_PROOF_REAL.md) — tiktoken `cl100k_base` vs UTF-8÷4 estimator, illustrative USD costs.
+- **Report:** `torqa-token-proof-real` → [`reports/token_proof_real.json`](../reports/token_proof_real.json)
+- **Tests:** `tests/test_token_proof_real.py` (dev extra includes `tiktoken`)
 
 ## Running
 

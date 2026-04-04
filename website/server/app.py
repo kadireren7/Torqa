@@ -36,6 +36,7 @@ from src.orchestrator.pipeline_run import build_console_run_payload
 from src.projection.projection_strategy import ProjectionContext, explain_projection_strategy
 from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_function_registry
 from src.project_materialize import build_zip_bytes, validate_bundle_dict
+from .demo_try_prompt import build_try_prompt_preview
 from .middleware_rate_limit import RateLimitMiddleware
 
 WEBSITE_ROOT = Path(__file__).resolve().parents[1]
@@ -95,6 +96,12 @@ class AISuggestRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
     max_retries: int = Field(default=3, ge=0, le=8)
     model: Optional[str] = None
+
+
+class TryPromptRequest(BaseModel):
+    """Marketing-only: deterministic template + token estimates (no LLM)."""
+
+    prompt: str = Field(..., min_length=1, max_length=14000)
 
 
 class SystemHealthRequest(RunRequest):
@@ -182,6 +189,15 @@ def api_demo_benchmark_report():
     if not path.is_file():
         return {"ok": False, "message": "compression_baseline_report.json not found"}
     return {"ok": True, "report": json.loads(path.read_text(encoding="utf-8"))}
+
+
+@app.post("/api/demo/try-prompt")
+def api_demo_try_prompt(body: TryPromptRequest):
+    """
+    Live marketing preview: inferred profile + validated template .tq + token estimates.
+    No OpenAI call — safe for public site when served via torqa-console.
+    """
+    return build_try_prompt_preview(REPO_ROOT, body.prompt)
 
 
 @app.get("/api/demo/gate-proof-report")

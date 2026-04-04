@@ -48,7 +48,7 @@
       esc(String(tqR)) +
       "</span></div>" +
       "</div>" +
-      '<p class="tq-bm-note">Flagship baseline · utf8÷4 token estimate</p>' +
+      '<p class="tq-bm-note">Flagship baseline · utf8÷4 estimate · multi-scenario proof: docs/TOKEN_PROOF.md</p>' +
       "</div>"
     );
   }

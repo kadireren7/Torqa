@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description_en": "P75 reproducible token comparison: fixed NL task prompts and baseline code stubs vs minimal .tq surfaces.",
+  "description_en": "P75/P77 reproducible token proof: fixed NL task prompts and baseline code stubs vs minimal .tq surfaces (core validation required).",
   "estimator_id": "utf8_bytes_div_4_v1",
   "scenarios": [
     {
