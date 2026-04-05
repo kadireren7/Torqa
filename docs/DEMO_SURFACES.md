@@ -2,11 +2,11 @@
 
 Short guide for **showing** TORQA with the **flagship benchmark**, **compression story (P32)**, and **validation gate (P33)** — without a full product redesign.
 
-**End-to-end public story:** [FLAGSHIP_DEMO.md](FLAGSHIP_DEMO.md) (P35) · **single demo entry:** `torqa demo` (prints verify, build, and these surfaces).
+**Canonical try map:** [TRY_TORQA.md](TRY_TORQA.md) · **End-to-end public story:** [FLAGSHIP_DEMO.md](FLAGSHIP_DEMO.md) (P35) · **single demo entry:** `torqa demo` (prints verify, build, and these surfaces).
 
 **Surface split:** **`/`** = **marketing website** only ([`website/`](../website/)) · **`/console`** → **`/`** (IR lab removed) · **`/desktop`** = pointer to **native** `torqa-desktop`. Rules: [UI_SURFACE_RULES.md](UI_SURFACE_RULES.md) · [P73_PRODUCT_SURFACES.md](P73_PRODUCT_SURFACES.md).
 
-## Website + web console
+## Marketing website (`torqa-console`)
 
 **Launch** (from repo root, with dependencies installed):
 

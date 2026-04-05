@@ -9,17 +9,37 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-TqGenIntent = Literal["auth", "landing", "crud", "automation", "generic"]
+TqGenIntent = Literal[
+    "auth",
+    "landing",
+    "crud",
+    "automation",
+    "crm",
+    "onboarding",
+    "approvals",
+    "dashboard",
+    "generic",
+]
 
-_VALID_FORCED_CATEGORY: frozenset[str] = frozenset({"landing", "crud", "automation"})
+_VALID_FORCED_CATEGORY: frozenset[str] = frozenset(
+    {
+        "landing",
+        "crud",
+        "automation",
+        "crm",
+        "onboarding",
+        "approvals",
+        "dashboard",
+    }
+)
 
 
 def resolve_tq_gen_intent(user_prompt: str, forced_category: str | None = None) -> TqGenIntent:
     """
     Pick the active generation profile.
 
-    When ``forced_category`` is one of ``landing`` / ``crud`` / ``automation``, it wins over
-    heuristic classification (desktop chips / CLI ``--gen-category``).
+    When ``forced_category`` is a known product category, it wins over heuristic classification
+    (desktop / CLI ``--gen-category``).
     """
     if forced_category:
         c = forced_category.strip().lower()
@@ -73,10 +93,53 @@ def classify_tq_gen_intent(prompt: str) -> TqGenIntent:
     ):
         return "auth"
 
+    # P118: human approval chains (before broad "workflow" / automation)
+    if _has(
+        r"\b("
+        r"approval[\s-]?(pipeline|chain|matrix|workflow)|multi[\s-]?(level|stage)[\s-]?approval|"
+        r"purchase[\s-]?(order|req(uisition)?)[\s-]?approval|delegat(e|ion)[\s-]?path|"
+        r"four[\s-]?eyes|maker[\s-]?checker|stakeholder[\s-]?(sign[\s-]?off|review)"
+        r")\b"
+    ):
+        return "approvals"
+
+    # P118: CRM / revenue ops
+    if _has(
+        r"\b("
+        r"\bcrm\b|salesforce|hubspot|customer[\s-]?(360|relationship|health)|"
+        r"sales[\s-]?(pipeline|funnel|forecast)|deal[\s-]?(stage|opportunity|desk)|"
+        r"account[\s-]?(exec|owner|team)|lead[\s-]?(score|routing|queue)|"
+        r"opportunity[\s-]?(stage|amount)|contact\s+(record|history)"
+        r")\b"
+    ):
+        return "crm"
+
+    # P118: product onboarding / provisioning journeys
+    if _has(
+        r"\b("
+        r"onboarding|welcome[\s-]?(flow|journey)|setup[\s-]?(wizard|flow)|"
+        r"first[\s-]?(run|login)[\s-]?(flow|experience)|trial[\s-]?(activation|onboarding)|"
+        r"user[\s-]?provisioning|account[\s-]?(setup|creation)[\s-]?(wizard|flow)|"
+        r"guided[\s-]?(setup|tour)|checklist[\s-]?(flow|wizard)"
+        r")\b"
+    ):
+        return "onboarding"
+
+    # P118: read-heavy analytics surfaces (before generic CRUD admin)
+    if _has(
+        r"\b("
+        r"dashboard|executive[\s-]?(summary|dashboard)|kpi[\s-]?(board|wall|grid|tree)|"
+        r"metrics[\s-]?(wall|hub|console)|analytics[\s-]?(hub|console|workspace)|"
+        r"data[\s-]?(studio|explorer|viz|visualization)|reporting[\s-]?(portal|suite)|"
+        r"bi\b|looker|power[\s-]?bi|embedded[\s-]?analytics"
+        r")\b"
+    ):
+        return "dashboard"
+
     if _has(
         r"\b("
         r"crud|create[\s-]?read|list\s+view|data[\s-]?(grid|table)|entity\b|entities\b|records?\b|"
-        r"inventory|admin[\s-]?(panel|ui)|dashboard|analytics|kpi|metrics?|sidebar[\s-]?nav|"
+        r"inventory|admin[\s-]?(panel|ui)|sidebar[\s-]?nav|"
         r"edit\s+row|delete\s+record|form\s+for\b"
         r")\b"
     ):
@@ -125,6 +188,26 @@ _PROFILE_RULES: dict[TqGenIntent, str] = {
 - **result**: e.g. `WorkflowComplete`, `ApprovalRecorded`, `RunSucceeded`, `OK`.
 - **intent**: snake_case flow name, e.g. `invoice_approval_pipeline`, `deploy_gate`, `ticket_escalation`.
 - **tone**: triggers, approvals, SLA, webhooks, audit timestamps belong in the *user request* — keep .tq minimal.""",
+    "crm": """- **requires**: **at least four** comma-separated business identifiers — start with an account or record key, then fields the user named, e.g. `account_id, contact_id, deal_stage, owner_id, last_activity_at, territory`. Reflect pipelines, owners, stages, and segments from the request. Never `password`-only.
+- **flow**: **empty** unless the story explicitly needs `create session` + `emit login_success` (e.g. rep portal login).
+- **result**: outcome labels such as `DealUpdated`, `HandoffReady`, `PipelineSynced`, `RecordSaved`.
+- **intent**: snake_case, e.g. `account_360_view`, `opportunity_pipeline_board`, `lead_routing_queue`.
+- **tone**: use `#` comments to group **sections** (e.g. pipeline, activities, ownership) — parser allows comments before `flow:`; keep step lines only where the global syntax allows.""",
+    "onboarding": """- **requires**: **at least four** fields that encode **multi-step** state, e.g. `user_id, onboarding_step, journey_variant, completion_pct, tenant_id, checklist_item_id`. Name steps and gates from the user story (welcome, profile, billing, invite team, etc.).
+- **flow**: **empty** unless they asked for authenticated session success; multi-step *logic* is captured in `requires` + `#` comments (tq_v1 flow steps are limited — describe phases in comments).
+- **result**: e.g. `StepCompleted`, `JourneyReady`, `ProvisioningDone`, `TrialActivated`.
+- **intent**: snake_case, e.g. `saas_onboarding_wizard`, `b2b_trial_activation`, `employee_provisioning_flow`.
+- **tone**: explicitly mirror **ordered phases** in comments so downstream UI can map screens.""",
+    "approvals": """- **requires**: stable ids for the **case** and **actors**, e.g. `request_id, approver_id, delegate_id, policy_tier, amount_cents, sla_deadline_at`. At least four identifiers when the story is non-trivial.
+- **flow**: include **at least one** valid indented step under `flow:` (e.g. `create session` / `emit login_success`) when the story implies submission or decision recording; if the user only asked for a policy/data capture with no session story, you may use an empty `flow:` **only** if `requires` is rich enough.
+- **result**: e.g. `Approved`, `Rejected`, `Escalated`, `PendingReview`, `DecisionRecorded`.
+- **intent**: snake_case, e.g. `po_approval_chain`, `contract_review_gate`, `expense_sign_off`.
+- **tone**: capture levels, thresholds, and escalation in `requires` + `#` comments.""",
+    "dashboard": """- **requires**: **at least four** fields for **data-heavy** surfaces: keys for scope + measures, e.g. `report_id, metric_key, time_range, dimension, comparison_period, refresh_token`. Tie names to KPIs, filters, and drill-downs the user mentioned.
+- **flow**: **empty** unless they explicitly asked for sign-in/session success on the dashboard.
+- **result**: e.g. `DashboardLoaded`, `ReportRefreshed`, `SliceSelected`, `ExportReady`.
+- **intent**: snake_case, e.g. `executive_kpi_dashboard`, `sales_metrics_hub`, `operations_control_tower`.
+- **tone**: use `#` comments to separate **zones** (filters, primary KPIs, detail tables) — keep .tq valid and dense on `requires`.""",
     "generic": """- **requires**: safest default `requires username, password` (comma-separated). First identifier must not be only `password`.
 - **flow**: **empty** unless the user clearly asked for session + success emit.
 - **result**: `OK` or a short PascalCase label.
@@ -136,12 +219,20 @@ def profile_rules_markdown(intent: TqGenIntent) -> str:
     return _PROFILE_RULES[intent]
 
 
-def build_structured_user_message(raw_prompt: str, intent: TqGenIntent) -> str:
+def build_structured_user_message(
+    raw_prompt: str,
+    intent: TqGenIntent,
+    *,
+    nl_plan_markdown: str | None = None,
+) -> str:
     norm = normalize_prompt_text(raw_prompt)
     rules = profile_rules_markdown(intent)
-    return (
+    core = (
         f"## Generation profile: {intent}\n"
         f"Apply the profile rules **together** with the global .tq syntax rules in the system message.\n\n"
         f"### Profile checklist\n{rules}\n\n"
         f"### User request\n{norm if norm else '(empty — produce a minimal valid idle .tq with intent user_intent and result OK)'}\n"
     )
+    if nl_plan_markdown and nl_plan_markdown.strip():
+        return f"{nl_plan_markdown.strip()}\n\n{core}"
+    return core

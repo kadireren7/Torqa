@@ -12,7 +12,7 @@
     "openai_api_key_present": false,
     "success_count": 0,
     "tasks_live_measured": 0,
-    "tasks_total": 7
+    "tasks_total": 11
   },
   "tasks": [
     {
@@ -27,6 +27,58 @@
       "retries_after_first": null,
       "success": null,
       "task_id": "approval_workflow"
+    },
+    {
+      "api_rounds": null,
+      "failure_code": null,
+      "live_measured": false,
+      "max_model_rounds": 4,
+      "max_retries_configured": 3,
+      "measurement_mode": "skipped_no_live_or_no_api_key",
+      "path": "examples/benchmarks/company_crm_handoff_console/TASK.md",
+      "prompt_char_count": 914,
+      "retries_after_first": null,
+      "success": null,
+      "task_id": "company_crm_handoff_console"
+    },
+    {
+      "api_rounds": null,
+      "failure_code": null,
+      "live_measured": false,
+      "max_model_rounds": 4,
+      "max_retries_configured": 3,
+      "measurement_mode": "skipped_no_live_or_no_api_key",
+      "path": "examples/benchmarks/company_document_processing_pipeline/TASK.md",
+      "prompt_char_count": 870,
+      "retries_after_first": null,
+      "success": null,
+      "task_id": "company_document_processing_pipeline"
+    },
+    {
+      "api_rounds": null,
+      "failure_code": null,
+      "live_measured": false,
+      "max_model_rounds": 4,
+      "max_retries_configured": 3,
+      "measurement_mode": "skipped_no_live_or_no_api_key",
+      "path": "examples/benchmarks/company_internal_ops_dashboard/TASK.md",
+      "prompt_char_count": 822,
+      "retries_after_first": null,
+      "success": null,
+      "task_id": "company_internal_ops_dashboard"
+    },
+    {
+      "api_rounds": null,
+      "failure_code": null,
+      "live_measured": false,
+      "max_model_rounds": 4,
+      "max_retries_configured": 3,
+      "measurement_mode": "skipped_no_live_or_no_api_key",
+      "path": "examples/benchmarks/company_service_request_queue/TASK.md",
+      "prompt_char_count": 1095,
+      "retries_after_first": null,
+      "success": null,
+      "task_id": "company_service_request_queue"
     },
     {
       "api_rounds": null,

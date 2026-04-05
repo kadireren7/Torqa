@@ -1,6 +1,6 @@
 # TORQA
 
-**Semantic-first core for describing system behavior** — canonical IR, validation, and projections (web, SQL, stubs) so humans and tools share one structured model. **Positioning:** TORQA is not another AI tool — it is a **compression-first execution layer** (NL intent → validated `.tq` → materialized artifacts); see **[`docs/EXECUTION_LAYER_PROOF.md`](docs/EXECUTION_LAYER_PROOF.md)**. **Trial-ready flagship path:** a real website-style Vite + React demo, **benchmarked semantic compression**, and a **hard validation gate** ([`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md)). Not “another syntax-first language”; **meaning and checks come first**.
+**Semantic-first core for describing system behavior** — canonical IR, validation, and projections (web, SQL, stubs) so humans and tools share one structured model. **One-sentence product story:** TORQA is a **compression-first execution layer** — NL or `.tq` → **validated spec (IR)** → **materialized artifacts**; see **[`docs/WHAT_TORQA_DOES_BEST.md`](docs/WHAT_TORQA_DOES_BEST.md)** and **[`docs/EXECUTION_LAYER_PROOF.md`](docs/EXECUTION_LAYER_PROOF.md)**. **Start here:** **[`docs/TRY_TORQA.md`](docs/TRY_TORQA.md)** (official surfaces + canonical trial path). **Trial contract & limits:** [`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md) · [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md). Not “another syntax-first language”; **meaning and checks come first**.
 
 ---
 
@@ -9,12 +9,18 @@
 | | |
 |--|--|
 | **Maturity** | **Early usable**, **developer-focused** — solid CLI, IR `1.4`, tests, and examples; not a shrink-wrapped product. |
-| **First trials (P37)** | **[`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md)** — flagship path, compression + gate proof, generated web preview; explicit limits. |
+| **Try TORQA (P132)** | **[`docs/TRY_TORQA.md`](docs/TRY_TORQA.md)** — one page: official CLI / website / desktop, canonical flagship trial, prompt pipeline pointers. |
+| **First trials (P37)** | **[`docs/TRIAL_READINESS.md`](docs/TRIAL_READINESS.md)** — flagship path, compression + gate proof, generated web preview; explicit limits (see also [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md)). |
 | **Execution layer proof** | **[`docs/EXECUTION_LAYER_PROOF.md`](docs/EXECUTION_LAYER_PROOF.md)** — prompt → app → preview, token/cost proof, GPT · Claude · Gemini vs TORQA framing, demo + video checklist. |
 | **Best for** | Teams and builders who want **validated specs + codegen**, AI-assisted or not. |
 | **Product story** | Deeper direction: [`docs/TORQA_VISION_NORTH_STAR.md`](docs/TORQA_VISION_NORTH_STAR.md) · maturity detail: [`STATUS.md`](STATUS.md) |
 | **Architecture** | TORQA-first layering (vs Python/Rust): [`docs/TORQA_DOMINANCE.md`](docs/TORQA_DOMINANCE.md) (P30 milestone) · [`docs/ARCHITECTURE_RULES.md`](docs/ARCHITECTURE_RULES.md) · [`docs/SURFACE_CLASSIFICATION.md`](docs/SURFACE_CLASSIFICATION.md) |
 | **Product website** | All in [`website/`](website/) — Vite app + `npm run build` → `website/dist/site/`, FastAPI in `website/server/`, `torqa-console` · [`docs/P72_WEBSITE_OFFICIAL.md`](docs/P72_WEBSITE_OFFICIAL.md) |
+| **Desktop trial UX (P130)** | Electron app surfaces **token savings**, **API usage**, **heuristic quality score**, and **per-run reliability** (first-pass vs recovered) after `generate-tq` / `app` — see [`desktop/README.md`](desktop/README.md). |
+| **Desktop distribution (P133)** | **Windows NSIS** installer (`npm run pack:win` in `desktop/`) — [`docs/P133_DESKTOP_DISTRIBUTION.md`](docs/P133_DESKTOP_DISTRIBUTION.md) (core still via `pip install -e .`). |
+| **Trial feedback & telemetry (P135)** | TORQA Desktop: **local-only** session events + optional feedback JSON (no auto upload) — [`docs/P135_TRIAL_FEEDBACK.md`](docs/P135_TRIAL_FEEDBACK.md) · **Feedback** tab in the app. |
+| **Launch comparison (P136)** | **Reference vs live** story + machine JSON — [`docs/COMPARISON_REPORT.md`](docs/COMPARISON_REPORT.md), `torqa-comparison-report`, website Proof page + desktop **Models** tab. |
+| **Pre-trial audit (P137)** | Quality / reliability / UX checklist + high-severity fixes — [`docs/P137_TRIAL_QUALITY_AUDIT.md`](docs/P137_TRIAL_QUALITY_AUDIT.md). |
 
 ---
 
@@ -25,8 +31,10 @@
 1. **Install** (repo root, Python 3.10+):
 
    ```bash
-   pip install -e .
+   python -m pip install -e .
    ```
+
+   This registers the **`torqa`** command (see `pyproject.toml` `[project.scripts]`). Confirm with `torqa --version`.
 
 2. **First build** (one command):
 
@@ -34,15 +42,15 @@
    torqa build examples/workspace_minimal/app.tq
    ```
 
-3. **Next:** **[`docs/FIRST_REAL_DEMO.md`](docs/FIRST_REAL_DEMO.md)** — full `.tq` → generated website walkthrough — or [`docs/FIRST_PROJECT.md`](docs/FIRST_PROJECT.md) for templates and packages ([`docs/USING_PACKAGES.md`](docs/USING_PACKAGES.md)).
+3. **Next:** **[`docs/TRY_TORQA.md`](docs/TRY_TORQA.md)** for the full trial map — then **[`docs/FLAGSHIP_DEMO.md`](docs/FLAGSHIP_DEMO.md)** / **`torqa demo`**, or **[`docs/FIRST_REAL_DEMO.md`](docs/FIRST_REAL_DEMO.md)** for an alternate `.tq` → website walkthrough, or [`docs/FIRST_PROJECT.md`](docs/FIRST_PROJECT.md) for templates and packages ([`docs/USING_PACKAGES.md`](docs/USING_PACKAGES.md)).
 
-If `torqa` is not on `PATH` (common on Windows when `Scripts` is missing from `PATH`): `python -m torqa build examples/workspace_minimal/app.tq` — or `python -m src.cli.main …` (same entrypoint).
+If `torqa` is not on `PATH` (see **[`docs/QUICKSTART.md`](docs/QUICKSTART.md)** for `sysconfig` / venv / Windows `Scripts`): use the same interpreter — `python -m torqa build examples/workspace_minimal/app.tq` — or `python -m src.cli.main …` (identical entrypoint).
 
 ---
 
 ## Public flagship demo
 
-**Story:** One benchmark-shaped **login + dashboard** flow shows **semantic compression** (small `.tq` vs NL task + generated app scale) and a **hard validation gate** (bad specs never complete a clean materialize path). The same paths power **CLI**, **gate proof**, **compression report**, **Web console**, and **Desktop**.
+**Story:** One benchmark-shaped **login + dashboard** flow shows **semantic compression** (small `.tq` vs NL task + generated app scale) and a **hard validation gate** (bad specs never complete a clean materialize path). The same paths power **CLI**, **gate proof**, **compression report**, the **marketing site** (`torqa-console` **`/`**), and **TORQA Desktop** (`torqa-desktop`). **`/console`** redirects to **`/`** — use Desktop or CLI for authoring ([`docs/TRY_TORQA.md`](docs/TRY_TORQA.md)).
 
 **Single entry for the flagship demo:** run this from the repo root (after install); it prints the full trial path (verify, build, console, proofs):
 
@@ -106,6 +114,10 @@ torqa build examples/benchmark_flagship/app.tq
 
 | Doc | Role |
 |-----|------|
+| [TRY_TORQA.md](docs/TRY_TORQA.md) | **P132:** canonical try path + official surfaces (CLI, website, desktop) |
+| [WHAT_TORQA_DOES_BEST.md](docs/WHAT_TORQA_DOES_BEST.md) | **P132:** single product story — where TORQA shines |
+| [KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md) | **P132:** honest scope boundaries (trial, tokens, AI, hosting) |
+| [P133_DESKTOP_DISTRIBUTION.md](docs/P133_DESKTOP_DISTRIBUTION.md) | **P133:** Windows installer build + trial install steps + QA checklist |
 | [FLAGSHIP_DEMO.md](docs/FLAGSHIP_DEMO.md) | **P35:** public flagship walkthrough + stable commands |
 | [QUICKSTART.md](docs/QUICKSTART.md) | Canonical install + first success |
 | [FIRST_PROJECT.md](docs/FIRST_PROJECT.md) | After first build |
@@ -131,7 +143,7 @@ python -m pytest
 
 Optional Rust: `cargo test --manifest-path rust-core/Cargo.toml`
 
-**Web:** `pip install -r requirements.txt` then `torqa-console` or `python -m website.server` → **`/`** marketing site (JSON APIs for local preview) ([`docs/UI_SURFACE_RULES.md`](docs/UI_SURFACE_RULES.md)). Docker: `docker compose up --build` → `http://127.0.0.1:8000`.
+**Web:** `pip install -r requirements.txt` then `torqa-console` or `python -m website.server` → **`/`** marketing site (JSON APIs for local preview) ([`docs/TRY_TORQA.md`](docs/TRY_TORQA.md) · [`docs/UI_SURFACE_RULES.md`](docs/UI_SURFACE_RULES.md)). Docker: `docker compose up --build` → `http://127.0.0.1:8000`.
 
 **IDE:** open [`Torqa.code-workspace`](Torqa.code-workspace) so the window title shows TORQA.
 

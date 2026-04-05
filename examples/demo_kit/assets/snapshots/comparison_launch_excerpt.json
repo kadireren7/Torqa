@@ -1,0 +1,98 @@
+{
+  "documentation_md": "docs/COMPARISON_REPORT.md",
+  "family_coverage_counts": {
+    "apps": 1,
+    "automations": 2,
+    "websites": 1,
+    "workflows": 3
+  },
+  "flagship_web_shell_metrics": {
+    "benchmark_id": "p31_login_dashboard_shell_v1",
+    "estimator_id": "utf8_bytes_div_4_v1",
+    "note_en": "Headline NL-vs-surface compression for the flagship web shell benchmark.",
+    "semantic_compression_ratio": 2.969325,
+    "task_prompt_token_estimate": 484,
+    "torqa_source_token_estimate": 163
+  },
+  "generated_at": "2026-04-05T16:31:52Z",
+  "honesty": {
+    "live_en": "Live API runs (exact tokenizer usage, retries, success/failure, heuristic quality scores) are not aggregated here. See TORQA Desktop after generate-tq / app, and CLI JSON for per-run fields.",
+    "reference_en": "All numbers in this file are computed offline from checked-in fixtures. Token counts use the repository estimator utf8_bytes_div_4_v1 unless noted. Vendor USD columns use published-style list tiers as reference math only — not invoices and not live quotes."
+  },
+  "pricing_note_en": "Verify current list prices with each vendor; tiers change frequently.",
+  "report_id": "p136_launch_comparison_v1",
+  "schema_version": 1,
+  "source_reports": {
+    "flagship_compression_json": "examples/benchmark_flagship/compression_baseline_report.json",
+    "token_proof_json": "reports/token_proof.json"
+  },
+  "token_proof_reference": {
+    "average_compression_ratio_prompt_per_torqa": 3.574615,
+    "average_prompt_token_reduction_percent_vs_torqa": 71.615054,
+    "passed_scenario_count": 5,
+    "scenario_count": 5,
+    "scenarios": [
+      {
+        "category": "simple form flow",
+        "id": "simple_form_flow",
+        "ok": true,
+        "scenario_family": "workflows",
+        "token_counts": {
+          "baseline_code_tokens": 279,
+          "ir_tokens": 295,
+          "prompt_tokens": 223,
+          "torqa_tokens": 52
+        }
+      },
+      {
+        "category": "approval workflow",
+        "id": "approval_workflow",
+        "ok": true,
+        "scenario_family": "workflows",
+        "token_counts": {
+          "baseline_code_tokens": 303,
+          "ir_tokens": 299,
+          "prompt_tokens": 209,
+          "torqa_tokens": 55
+        }
+      },
+      {
+        "category": "data transformation",
+        "id": "data_transform_pipeline",
+        "ok": true,
+        "scenario_family": "automations",
+        "token_counts": {
+          "baseline_code_tokens": 279,
+          "ir_tokens": 298,
+          "prompt_tokens": 187,
+          "torqa_tokens": 55
+        }
+      },
+      {
+        "category": "multi-step logic",
+        "id": "conditional_logic_flow",
+        "ok": true,
+        "scenario_family": "workflows",
+        "token_counts": {
+          "baseline_code_tokens": 288,
+          "ir_tokens": 338,
+          "prompt_tokens": 176,
+          "torqa_tokens": 52
+        }
+      },
+      {
+        "category": "small automation",
+        "id": "multi_step_automation",
+        "ok": true,
+        "scenario_family": "automations",
+        "token_counts": {
+          "baseline_code_tokens": 296,
+          "ir_tokens": 255,
+          "prompt_tokens": 174,
+          "torqa_tokens": 58
+        }
+      }
+    ],
+    "suite_id": "token_proof_workflow_v1"
+  }
+}

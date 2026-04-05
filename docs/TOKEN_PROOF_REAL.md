@@ -1,6 +1,8 @@
 # Token proof — real tokenizer & cost (P79)
 
-This report complements the legacy **UTF-8÷4 estimator** used in [`TOKEN_PROOF.md`](TOKEN_PROOF.md) with **offline BPE token counts** (via **tiktoken** `cl100k_base` when installed) and a small **illustrative cost model**.
+**Standard / primary suite:** [`TOKEN_PROOF.md`](TOKEN_PROOF.md) + `torqa-token-proof` → `reports/token_proof.json` (deterministic **utf8÷4** estimator; scenario manifest-driven).
+
+This document complements that with **offline BPE token counts** (via **tiktoken** `cl100k_base` when installed) and a small **illustrative cost model** on the **same** benchmark idea — use both labels when citing “token proof” so readers know which report you mean.
 
 ## Reproduce
 

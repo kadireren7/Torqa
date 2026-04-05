@@ -1,6 +1,6 @@
 # Supported scope
 
-This document defines **what TORQA supports today** in the repository: authoring surfaces, tooling, validation behavior, projections, and trial-ready paths. It complements [TRIAL_READINESS.md](TRIAL_READINESS.md) (first-trial contract) and [USE_CASES.md](USE_CASES.md) (fit / non-fit narratives).
+This document defines **what TORQA supports today** in the repository: authoring surfaces, tooling, validation behavior, projections, and trial-ready paths. It complements [TRY_TORQA.md](TRY_TORQA.md) (canonical try map), [TRIAL_READINESS.md](TRIAL_READINESS.md) (first-trial contract), [KNOWN_LIMITS.md](KNOWN_LIMITS.md), and [USE_CASES.md](USE_CASES.md) (fit / non-fit narratives).
 
 TORQA is **semantic-first** and **developer-focused**: checkable IR, diagnostics, and codegen — not a full application platform or arbitrary “generate any website from prose” product.
 
@@ -10,7 +10,7 @@ TORQA is **semantic-first** and **developer-focused**: checkable IR, diagnostics
 
 | Surface | Status | Notes |
 |---------|--------|--------|
-| **`.tq` (tq_v1)** | **Supported** for the grammar and examples in-repo | Parse → IR via `torqa surface`, `torqa build` / `torqa project`, and web **Compile .tq → IR**. Rules: [TQ_SURFACE_MAPPING.md](TQ_SURFACE_MAPPING.md), [TQ_AUTHOR_CHEATSHEET.md](TQ_AUTHOR_CHEATSHEET.md). |
+| **`.tq` (tq_v1)** | **Supported** for the grammar and examples in-repo | Parse → IR via `torqa surface`, `torqa build` / `torqa project` (**CLI** and **TORQA Desktop**). The marketing site does **not** compile `.tq`. Rules: [TQ_SURFACE_MAPPING.md](TQ_SURFACE_MAPPING.md), [TQ_AUTHOR_CHEATSHEET.md](TQ_AUTHOR_CHEATSHEET.md). |
 | **IR bundle JSON** | **Supported** (canonical contract) | Envelope + `ir_goal`; schema: `spec/IR_BUNDLE.schema.json`. Validate with `torqa validate` / `diagnostics`; drives build, run, web APIs. |
 | **`.pxir`** | **Transitional** | Subset / legacy path; still compilable where wired — [SURFACE_CLASSIFICATION.md](SURFACE_CLASSIFICATION.md). |
 

@@ -1,0 +1,14 @@
+# Queue: triage — id, priority, SLA clock, assignee pool, customer org
+# Detail drawer: thread summary, internal notes, escalation ladder
+# Actions: reassign, escalate, resolve with root-cause code (mapped in requires)
+module benchmark.company_service_request_queue
+
+intent service_request_ops_console
+requires username, password, request_id, assignee_id, team_id, status_code, priority, sla_deadline_at, escalation_tier, customer_org_id, correlation_id, actor_role, rejection_code, ip_address
+forbid locked
+ensures session.created
+result OpsConsoleReady
+
+flow:
+  create session
+  emit login_success

@@ -2,7 +2,7 @@
 
 Single place for a **first trial**: run the public demo path and **see the flagship compression benchmark** without hunting paths.
 
-Canonical spec and fixtures live under [`../benchmark_flagship/`](../benchmark_flagship/).
+Canonical spec and fixtures live under [`../benchmark_flagship/`](../benchmark_flagship/). **Demos, video scripts, and slide-ready JSON snapshots:** [`../demo_kit/README.md`](../demo_kit/README.md) (P138).
 
 ## Prerequisites
 

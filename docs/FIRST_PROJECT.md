@@ -1,6 +1,6 @@
 # First project (after Quick Start)
 
-You already ran [QUICKSTART.md](QUICKSTART.md) for **TORQA**. This page is the **next** small loop: own a file, rebuild, optionally use a package.
+You already ran [QUICKSTART.md](QUICKSTART.md) for **TORQA**. For the **full trial map** (flagship, desktop, website roles), see [TRY_TORQA.md](TRY_TORQA.md). This page is the **next** small loop: own a file, rebuild, optionally use a package.
 
 ## 1. Own a `.tq` file
 

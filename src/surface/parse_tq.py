@@ -27,18 +27,20 @@ path token, no ``..``). Sets ``metadata.source_map.projection_stub_paths`` for c
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.ir.canonical_ir import CANONICAL_IR_VERSION, DEFAULT_IR_METADATA
-
-
-class TQParseError(ValueError):
-    """Surface parse failure with a stable diagnostic code (``PX_TQ_*``)."""
-
-    def __init__(self, code: str, message: str) -> None:
-        self.code = code
-        super().__init__(message)
+from src.surface.tq_errors import TQParseError
+from src.surface.tq_rich_parse import (
+    flatten_rich_flow,
+    ir_input_type_for_model_field,
+    parse_effects_block,
+    parse_model_block,
+    parse_rich_flow_tree,
+    parse_validate_block,
+)
 
 
 def _ident_expr(name: str) -> Dict[str, Any]:
@@ -149,7 +151,21 @@ def _unrecognized_line_suffix(stripped: str) -> str:
         return ""
     head = parts[0]
     low = head.lower().rstrip(":")
-    if low not in ("module", "intent", "requires", "forbid", "ensures", "result", "flow", "include", "stub_path"):
+    if low not in (
+        "module",
+        "surface",
+        "intent",
+        "requires",
+        "forbid",
+        "ensures",
+        "result",
+        "flow",
+        "include",
+        "stub_path",
+        "model",
+        "validate",
+        "effects",
+    ):
         return ""
     if head == head.lower():
         return ""
@@ -368,19 +384,30 @@ def _text_has_include_directive(text: str) -> bool:
     return False
 
 
-def _parse_header_and_flow(
-    text: str,
-) -> Tuple[
-    Optional[str],
-    str,
-    List[str],
-    Optional[str],
-    Optional[str],
-    List[str],
-    List[Tuple[str, Optional[str]]],
-    Dict[str, str],
-]:
+@dataclass
+class _ParsedTqSurface:
+    module: Optional[str]
+    surface: str
+    intent: str
+    requires: List[str]
+    ensures: Optional[str]
+    result_line: Optional[str]
+    forbid_phrases: List[str]
+    flow_steps: List[Tuple[str, Optional[str]]]
+    stub_paths: Dict[str, str]
+    model_fields: List[Dict[str, Any]] = field(default_factory=list)
+    validate_rules: List[Dict[str, Any]] = field(default_factory=list)
+    effects_lines: List[str] = field(default_factory=list)
+    rich_flow_nodes: List[Any] = field(default_factory=list)
+
+
+def _str_lit_expr(value: str) -> Dict[str, Any]:
+    return {"type": "string_literal", "value": value}
+
+
+def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
     module: Optional[str] = None
+    surface_kind = "tq_v1"
     intent = ""
     requires: List[str] = []
     ensures: Optional[str] = None
@@ -388,6 +415,10 @@ def _parse_header_and_flow(
     forbid_phrases: List[str] = []
     flow_steps: List[Tuple[str, Optional[str]]] = []
     stub_paths: Dict[str, str] = {}
+    model_fields: List[Dict[str, Any]] = []
+    validate_rules: List[Dict[str, Any]] = []
+    effects_lines: List[str] = []
+    rich_flow_nodes: List[Any] = []
     in_flow = False
     after_flow = False
     singleton_headers: set[str] = set()
@@ -407,9 +438,10 @@ def _parse_header_and_flow(
         return TQParseError(
             "PX_TQ_HEADER_ORDER",
             f"tq: {msg} (line {lineno}). Expected order: "
-            "module (optional), intent, requires, optional stub_path lines, forbid locked (at most once), "
+            "module (optional), surface torqa_rich v0 (optional), intent, requires, "
+            "optional model:/validate:/effects:/stub_path, forbid locked (at most once), "
             "ensures session.created (optional), result (required), flow:. "
-            "Missing a line? Add intent, then requires, then result, then flow: (see docs/TQ_AUTHOR_CHEATSHEET.md).",
+            "See docs/TORQA_RICH_SURFACE.md and docs/TQ_AUTHOR_CHEATSHEET.md.",
         )
 
     lines = text.splitlines()

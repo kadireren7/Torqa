@@ -27,6 +27,10 @@ This directory defines **standard comparison tasks** for evaluating **TORQA (com
 | Small multi-step automation | [`multi_step_automation/`](multi_step_automation/) |
 | **Customer onboarding** (real workflow) | [`workflow_customer_onboarding/`](workflow_customer_onboarding/) |
 | **Document approval** (real workflow) | [`workflow_document_approval/`](workflow_document_approval/) |
+| **Company: service request / ops queue** (P128) | [`company_service_request_queue/`](company_service_request_queue/) |
+| **Company: CRM handoff console** (P128) | [`company_crm_handoff_console/`](company_crm_handoff_console/) |
+| **Company: internal ops dashboard** (P128) | [`company_internal_ops_dashboard/`](company_internal_ops_dashboard/) |
+| **Company: document processing pipeline** (P128) | [`company_document_processing_pipeline/`](company_document_processing_pipeline/) |
 
 ## Frozen wording
 

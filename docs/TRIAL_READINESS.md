@@ -56,8 +56,10 @@ This page is the short **“what to expect on a first trial”** contract. It do
 
 | Doc | Role |
 |-----|------|
+| [`TRY_TORQA.md`](TRY_TORQA.md) | One-page canonical try path + official surfaces |
+| [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md) | Consolidated scope boundaries |
 | [`FLAGSHIP_DEMO.md`](FLAGSHIP_DEMO.md) | Full flagship walkthrough |
 | [`QUICKSTART.md`](QUICKSTART.md) | Install + minimal `.tq` build |
 | [`BENCHMARK_COMPRESSION.md`](BENCHMARK_COMPRESSION.md) | Compression metrics |
 | [`VALIDATION_GATE.md`](VALIDATION_GATE.md) | Gate semantics |
-| [`DEMO_SURFACES.md`](DEMO_SURFACES.md) | Web vs desktop vs console |
+| [`DEMO_SURFACES.md`](DEMO_SURFACES.md) | Marketing web vs native desktop (`/console` redirect) |

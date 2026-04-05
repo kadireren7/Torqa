@@ -18,7 +18,7 @@ TORQA is **early usable** and **developer-focused**: the CLI, IR validation, and
 ## Distribution today
 
 - **From source:** `pip install -e .` from a git checkout (primary path in [QUICKSTART.md](QUICKSTART.md)).
-- **Docker:** `docker compose up --build` for the web console ([README.md](../README.md)).
+- **Docker:** `docker compose up --build` for the local marketing/API host ([README.md](../README.md)) — same surface rules as `torqa-console` ([TRY_TORQA.md](TRY_TORQA.md)).
 - **Published wheel:** if/when you publish to PyPI, document the install line in README for that release.
 
 Do not promise stability beyond what CHANGELOG and STATUS describe.

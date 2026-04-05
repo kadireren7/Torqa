@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { TorqaRequest } from "./torqaTypes";
+import { getLlmProvider, loadMergedLlmProcessEnv } from "./llmKeysStore";
 import { resolvePythonExe, resolveRepoRoot } from "./paths";
 import * as fsSafe from "./fsSafe";
 
@@ -15,7 +16,7 @@ function runProcess(
   repoRoot: string,
   pythonExe: string,
   args: string[],
-  options?: { cwd?: string; stdinText?: string },
+  options?: { cwd?: string; stdinText?: string; extraEnv?: Record<string, string> },
 ): Promise<TorqaRunResult> {
   return new Promise((resolve) => {
     const child = spawn(pythonExe, args, {
@@ -25,6 +26,7 @@ function runProcess(
         PYTHONPATH: repoRoot,
         PYTHONUTF8: "1",
         PYTHONIOENCODING: "utf-8",
+        ...(options?.extraEnv ?? {}),
       },
       windowsHide: true,
     });
@@ -74,6 +76,7 @@ export async function runTorqa(req: TorqaRequest): Promise<TorqaRunResult> {
     if (!fs.existsSync(ws) || !fs.statSync(ws).isDirectory()) {
       return { exitCode: 1, stdout: "", stderr: "generate-tq: workspace is not a directory" };
     }
+    const prov = req.llmProvider ?? getLlmProvider();
     const args = [
       ...mod,
       "--json",
@@ -81,13 +84,34 @@ export async function runTorqa(req: TorqaRequest): Promise<TorqaRunResult> {
       "--workspace",
       ws,
       "--prompt-stdin",
-      "--max-retries",
-      String(req.maxRetries ?? 3),
+      "--llm-provider",
+      prov,
     ];
+    if (req.maxRetries != null) {
+      args.push("--max-retries", String(req.maxRetries));
+    }
+    if (req.llmModel?.trim()) {
+      args.push("--model", req.llmModel.trim());
+    }
+    if (req.fallbackModel?.trim()) {
+      args.push("--fallback-model", req.fallbackModel.trim());
+    }
+    if (req.llmGenMode && req.llmGenMode !== "balanced") {
+      args.push("--llm-gen-mode", req.llmGenMode);
+    }
     if (req.genCategory) {
       args.push("--gen-category", req.genCategory);
     }
-    return runProcess(repoRoot, pythonExe, args, { stdinText: req.prompt });
+    if (req.tqGenPhases != null) {
+      args.push("--tq-gen-phases", String(req.tqGenPhases));
+    }
+    if (req.evolveMode && req.evolveFromRelativePath) {
+      args.push("--evolve-mode", req.evolveMode, "--evolve-from", req.evolveFromRelativePath);
+    }
+    return runProcess(repoRoot, pythonExe, args, {
+      stdinText: req.prompt,
+      extraEnv: loadMergedLlmProcessEnv(),
+    });
   }
 
   if (req.kind === "appPipeline") {
@@ -96,6 +120,7 @@ export async function runTorqa(req: TorqaRequest): Promise<TorqaRunResult> {
       return { exitCode: 1, stdout: "", stderr: "app: workspace is not a directory" };
     }
     const outDir = req.outDir ?? "torqa_generated_out";
+    const prov = req.llmProvider ?? getLlmProvider();
     const args = [
       ...mod,
       "--json",
@@ -105,15 +130,36 @@ export async function runTorqa(req: TorqaRequest): Promise<TorqaRunResult> {
       "--out",
       outDir,
       "--prompt-stdin",
-      "--max-retries",
-      String(req.maxRetries ?? 3),
       "--engine-mode",
       req.engineMode ?? "python_only",
+      "--llm-provider",
+      prov,
     ];
+    if (req.maxRetries != null) {
+      args.push("--max-retries", String(req.maxRetries));
+    }
+    if (req.llmModel?.trim()) {
+      args.push("--model", req.llmModel.trim());
+    }
+    if (req.fallbackModel?.trim()) {
+      args.push("--fallback-model", req.fallbackModel.trim());
+    }
+    if (req.llmGenMode && req.llmGenMode !== "balanced") {
+      args.push("--llm-gen-mode", req.llmGenMode);
+    }
     if (req.genCategory) {
       args.push("--gen-category", req.genCategory);
     }
-    return runProcess(repoRoot, pythonExe, args, { stdinText: req.prompt });
+    if (req.tqGenPhases != null) {
+      args.push("--tq-gen-phases", String(req.tqGenPhases));
+    }
+    if (req.evolveMode && req.evolveFromRelativePath) {
+      args.push("--evolve-mode", req.evolveMode, "--evolve-from", req.evolveFromRelativePath);
+    }
+    return runProcess(repoRoot, pythonExe, args, {
+      stdinText: req.prompt,
+      extraEnv: loadMergedLlmProcessEnv(),
+    });
   }
 
   if (req.kind === "benchmark") {

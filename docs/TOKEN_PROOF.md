@@ -3,6 +3,8 @@
 **P75/P77** — Reproducible, product-grade comparison of fixed **natural-language task specs** and 
 **baseline code stubs** against **`.tq` surfaces** that must pass **core parse + diagnostics**.
 
+**Companion (optional):** [TOKEN_PROOF_REAL.md](TOKEN_PROOF_REAL.md) adds **offline tiktoken** counts and illustrative cost fields on the same scenarios — not a replacement for this suite’s primary estimator story.
+
 ## Product statement (measured, bounded)
 
 > In this benchmark set, TORQA expressed the same workflow intent with substantially fewer estimated tokens than the paired natural-language prompts, while the `.tq` surfaces satisfy strict core validation. Results are scenario-bound and use a deterministic estimator, not live tokenizer APIs.
@@ -85,6 +87,12 @@ torqa-token-proof
 # or: python -m src.benchmarks.token_proof_cli
 ```
 
+After changing token proof or flagship compression inputs, refresh the bundled **P136** comparison JSON:
+
+```bash
+torqa-comparison-report
+```
+
 ### Add a new scenario
 
 1. Create a directory under `examples/benchmarks/<your_id>/` with `TASK.md`, `BASELINE_CODE.txt`, `app.tq`.
@@ -105,3 +113,8 @@ Prefer reading numbers from `summary` / `public_summary` in `reports/token_proof
 - baseline_code_tokens: fixed BASELINE_CODE.txt per scenario (approximate non-TORQA implementation).
 - ir_to_torqa_ratio > 1 means canonical IR JSON is larger than the .tq surface (expected); NL→TQ compression is the headline claim.
 - Failed scenarios are listed with errors; they are excluded from summary averages.
+
+## See also
+
+- [KNOWN_LIMITS.md](KNOWN_LIMITS.md) — what these numbers do and do not claim.
+- [TOKEN_PROOF_REAL.md](TOKEN_PROOF_REAL.md) — optional tiktoken + illustrative cost on the same idea.

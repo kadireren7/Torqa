@@ -1,0 +1,14 @@
+{
+  "average_compression_ratio_prompt_per_torqa": 3.574615,
+  "average_prompt_token_reduction_percent_vs_torqa": 71.615054,
+  "documentation_md": "docs/TOKEN_PROOF.md",
+  "failed_scenario_count": 0,
+  "failed_scenario_ids": [],
+  "headline_claim_en": "In this benchmark set, TORQA expressed the same workflow intent with substantially fewer estimated tokens than the paired natural-language prompts, while the `.tq` surfaces satisfy strict core validation. Results are scenario-bound and use a deterministic estimator, not live tokenizer APIs.",
+  "machine_report_json": "reports/token_proof.json",
+  "measurement_focus_en": "Workflow- and automation-shaped intent: forms, approvals, data pipelines, branching logic, and small multi-step scripts. Each scenario pairs a fixed NL task (TASK.md), a fixed baseline code stub (BASELINE_CODE.txt), and a `.tq` surface that must pass the same core parse + diagnostics.",
+  "not_the_headline_en": "Generated website or UI bundle size is not the headline for this suite; see the flagship compression path (`docs/BENCHMARK_COMPRESSION.md`, `torqa-compression-bench`) for that slice.",
+  "passed_scenario_count": 5,
+  "scenario_count": 5,
+  "suite_id": "token_proof_workflow_v1"
+}

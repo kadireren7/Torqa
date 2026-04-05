@@ -36,7 +36,7 @@ You can reasonably run a **real trial** if your goal is to validate:
 - The **generated web UI** is a **credible preview**, not a design system or auth backend ([TRIAL_READINESS.md](TRIAL_READINESS.md)).
 - **Projection strength** is highest for **login/session-shaped** and similar **workflow** demos; marketing sites and large arbitrary SPAs are **out of scope** for this milestone.
 - **Local tooling** assumes a **developer environment** (Python 3.10+, optional Node for generated webapp, optional Rust — not required thanks to Python fallback per [STATUS.md](../STATUS.md)).
-- **Web console** is a **local prototype**; read [WEBUI_SECURITY.md](WEBUI_SECURITY.md) before exposing it to **untrusted networks**.
+- **`torqa-console` / marketing site** is a **local prototype** (not a hosted product shell); read [WEBUI_SECURITY.md](WEBUI_SECURITY.md) before exposing it to **untrusted networks**.
 
 **Verdict for “production” as hosted product:** **No.** This repo does **not** ship a hardened SaaS, enterprise IAM, or turnkey internet-facing deployment. That remains **missing** by design until separate product and security work land (see below).
 

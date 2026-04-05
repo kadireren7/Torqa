@@ -61,6 +61,12 @@ def test_desktop_contract_build_minimal_tq(tmp_path):
     assert data.get("ok") is True
     assert isinstance(data.get("written"), list)
     assert data.get("written_under")
+    th = data.get("token_hint")
+    assert isinstance(th, dict), data
+    assert th.get("comparison_basis") == "ir_bundle_json"
+    assert isinstance(th.get("tq_token_estimate"), int)
+    assert isinstance(th.get("prompt_token_estimate"), int)
+    assert th.get("compression_ratio", 0) >= 1.0
 
 
 def test_desktop_contract_demo_benchmark_json():

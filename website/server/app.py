@@ -110,9 +110,12 @@ class SystemHealthRequest(RunRequest):
 
 app = FastAPI(
     title="TORQA Web",
-    description="TORQA: marketing site (/), /desktop pointer, JSON APIs; /console redirects to /.",
+    description="TORQA: marketing SPA (/, /product, /proof, /try, /docs, /pricing, /contact), /desktop pointer, JSON APIs; /console redirects to /. OpenAPI UI: /api/openapi/docs.",
     version="0.3.0",
     lifespan=lifespan,
+    docs_url="/api/openapi/docs",
+    redoc_url="/api/openapi/redoc",
+    openapi_url="/api/openapi/openapi.json",
 )
 
 app.add_middleware(RateLimitMiddleware, max_calls=120, window_sec=60.0)
@@ -123,9 +126,8 @@ if SHARED_STATIC_DIR.is_dir():
     app.mount("/static/shared", StaticFiles(directory=str(SHARED_STATIC_DIR)), name="shared")
 
 
-@app.get("/")
-def site_home():
-    """Marketing site bundle from ``website/dist/site`` (Vite production build)."""
+def _site_index_response() -> FileResponse:
+    """Single-page app shell (``website/dist/site/index.html``)."""
     page = SITE_DIR / "index.html"
     if not page.is_file():
         raise HTTPException(
@@ -133,6 +135,43 @@ def site_home():
             "Site bundle missing: run `npm run build` in website/ (expect website/dist/site/index.html).",
         )
     return FileResponse(page)
+
+
+@app.get("/")
+def site_home():
+    """Marketing site bundle from ``website/dist/site`` (Vite production build)."""
+    return _site_index_response()
+
+
+# P134: client-side routes — same HTML shell as ``/``.
+@app.get("/product")
+def site_spa_product():
+    return _site_index_response()
+
+
+@app.get("/proof")
+def site_spa_proof():
+    return _site_index_response()
+
+
+@app.get("/try")
+def site_spa_try():
+    return _site_index_response()
+
+
+@app.get("/docs")
+def site_spa_docs():
+    return _site_index_response()
+
+
+@app.get("/pricing")
+def site_spa_pricing():
+    return _site_index_response()
+
+
+@app.get("/contact")
+def site_spa_contact():
+    return _site_index_response()
 
 
 @app.get("/console")

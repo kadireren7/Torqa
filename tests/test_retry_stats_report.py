@@ -56,10 +56,10 @@ def test_mock_suggest_aggregates_retries_and_failure_rate() -> None:
         }
 
     r = run_retry_stats(REPO, max_retries=3, suggest_fn=fake_suggest)
-    assert r["summary"]["tasks_live_measured"] == 7
-    assert r["summary"]["success_count"] == 6
+    assert r["summary"]["tasks_live_measured"] == 11
+    assert r["summary"]["success_count"] == 10
     assert r["summary"]["failure_count"] == 1
-    assert r["summary"]["failure_rate"] == round(1 / 7, 6)
+    assert r["summary"]["failure_rate"] == round(1 / 11, 6)
     assert r["summary"]["mean_retries_after_first_on_success"] == 1.0
     for t in r["tasks"]:
         assert t["live_measured"] is True
@@ -85,4 +85,4 @@ def test_committed_retry_stats_matches_generator() -> None:
 def test_write_roundtrip(tmp_path: Path) -> None:
     out = tmp_path / "retry_stats.json"
     write_retry_stats_report(REPO, out, live=False)
-    assert json.loads(out.read_text(encoding="utf-8"))["summary"]["tasks_total"] == 7
+    assert json.loads(out.read_text(encoding="utf-8"))["summary"]["tasks_total"] == 11

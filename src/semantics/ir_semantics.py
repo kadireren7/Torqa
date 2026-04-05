@@ -19,6 +19,8 @@ from src.semantics.torqa_semantic_policy import (
     effective_semantic_policy,
 )
 
+from src.semantics.ir_logic_validation import validate_ir_goal_logic
+
 from src.ir.canonical_ir import (
     IRBinary,
     IRBooleanLiteral,
@@ -554,10 +556,14 @@ def build_ir_semantic_report(
     symbol_table = build_ir_symbol_table(ir_goal)
     guarantee_table = build_ir_guarantee_table(ir_goal, function_registry)
     errors, warnings = validate_ir_semantics(ir_goal, function_registry)
+    logic_errors = validate_ir_goal_logic(ir_goal)
+    merged_errors = list(errors) + list(logic_errors)
     return {
         "symbol_table": dict(sorted(symbol_table.items())),
         "guarantee_table": _serialize_guarantee_table(guarantee_table),
-        "errors": list(errors),
+        "errors": merged_errors,
         "warnings": list(warnings),
-        "semantic_ok": len(errors) == 0,
+        "semantic_ok": len(merged_errors) == 0,
+        "logic_errors": list(logic_errors),
+        "logic_ok": len(logic_errors) == 0,
     }

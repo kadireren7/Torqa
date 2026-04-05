@@ -9,9 +9,16 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import * as fsSafe from "./fsSafe";
 import { resolvePythonExe, resolveRepoRoot } from "./paths";
+import { getLlmKeyPresence, setLlmApiKey, setLlmProvider, type LlmProviderId } from "./llmKeysStore";
 import { runTorqa } from "./torqaSpawn";
 import { seedSampleTq } from "./demoSeed";
 import type { TorqaRequest } from "./torqaTypes";
+import {
+  appendTrialEvent,
+  getTrialTelemetryInfo,
+  initTrialSession,
+  saveTrialFeedback,
+} from "./trialTelemetry";
 
 const execFileAsync = promisify(execFile);
 
@@ -220,7 +227,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 600,
     title: "TORQA Desktop",
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#1a1d24",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -247,6 +254,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  initTrialSession();
+  // P133: correct taskbar / jump list grouping on Windows (must match package.json build.appId).
+  if (process.platform === "win32") {
+    app.setAppUserModelId("dev.torqa.desktop");
+  }
   installMenu();
   createWindow();
   app.on("activate", () => {
@@ -302,6 +314,30 @@ ipcMain.handle("fs:write", async (_, root: string, relPath: string, content: str
 
 ipcMain.handle("torqa:run", async (_, req: TorqaRequest) => runTorqa(req));
 
+ipcMain.handle("llm:getState", () => getLlmKeyPresence());
+
+ipcMain.handle("llm:setProvider", (_, raw: string) => {
+  const v = String(raw || "openai").toLowerCase();
+  if (v !== "openai" && v !== "anthropic" && v !== "google") {
+    return { ok: false as const, error: "Invalid provider" };
+  }
+  setLlmProvider(v as LlmProviderId);
+  return { ok: true as const };
+});
+
+ipcMain.handle("llm:setKey", (_, slot: string, key: string | null) => {
+  try {
+    const s = String(slot || "").toLowerCase();
+    if (s !== "openai" && s !== "anthropic" && s !== "google") {
+      return { ok: false as const, error: "Invalid key slot" };
+    }
+    setLlmApiKey(s as LlmProviderId, key);
+    return { ok: true as const };
+  } catch (e) {
+    return { ok: false as const, error: String(e) };
+  }
+});
+
 ipcMain.handle("shell:openExternal", async (_, raw: string) => {
   const u = String(raw ?? "").trim();
   if (!/^https?:\/\//i.test(u)) {
@@ -327,7 +363,7 @@ ipcMain.handle(
   if (!fs.existsSync(pkg)) {
     return {
       ok: false as const,
-      error: "No package.json in this folder — build may not have produced generated/webapp. Run Build from prompt again.",
+      error: "No package.json in this folder — build may not have produced generated/webapp. Run Build again.",
     };
   }
   const npm = npmCmd();
@@ -408,4 +444,20 @@ ipcMain.handle(
 ipcMain.handle(
   "demo:seedTq",
   async (_, workspace: string, which: "minimal" | "flagship") => seedSampleTq(workspace, which),
+);
+
+/** P135: local session telemetry (NDJSON) + optional feedback JSON — never uploaded automatically. */
+ipcMain.handle("trial:getInfo", () => getTrialTelemetryInfo());
+
+ipcMain.handle(
+  "trial:recordEvent",
+  async (_, payload: { type: string; detail?: Record<string, unknown> }) => appendTrialEvent(payload),
+);
+
+ipcMain.handle(
+  "trial:saveFeedback",
+  async (
+    _,
+    body: { useful: string | null; failureCategory: string | null; comment: string | null },
+  ) => saveTrialFeedback(body),
 );

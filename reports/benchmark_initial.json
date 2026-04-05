@@ -9,12 +9,12 @@
   "report_id": "benchmark_initial",
   "schema_version": 1,
   "summary": {
-    "mean_ir_structural_element_total": 9.857143,
-    "mean_semantic_compression_nl_vs_torqa_surface": 3.38027,
-    "mean_token_reduction_vs_simulated_raw": 0.982075,
-    "task_count": 7,
+    "mean_ir_structural_element_total": 15.727273,
+    "mean_semantic_compression_nl_vs_torqa_surface": 2.673113,
+    "mean_token_reduction_vs_simulated_raw": 0.982148,
+    "task_count": 11,
     "torqa_validation_failure_count": 0,
-    "torqa_validation_success_count": 7
+    "torqa_validation_success_count": 11
   },
   "tasks": [
     {
@@ -52,6 +52,150 @@
       },
       "success": true,
       "task_id": "approval_workflow"
+    },
+    {
+      "failure_stage": null,
+      "message": null,
+      "metrics": {
+        "complexity": {
+          "ir_forbid_count": 1,
+          "ir_input_count": 12,
+          "ir_postcondition_count": 1,
+          "ir_precondition_count": 14,
+          "ir_structural_element_total": 30,
+          "ir_transition_count": 2
+        },
+        "generated_code_measured": false,
+        "generated_code_tokens": 0,
+        "ir_to_torqa_ratio": 6.517986,
+        "ir_tokens": 906,
+        "prompt_tokens": 187,
+        "raw_code_token_estimate_simulated": 9060,
+        "semantic_compression_nl_task_vs_torqa_surface": 1.345324,
+        "token_reduction_vs_simulated_raw": 0.984658,
+        "torqa_to_simulated_raw_ratio": 0.015342,
+        "torqa_tokens": 139,
+        "validation_ok": true
+      },
+      "paths": {
+        "task_md": "examples/benchmarks/company_crm_handoff_console/TASK.md",
+        "torqa_surface": "examples/benchmarks/company_crm_handoff_console/app.tq"
+      },
+      "retries": {
+        "ai_suggest_attempts": 0,
+        "ai_suggest_max_retries_default": 3,
+        "note": "Static batch: no OpenAI IR suggest loop; retries apply only to AI-assisted authoring."
+      },
+      "success": true,
+      "task_id": "company_crm_handoff_console"
+    },
+    {
+      "failure_stage": null,
+      "message": null,
+      "metrics": {
+        "complexity": {
+          "ir_forbid_count": 0,
+          "ir_input_count": 9,
+          "ir_postcondition_count": 0,
+          "ir_precondition_count": 11,
+          "ir_structural_element_total": 20,
+          "ir_transition_count": 0
+        },
+        "generated_code_measured": false,
+        "generated_code_tokens": 0,
+        "ir_to_torqa_ratio": 4.492537,
+        "ir_tokens": 602,
+        "prompt_tokens": 176,
+        "raw_code_token_estimate_simulated": 6020,
+        "semantic_compression_nl_task_vs_torqa_surface": 1.313433,
+        "token_reduction_vs_simulated_raw": 0.977741,
+        "torqa_to_simulated_raw_ratio": 0.022259,
+        "torqa_tokens": 134,
+        "validation_ok": true
+      },
+      "paths": {
+        "task_md": "examples/benchmarks/company_document_processing_pipeline/TASK.md",
+        "torqa_surface": "examples/benchmarks/company_document_processing_pipeline/app.tq"
+      },
+      "retries": {
+        "ai_suggest_attempts": 0,
+        "ai_suggest_max_retries_default": 3,
+        "note": "Static batch: no OpenAI IR suggest loop; retries apply only to AI-assisted authoring."
+      },
+      "success": true,
+      "task_id": "company_document_processing_pipeline"
+    },
+    {
+      "failure_stage": null,
+      "message": null,
+      "metrics": {
+        "complexity": {
+          "ir_forbid_count": 0,
+          "ir_input_count": 9,
+          "ir_postcondition_count": 0,
+          "ir_precondition_count": 11,
+          "ir_structural_element_total": 20,
+          "ir_transition_count": 0
+        },
+        "generated_code_measured": false,
+        "generated_code_tokens": 0,
+        "ir_to_torqa_ratio": 5.518868,
+        "ir_tokens": 585,
+        "prompt_tokens": 164,
+        "raw_code_token_estimate_simulated": 5850,
+        "semantic_compression_nl_task_vs_torqa_surface": 1.54717,
+        "token_reduction_vs_simulated_raw": 0.98188,
+        "torqa_to_simulated_raw_ratio": 0.01812,
+        "torqa_tokens": 106,
+        "validation_ok": true
+      },
+      "paths": {
+        "task_md": "examples/benchmarks/company_internal_ops_dashboard/TASK.md",
+        "torqa_surface": "examples/benchmarks/company_internal_ops_dashboard/app.tq"
+      },
+      "retries": {
+        "ai_suggest_attempts": 0,
+        "ai_suggest_max_retries_default": 3,
+        "note": "Static batch: no OpenAI IR suggest loop; retries apply only to AI-assisted authoring."
+      },
+      "success": true,
+      "task_id": "company_internal_ops_dashboard"
+    },
+    {
+      "failure_stage": null,
+      "message": null,
+      "metrics": {
+        "complexity": {
+          "ir_forbid_count": 1,
+          "ir_input_count": 14,
+          "ir_postcondition_count": 1,
+          "ir_precondition_count": 16,
+          "ir_structural_element_total": 34,
+          "ir_transition_count": 2
+        },
+        "generated_code_measured": false,
+        "generated_code_tokens": 0,
+        "ir_to_torqa_ratio": 6.589404,
+        "ir_tokens": 995,
+        "prompt_tokens": 232,
+        "raw_code_token_estimate_simulated": 9950,
+        "semantic_compression_nl_task_vs_torqa_surface": 1.536424,
+        "token_reduction_vs_simulated_raw": 0.984824,
+        "torqa_to_simulated_raw_ratio": 0.015176,
+        "torqa_tokens": 151,
+        "validation_ok": true
+      },
+      "paths": {
+        "task_md": "examples/benchmarks/company_service_request_queue/TASK.md",
+        "torqa_surface": "examples/benchmarks/company_service_request_queue/app.tq"
+      },
+      "retries": {
+        "ai_suggest_attempts": 0,
+        "ai_suggest_max_retries_default": 3,
+        "note": "Static batch: no OpenAI IR suggest loop; retries apply only to AI-assisted authoring."
+      },
+      "success": true,
+      "task_id": "company_service_request_queue"
     },
     {
       "failure_stage": null,

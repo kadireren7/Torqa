@@ -15,7 +15,7 @@ Strict **positioning** rules for this repository. They do not replace normative 
 
 ## 3. Python role (thin orchestration)
 
-- **Python** should concentrate on **CLI glue**, **tooling**, **compatibility**, **fallback**, web/console hosting, and bridging TORQA bundles to the outside world.
+- **Python** should concentrate on **CLI glue**, **tooling**, **compatibility**, **fallback**, **marketing web host** (`torqa-console`; **`/console` redirects to `/`**), and bridging TORQA bundles to the outside world.
 - Avoid growing Python into the “main story” in READMEs and tutorials; keep it **supporting**.
 
 ## 4. Self-host and P17.1 lock

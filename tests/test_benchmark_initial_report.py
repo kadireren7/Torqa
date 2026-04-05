@@ -19,10 +19,14 @@ REPO = Path(__file__).resolve().parents[1]
 def test_discover_benchmark_tasks() -> None:
     root = REPO / "examples" / "benchmarks"
     dirs = discover_benchmark_task_dirs(root)
-    assert len(dirs) == 7
+    assert len(dirs) == 11
     names = {d.name for d in dirs}
     assert names == {
         "approval_workflow",
+        "company_crm_handoff_console",
+        "company_document_processing_pipeline",
+        "company_internal_ops_dashboard",
+        "company_service_request_queue",
         "conditional_logic_flow",
         "data_transform_pipeline",
         "multi_step_automation",
@@ -38,8 +42,8 @@ def test_run_benchmark_initial_all_success_deterministic() -> None:
     assert r1 == r2
     assert r1["report_id"] == REPORT_ID
     assert r1["schema_version"] == 1
-    assert r1["summary"]["task_count"] == 7
-    assert r1["summary"]["torqa_validation_success_count"] == 7
+    assert r1["summary"]["task_count"] == 11
+    assert r1["summary"]["torqa_validation_success_count"] == 11
     assert r1["summary"]["torqa_validation_failure_count"] == 0
     assert r1["summary"]["mean_ir_structural_element_total"] is not None
     for t in r1["tasks"]:
@@ -68,7 +72,7 @@ def test_write_report_roundtrip(tmp_path: Path) -> None:
     out = tmp_path / "benchmark_initial.json"
     write_benchmark_initial_report(REPO, out)
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["summary"]["task_count"] == 7
+    assert data["summary"]["task_count"] == 11
 
 
 def test_committed_report_matches_generator() -> None:

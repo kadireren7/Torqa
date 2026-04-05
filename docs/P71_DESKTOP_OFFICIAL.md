@@ -1,5 +1,7 @@
 # P71 — Official desktop surface (replacement decision)
 
+> **P132 / P73 — use these for current product truth:** [P73_PRODUCT_SURFACES.md](P73_PRODUCT_SURFACES.md) · [desktop/README.md](../desktop/README.md) · [UI_SURFACE_RULES.md](UI_SURFACE_RULES.md). **This file is retained** as a **historical gap audit** (Tk/pywebview vs Electron); do not treat the legacy column as available software.
+
 > **P73:** **`desktop_legacy/`** and **`torqa-desktop-legacy`** are **removed**. **`GET /desktop`** is a **native-desktop CTA** only. Materialize helpers live in **`src/workspace_bundle_io.py`**. See [P73_PRODUCT_SURFACES.md](P73_PRODUCT_SURFACES.md).
 
 **Rule:** TORQA core (`torqa` CLI / APIs) owns validation and IR. Desktop code is **only** a surface.

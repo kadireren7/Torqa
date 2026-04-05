@@ -1,6 +1,6 @@
 # Known failure modes
 
-This page lists **expected** ways TORQA can fail or reject work — by design or by environment — so you can tell “bug” from “contract.” It is not an exhaustive code list; see linked docs and `src/diagnostics/codes.py` for identifiers.
+This page lists **expected** ways TORQA can fail or reject work — by design or by environment — so you can tell “bug” from “contract.” It is not an exhaustive code list; see linked docs and `src/diagnostics/codes.py` for identifiers. **Product scope limits** (what TORQA does *not* claim): [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md).
 
 ---
 
@@ -10,7 +10,7 @@ This page lists **expected** ways TORQA can fail or reject work — by design or
 |--------|----------------|------------|
 | `torqa` / `torqa-console` / `torqa-desktop` not found (Windows) | Console scripts live under Python’s `Scripts` folder, not on `PATH` | From repo root: `python -m torqa …`, `python -m website.server`; desktop: `cd desktop && npm run dev` or add `Scripts` to `PATH` — see [QUICKSTART.md](QUICKSTART.md), [DEMO_LOCALHOST.md](DEMO_LOCALHOST.md) |
 | `unrecognized arguments: --json` after a subcommand | Global `--json` must come **before** the subcommand | Use `torqa --json surface FILE.tq`, not `torqa surface FILE.tq --json` — see [WEBUI_AND_CLI_SURFACES.md](WEBUI_AND_CLI_SURFACES.md), [MAINTAINER_VERIFY.md](MAINTAINER_VERIFY.md) |
-| `torqa validate` fails on a `.tq` file | `validate` / `diagnostics` accept **IR bundle `.json` only** | Use `torqa surface …` or `torqa build` / `torqa project` for `.tq`; or compile in the web console first |
+| `torqa validate` fails on a `.tq` file | `validate` / `diagnostics` accept **IR bundle `.json` only** | Use `torqa surface …` or `torqa build` / `torqa project` for `.tq`; use **CLI** or **TORQA Desktop** — the marketing site has **no** IR lab ([`TRY_TORQA.md`](TRY_TORQA.md)) |
 | Non-zero exit from `torqa build` / `project` | Parse, envelope, IR shape, semantics, or materialize stage failed | Run `torqa --json project …` and inspect `pipeline_stages` / diagnostics; fix IR or surface, then retry — [VALIDATION_GATE.md](VALIDATION_GATE.md) |
 
 ---
@@ -67,12 +67,12 @@ Local preview only: do not expose the dev server to untrusted networks without h
 
 ---
 
-## Desktop (native / Tk)
+## Desktop (Electron — TORQA Desktop)
 
 | Symptom | Typical cause |
 |---------|----------------|
 | Electron desktop won’t start | Run `npm install` in `desktop/`; ensure Node 20+ — [desktop/README.md](../desktop/README.md) |
-| Folder pick / disk write unavailable in browser | PyWebview **API** not present; use native desktop or Tk for workspace selection |
+| Folder pick / disk write unavailable | You opened the UI in a **browser** tab (`http://localhost:…`). Use the **Electron** window (`torqa-desktop` or `cd desktop && npm run dev`) — browsers block the `torqaShell` bridge |
 
 ---
 
@@ -115,6 +115,7 @@ If the Rust path errors or times out, the stack may fall back to Python dependin
 
 | Doc | Use when |
 |-----|----------|
+| [P137_TRIAL_QUALITY_AUDIT.md](P137_TRIAL_QUALITY_AUDIT.md) | Pre–broad-trial audit checklist and recent blocker fixes |
 | [QUICKSTART.md](QUICKSTART.md) | First install and PATH |
 | [VALIDATION_GATE.md](VALIDATION_GATE.md) | Accept vs reject semantics |
 | [TQ_SURFACE_MAPPING.md](TQ_SURFACE_MAPPING.md) | `.tq` rules and `PX_TQ_*` |

@@ -1,5 +1,7 @@
 # Editor Architecture (V6.1)
 
+_End-user trial paths (CLI, desktop, marketing site): [`TRY_TORQA.md`](TRY_TORQA.md). This page is **internal** session architecture._
+
 The editor is a headless IR-native architecture layer.  
 It is the only supported write path for future application behavior.
 

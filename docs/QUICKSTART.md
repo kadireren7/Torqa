@@ -11,11 +11,32 @@
 
 ## 1. Install
 
+From the repository root (folder that contains `pyproject.toml`):
+
 ```bash
-pip install -e .
+python -m pip install -e .
 ```
 
-Creates the `torqa` command (from `pyproject.toml`). Prefer a venv if you use one for other projects.
+(`pip install -e .` is equivalent if `pip` is the pip for the Python you want.)
+
+This registers the **`torqa`** CLI via `[project.scripts]` in `pyproject.toml` — the same entrypoint as `python -m torqa`. Prefer a **venv** so scripts and dependencies stay isolated:
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -e .
+```
+
+### Verify the command (recommended)
+
+```bash
+torqa --version
+```
+
+You should see `torqa` plus a version string. Then run a real subcommand (see §2).
+
+**Non-editable install** (`python -m pip install .` from a sdist/wheel) also exposes `torqa` the same way; use that when you are not hacking on the repo.
 
 ## 2. First success (one command)
 
@@ -39,6 +60,7 @@ Exit code `0` and `"ok": true` in JSON means the IR bundle shape checks passed.
 
 | Step | Where |
 |------|--------|
+| **Full map (surfaces + canonical trial)** | [TRY_TORQA.md](TRY_TORQA.md) — start here after Quick Start if you want one coherent path |
 | **Public flagship trial (command index)** | Run `torqa demo` (repo root) then follow the printout — [FLAGSHIP_DEMO.md](FLAGSHIP_DEMO.md) · [`examples/benchmark_flagship/`](../examples/benchmark_flagship/) |
 | **Flagship `.tq` → website** | [FIRST_REAL_DEMO.md](FIRST_REAL_DEMO.md) · [`examples/torqa_demo_site/app.tq`](../examples/torqa_demo_site/app.tq) |
 | First **.tq** edits | Start from [`examples/torqa/templates/`](../examples/torqa/templates/) (`minimal.tq`, `session_only.tq`, `guarded_session.tq`, `login_flow.tq`, …); see [templates README](../examples/torqa/templates/README.md) |
@@ -49,24 +71,42 @@ Exit code `0` and `"ok": true` in JSON means the IR bundle shape checks passed.
 
 ## If `torqa` is not found
 
-Windows often installs `torqa.exe` under Python’s `Scripts` folder; if that folder is **not** on `PATH`, the shell will not find `torqa` even after a successful `pip install`.
+After a successful install, Pip places a launcher next to that Python:
 
-**Same CLI, no PATH needed** (use the module shim):
+| OS | Typical location |
+|----|------------------|
+| **Windows** | `…\Python3xx\Scripts\torqa.exe` (or `…\.venv\Scripts\torqa.exe` in a venv) |
+| **macOS / Linux** | `…/bin/torqa` (same `bin` as `python3`) |
+
+If that directory is **not** on `PATH`, the shell will not resolve `torqa` even though the install succeeded.
+
+**Find the launchers folder for *this* Python** (works on Windows, macOS, and Linux):
 
 ```bash
+python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+```
+
+That directory should contain `torqa` (or `torqa.exe` on Windows). Add it to your user `PATH` if needed, **or** activate the venv you installed into (activation usually prepends that folder to `PATH` automatically).
+
+**Same CLI without fixing PATH** — call the module entry (always uses the current interpreter):
+
+```bash
+python -m torqa --version
 python -m torqa build examples/workspace_minimal/app.tq
 ```
 
-Equivalent low-level form:
+Equivalent low-level form (same `main()` as the `torqa` script):
 
 ```bash
 python -m src.cli.main build examples/workspace_minimal/app.tq
 ```
 
-Add `…\Python\pythoncore-*\Scripts` to your user `PATH` if you prefer typing `torqa` directly.
+Use **`torqa` directly** once `Scripts`/`bin` is on PATH — that is the supported primary experience after install.
 
 ## See also
 
+- **Canonical try map (P132):** [TRY_TORQA.md](TRY_TORQA.md)
 - **After first build:** [FIRST_PROJECT.md](FIRST_PROJECT.md)
+- **Product fit & limits:** [WHAT_TORQA_DOES_BEST.md](WHAT_TORQA_DOES_BEST.md) · [KNOWN_LIMITS.md](KNOWN_LIMITS.md)
 - **Maturity / expectations:** [../STATUS.md](../STATUS.md)
 - **Releases & versions:** [RELEASE_AND_VERSIONING.md](RELEASE_AND_VERSIONING.md)

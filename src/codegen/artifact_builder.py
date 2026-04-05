@@ -6,6 +6,15 @@ from html import escape as html_escape
 from typing import Any, Dict, List, Sequence, Tuple
 
 from src.ir.canonical_ir import IRGoal
+from src.projection.projection_contract import (
+    TARGET_STACK_PYTHON_STUB,
+    TARGET_STACK_RUST_STUB,
+    TARGET_STACK_SQL_SURFACE,
+    TARGET_STACK_TYPESCRIPT_IR_STUB,
+    TARGET_STACK_TYPESCRIPT_WEBAPP,
+    build_p124_projection_manifest_artifact,
+    enrich_artifact_with_torqa_projection,
+)
 from src.projection.projection_strategy import ProjectionPlan, ProjectionTarget
 from src.projection.stub_paths_layout import effective_stub_paths_for_goal
 from src.projection.extra_artifacts import merge_extra_projection_artifacts
@@ -688,11 +697,22 @@ def generate_stub_artifact(goal: IRGoal, target: ProjectionTarget) -> Dict[str, 
         stub_key = "cpp"
     fn = paths.get(stub_key) or paths.get("cpp", "generated/cpp/main.cpp")
     files = [(fn, content)]
-    return {
+    art: Dict[str, Any] = {
         "target_language": lang,
         "purpose": purpose,
         "files": [{"filename": f, "content": c} for f, c in files],
     }
+    stack_map = {
+        "rust": TARGET_STACK_RUST_STUB,
+        "python": TARGET_STACK_PYTHON_STUB,
+        "sql": TARGET_STACK_SQL_SURFACE,
+        "typescript": TARGET_STACK_TYPESCRIPT_IR_STUB,
+        "go": "go_language_stub",
+        "kotlin": "kotlin_language_stub",
+        "cpp": "cpp_language_stub",
+    }
+    enrich_artifact_with_torqa_projection(art, target_stack=stack_map.get(lang, f"{lang}_language_stub"))
+    return art
 
 
 def _generate_website_artifact(goal: IRGoal, plan: Dict[str, Any]) -> Dict[str, Any]:
@@ -928,12 +948,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
                 ir_goal_server_typescript_stub(goal),
             )
         )
-    return {
+    web: Dict[str, Any] = {
         "target_language": "typescript",
         "purpose": "frontend_surface",
         "generation_profile": dict(plan.get("website_generation_profile", {})),
         "files": [{"filename": fn, "content": content} for fn, content in files],
     }
+    enrich_artifact_with_torqa_projection(web, target_stack=TARGET_STACK_TYPESCRIPT_WEBAPP)
+    return web
 
 
 def validate_generated_artifacts(artifacts: Sequence[Dict[str, Any]]) -> List[str]:
@@ -1019,4 +1041,5 @@ def generate_all_artifacts(ir_goal: IRGoal, projection_plan: ProjectionPlan) -> 
         if _target_key(t) == website_key:
             continue
         artifacts.append(generate_stub_artifact(ir_goal, t))
+    artifacts.append(build_p124_projection_manifest_artifact(ir_goal, artifacts))
     return merge_extra_projection_artifacts(ir_goal, projection_plan, artifacts)

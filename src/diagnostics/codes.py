@@ -39,6 +39,15 @@ PX_SEM_UNKNOWN_EFFECT = "PX_SEM_UNKNOWN_EFFECT"
 PX_SEM_LOGICAL_OPERAND = "PX_SEM_LOGICAL_OPERAND"
 PX_SEM_COMPARISON = "PX_SEM_COMPARISON"
 
+# P112: IR logic (reachability, ordering, termination, metadata cross-checks)
+PX_SEM_LOGIC_UNREACHABLE = "PX_SEM_LOGIC_UNREACHABLE"
+PX_SEM_LOGIC_NON_TERMINATING = "PX_SEM_LOGIC_NON_TERMINATING"
+PX_SEM_LOGIC_EFFECT_ORDER = "PX_SEM_LOGIC_EFFECT_ORDER"
+PX_SEM_LOGIC_MISSING_EFFECT = "PX_SEM_LOGIC_MISSING_EFFECT"
+PX_SEM_LOGIC_CONTRADICTORY_PRECONDITION = "PX_SEM_LOGIC_CONTRADICTORY_PRECONDITION"
+PX_SEM_LOGIC_REQUIRED_EFFECT = "PX_SEM_LOGIC_REQUIRED_EFFECT"
+PX_SEM_LOGIC_TQ_MODEL_INPUT = "PX_SEM_LOGIC_TQ_MODEL_INPUT"
+
 # External / transport
 PX_SCHEMA_INVALID = "PX_SCHEMA_INVALID"
 PX_PARSE_FAILED = "PX_PARSE_FAILED"
@@ -46,6 +55,7 @@ PX_AI_NO_KEY = "PX_AI_NO_KEY"
 PX_AI_HTTP = "PX_AI_HTTP"
 PX_AI_JSON = "PX_AI_JSON"
 PX_AI_MAX_RETRIES = "PX_AI_MAX_RETRIES"
+PX_AI_QUALITY_GATE = "PX_AI_QUALITY_GATE"
 
 # Mutation API
 PX_MUTATION_UNSUPPORTED = "PX_MUTATION_UNSUPPORTED"
@@ -110,6 +120,22 @@ def classify_message(message: str) -> str:
         return PX_SEM_LOGICAL_OPERAND
     if "comparison type mismatch" in m:
         return PX_SEM_COMPARISON
+    if m.startswith("IR logic: transition ") and "is unreachable" in m:
+        return PX_SEM_LOGIC_UNREACHABLE
+    if "postconditions are present but the transition chain does not end" in m:
+        return PX_SEM_LOGIC_NON_TERMINATING
+    if "start_session must appear before log_successful_login" in m or (
+        "log_successful_login is present but start_session is missing" in m
+    ):
+        return PX_SEM_LOGIC_EFFECT_ORDER
+    if "postcondition " in m and "required " in m and "effect(s) are missing" in m:
+        return PX_SEM_LOGIC_MISSING_EFFECT
+    if "contradictory preconditions" in m:
+        return PX_SEM_LOGIC_CONTRADICTORY_PRECONDITION
+    if "logic_required_effects" in m:
+        return PX_SEM_LOGIC_REQUIRED_EFFECT
+    if "metadata.source_map.tq_model" in m:
+        return PX_SEM_LOGIC_TQ_MODEL_INPUT
     if "unknown IR expression" in m or "Unsupported mutation_type" in m:
         return PX_IR_EXPR
     return "PX_UNSPECIFIED"

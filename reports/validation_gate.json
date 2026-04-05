@@ -2,7 +2,7 @@
   "cases": [
     {
       "category": "control_valid",
-      "detail": "written_files=24",
+      "detail": "written_files=25",
       "expect_accepted": true,
       "expect_reject_at": null,
       "expectation_mismatch": false,

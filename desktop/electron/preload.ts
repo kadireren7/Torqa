@@ -32,6 +32,17 @@ contextBridge.exposeInMainWorld("torqaShell", {
       { ok: true } | { ok: false; error: string }
     >,
   torqaRun: (req: TorqaRequest) => ipcRenderer.invoke("torqa:run", req),
+  getLlmState: () =>
+    ipcRenderer.invoke("llm:getState") as Promise<{
+      provider: string;
+      haveOpenAi: boolean;
+      haveAnthropic: boolean;
+      haveGoogle: boolean;
+    }>,
+  setLlmProvider: (p: string) =>
+    ipcRenderer.invoke("llm:setProvider", p) as Promise<{ ok: true } | { ok: false; error: string }>,
+  setLlmApiKey: (slot: "openai" | "anthropic" | "google", key: string | null) =>
+    ipcRenderer.invoke("llm:setKey", slot, key) as Promise<{ ok: true } | { ok: false; error: string }>,
   startVitePreview: (webappAbsolute: string, opts?: { openExternal?: boolean }) =>
     ipcRenderer.invoke("preview:startVite", webappAbsolute, opts ?? {}) as Promise<
       { ok: true; url: string; ready: true; port: number } | { ok: false; error: string; url?: string }
@@ -42,4 +53,16 @@ contextBridge.exposeInMainWorld("torqaShell", {
     ipcRenderer.invoke("demo:seedTq", workspace, which) as Promise<
       { ok: true; relativePath: string } | { ok: false; error: string }
     >,
+  trialGetInfo: () =>
+    ipcRenderer.invoke("trial:getInfo") as Promise<{
+      schema: number;
+      sessionId: string;
+      dataDirectory: string;
+      eventsFile: string;
+      feedbackDirectory: string;
+    }>,
+  trialRecordEvent: (payload: { type: string; detail?: Record<string, unknown> }) =>
+    ipcRenderer.invoke("trial:recordEvent", payload) as Promise<{ ok: true } | { ok: false; error: string }>,
+  trialSaveFeedback: (body: { useful: string | null; failureCategory: string | null; comment: string | null }) =>
+    ipcRenderer.invoke("trial:saveFeedback", body) as Promise<{ ok: true; path: string } | { ok: false; error: string }>,
 });

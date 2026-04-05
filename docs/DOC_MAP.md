@@ -7,14 +7,19 @@ Grouped entry points. **Normative** technical contracts are marked.
 | Document | Role |
 |----------|------|
 | [README.md](../README.md) | What / why / status + links to Quick Start |
+| [TRY_TORQA.md](TRY_TORQA.md) | **P132:** single entry — official CLI / website / desktop, canonical flagship trial, prompt pipeline |
+| [WHAT_TORQA_DOES_BEST.md](WHAT_TORQA_DOES_BEST.md) | **P132:** one product story — strengths and fit |
+| [KNOWN_LIMITS.md](KNOWN_LIMITS.md) | **P132:** scope boundaries (trial UI, tokens, AI, hosting, surfaces) |
 | [TRIAL_READINESS.md](TRIAL_READINESS.md) | **P37:** first-trial expectations — ready vs limited, canonical flagship path |
 | [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) | Trial vs production: readiness verdict, what is missing, preconditions |
 | [examples/trial_ready/README.md](../examples/trial_ready/README.md) | **Trial package:** `torqa demo` + `torqa demo benchmark` / console / scripts |
 | [FLAGSHIP_DEMO.md](FLAGSHIP_DEMO.md) | **P35:** one public walkthrough — benchmark, gate, metrics, web/desktop |
-| [QUICKSTART.md](QUICKSTART.md) | **Canonical** install + first build (5 min) |
+| [QUICKSTART.md](QUICKSTART.md) | **Canonical** install + first build; **`torqa` on PATH**, `torqa --version`, `python -m torqa` fallback |
 | [FIRST_REAL_DEMO.md](FIRST_REAL_DEMO.md) | **P25:** flagship `.tq` → generated website (end-to-end) |
 | [BENCHMARK_FLAGSHIP.md](BENCHMARK_FLAGSHIP.md) | **P31:** canonical benchmark demo + fixtures (P32–P35 baseline) |
 | [BENCHMARK_COMPRESSION.md](BENCHMARK_COMPRESSION.md) | **P32:** token compression metrics + `torqa-compression-bench` |
+| [COMPARISON_REPORT.md](COMPARISON_REPORT.md) | **P136:** launch comparison suite — scenario families, metrics, reference vs live, `reports/comparison_report.json` |
+| [P138_DEMO_AND_VIDEO_KIT.md](P138_DEMO_AND_VIDEO_KIT.md) | **P138:** demo / video / launch kit — [`examples/demo_kit/`](../examples/demo_kit/README.md), snapshots, proof narrative |
 | [VALIDATION_GATE.md](VALIDATION_GATE.md) | **P33:** hard gate — accepted vs rejected by stage; `torqa-gate-proof` |
 | [FIRST_PROJECT.md](FIRST_PROJECT.md) | After Quick Start: own a `.tq`, optional packages |
 | [examples/torqa_self/README.md](../examples/torqa_self/README.md) | **Self-host policy:** grouped `.tq` bundles (hints, caps, ordering, language ref); registry + drift |
@@ -33,11 +38,14 @@ Grouped entry points. **Normative** technical contracts are marked.
 | [DEMO_LOCALHOST.md](DEMO_LOCALHOST.md) | Run generated Vite app locally |
 | [DEMO_SURFACES.md](DEMO_SURFACES.md) | **P34:** Web UI + Desktop demo launch and what to show |
 | [desktop/README.md](../desktop/README.md) | Official TORQA Desktop (Electron; `torqa-desktop`) |
-| [P71_DESKTOP_OFFICIAL.md](P71_DESKTOP_OFFICIAL.md) | Historical desktop parity notes (superseded by P73 for surface split) |
+| [P133_DESKTOP_DISTRIBUTION.md](P133_DESKTOP_DISTRIBUTION.md) | **P133:** Windows NSIS installer build, metadata, trial QA checklist |
+| [P135_TRIAL_FEEDBACK.md](P135_TRIAL_FEEDBACK.md) | **P135:** Local trial telemetry + optional feedback files; privacy; maintainer review |
+| [P137_TRIAL_QUALITY_AUDIT.md](P137_TRIAL_QUALITY_AUDIT.md) | **P137:** Pre-trial quality/reliability audit checklist + high-severity UX/doc fixes |
+| [P71_DESKTOP_OFFICIAL.md](P71_DESKTOP_OFFICIAL.md) | **Historical:** Electron vs legacy Tk gap audit — **current truth:** [P73_PRODUCT_SURFACES.md](P73_PRODUCT_SURFACES.md) + [desktop/README.md](../desktop/README.md) |
 | [website/README.md](../website/README.md) | Official marketing site (`npm run build` → `website/dist/site/` → `GET /`; host: `website/server/`) |
 | [P72_WEBSITE_OFFICIAL.md](P72_WEBSITE_OFFICIAL.md) | Website vs host; `/desktop` updated in P73 |
 | [P73_PRODUCT_SURFACES.md](P73_PRODUCT_SURFACES.md) | **P73:** One website, one desktop; legacy UI removed |
-| [UI_SURFACE_RULES.md](UI_SURFACE_RULES.md) | **P36:** Website vs Desktop vs `/console` — purpose and layout rules |
+| [UI_SURFACE_RULES.md](UI_SURFACE_RULES.md) | **P36 + P73:** marketing site **`/`** vs native **`torqa-desktop`**; **`/console` → `/`** (no browser lab) |
 
 ## Product direction (non-normative wire)
 
@@ -101,6 +109,8 @@ Grouped entry points. **Normative** technical contracts are marked.
 | [archive/precursor_and_plans/](archive/precursor_and_plans/) | Kural v0, rust drafts, one-off reports |
 
 ## Editor tooling (experimental)
+
+**Product authoring path:** CLI + **TORQA Desktop** — see [TRY_TORQA.md](TRY_TORQA.md). The docs below describe internal/editor experiments, not the primary trial surface.
 
 | Document | Role |
 |----------|------|

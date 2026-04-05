@@ -6,6 +6,8 @@
 
 This document maps **product goals** to **shipped artifacts** so teams can **try**, **see the difference**, and **repeat** the demo.
 
+**Official surfaces + canonical trial order:** [TRY_TORQA.md](TRY_TORQA.md).
+
 ---
 
 ## 1. Product — prompt → app → preview (stable)
@@ -56,7 +58,7 @@ This document maps **product goals** to **shipped artifacts** so teams can **try
 
 | Demo | Status / how |
 |------|----------------|
-| **Live (browser)** | `torqa-console` → site with **Try live** (`#try`) — prompt → token + illustrative `.tq` (no API key). |
+| **Live (browser)** | `torqa-console` → marketing site **`#try`** — optional API prompt → token + illustrative `.tq` (no API key when API unavailable). |
 | **Live (full pipeline)** | Desktop **Build from prompt** + optional **Generate .tq** (needs `OPENAI_API_KEY` for LLM step). |
 | **Script overlay** | `torqa-prompt-preview` — HTML overlay with token bars over iframe preview. |
 | **Recorded video** | *Definition of done:* publish a short screen recording (Desktop: prompt → success → preview; optional voiceover reading the positioning line). Place embed URL in [`website/src/App.tsx`](../website/src/App.tsx) `#product-video` when ready. |
@@ -65,22 +67,22 @@ This document maps **product goals** to **shipped artifacts** so teams can **try
 
 ## 5. Narrative — repeatability
 
-- **Website:** Hero + **Three-slide story** (`#story`) + **Not another AI tool** (`#position`) + **vs assistants** (`#compare`).
-- **README:** Links here + trial readiness.
+- **Website:** Sections `#hero`, `#quickstart`, `#try`, `#why`, `#proof`, `#desktop` (marketing site at **`/`** only; **`/console` → `/`**).
+- **README:** Links here + [`TRY_TORQA.md`](TRY_TORQA.md) + trial readiness.
 - **Desktop:** Success card explains **assistant NL (multi-vendor)** vs **TORQA deterministic pass**.
 
 ---
 
 ## Definition of done (insanlar deneyebiliyor, farkı anlıyor, tekrar etmek istiyor)
 
-- [ ] **Try:** A new visitor can run **Try live** (local server) *or* open Desktop and **Build from prompt** without reading the whole repo.
+- [ ] **Try:** A new visitor can use the site **`#try`** demo (local server) *or* open Desktop and **Build from prompt** without reading the whole repo ([`TRY_TORQA.md`](TRY_TORQA.md)).
 - [ ] **Understand:** They see **token / size** difference and read **execution layer vs chat** in one screen (website or Desktop success card).
 - [ ] **Repeat:** One command or one button reliably reproduces the happy path (`torqa demo`, `torqa-prompt-preview`, or Desktop prompt mode).
 - [ ] **Proof:** At least one maintainer can point to **token_proof.json** (and optional **api_metrics**) for numbers.
-- [ ] **Video:** Recorded walkthrough linked or embedded from `#product-video` when published.
+- [ ] **Video:** Recorded walkthrough linked from the site or README when published.
 
 ---
 
 ## Related docs
 
-- [`docs/TRIAL_READINESS.md`](TRIAL_READINESS.md) · [`docs/PROOF_SUMMARY.md`](PROOF_SUMMARY.md) · [`docs/P72_WEBSITE_OFFICIAL.md`](P72_WEBSITE_OFFICIAL.md)
+- [`docs/TRY_TORQA.md`](TRY_TORQA.md) · [`docs/TRIAL_READINESS.md`](TRIAL_READINESS.md) · [`docs/PROOF_SUMMARY.md`](PROOF_SUMMARY.md) · [`docs/P72_WEBSITE_OFFICIAL.md`](P72_WEBSITE_OFFICIAL.md)

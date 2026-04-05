@@ -66,18 +66,18 @@
     "transitions": [
       {
         "transition_id": "t_0001",
-        "effect_name": "log_successful_login",
-        "arguments": [
-          { "type": "identifier", "name": "username" },
-          { "type": "identifier", "name": "ip_address" }
-        ],
+        "effect_name": "start_session",
+        "arguments": [{ "type": "identifier", "name": "username" }],
         "from_state": "before",
         "to_state": "after"
       },
       {
         "transition_id": "t_0002",
-        "effect_name": "start_session",
-        "arguments": [{ "type": "identifier", "name": "username" }],
+        "effect_name": "log_successful_login",
+        "arguments": [
+          { "type": "identifier", "name": "username" },
+          { "type": "identifier", "name": "ip_address" }
+        ],
         "from_state": "after",
         "to_state": "after"
       }

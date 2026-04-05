@@ -22,12 +22,28 @@ def test_classify_landing():
     assert classify_tq_gen_intent("Marketing landing with hero and waitlist email") == "landing"
 
 
-def test_classify_crud_from_dashboard_wording():
-    assert classify_tq_gen_intent("Admin dashboard with KPI row and sidebar") == "crud"
+def test_classify_dashboard_from_kpi_wording():
+    assert classify_tq_gen_intent("Admin dashboard with KPI row and sidebar") == "dashboard"
 
 
-def test_classify_automation():
-    assert classify_tq_gen_intent("Approval workflow with webhook trigger") == "automation"
+def test_classify_approvals_workflow():
+    assert classify_tq_gen_intent("Approval workflow with webhook trigger") == "approvals"
+
+
+def test_classify_automation_without_approval_phrase():
+    assert classify_tq_gen_intent("Webhook trigger that enqueues a background job") == "automation"
+
+
+def test_classify_crm():
+    assert classify_tq_gen_intent("Salesforce-style CRM pipeline for deals and account owners") == "crm"
+
+
+def test_classify_onboarding():
+    assert classify_tq_gen_intent("SaaS onboarding wizard: welcome, profile, then billing step") == "onboarding"
+
+
+def test_resolve_forced_crm():
+    assert resolve_tq_gen_intent("waitlist and hero section", "crm") == "crm"
 
 
 def test_classify_generic():
@@ -44,5 +60,18 @@ def test_profile_rules_non_empty():
 
     from src.ai.tq_intent import TqGenIntent
 
-    for k in cast(tuple[TqGenIntent, ...], ("auth", "landing", "crud", "automation", "generic")):
+    for k in cast(
+        tuple[TqGenIntent, ...],
+        (
+            "auth",
+            "landing",
+            "crud",
+            "automation",
+            "crm",
+            "onboarding",
+            "approvals",
+            "dashboard",
+            "generic",
+        ),
+    ):
         assert "requires" in profile_rules_markdown(k)

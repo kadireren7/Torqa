@@ -19,7 +19,7 @@ This is the **single walkthrough** for TORQA’s first **public-quality** demo p
 | **1 · Semantic compression** | A short `.tq` plus IR carries the same intent as a longer natural-language task spec (`BENCHMARK_TASK.md`). Metrics quantify **task vs surface** and **surface vs generated** scale (see P32). |
 | **2 · Hard validation gate** | Invalid bundles never complete a clean accept path: parse and validate stop bad input before projection. The **gate proof** manifest encodes expected reject stages (P33). |
 
-Together with **generated/webapp** and the **Web/Desktop** consoles, this is the “real system” story—not an internal language sketch.
+Together with **generated/webapp**, the **marketing site** (`torqa-console` **`/`**), and **TORQA Desktop** (`torqa-desktop`), this is the “real system” story—not an internal language sketch. (**`/console`** redirects to **`/`** — no in-browser IR lab.)
 
 ---
 

@@ -66,6 +66,34 @@ HINTS_BY_CODE: Dict[str, HintPayload] = {
         "hint": "A transition reads world state that must be guaranteed before it runs; add matching preconditions.",
         "doc": "docs/FORMAL_CORE.md#43-well-formedness-phase",
     },
+    "PX_SEM_LOGIC_UNREACHABLE": {
+        "hint": "Each transition's from_state must match the current control state σ after the previous step; reorder or fix states.",
+        "doc": "docs/FORMAL_CORE.md#43-well-formedness-phase",
+    },
+    "PX_SEM_LOGIC_NON_TERMINATING": {
+        "hint": "With postconditions, the last transition must leave σ='after' (prototype AEM schedule).",
+        "doc": "src/execution/ir_execution.py",
+    },
+    "PX_SEM_LOGIC_EFFECT_ORDER": {
+        "hint": "List start_session before log_successful_login in transitions[]; session must exist before audit log.",
+        "doc": "docs/TQ_SURFACE_MAPPING.md",
+    },
+    "PX_SEM_LOGIC_MISSING_EFFECT": {
+        "hint": "Add the missing transition effect_name(s) implied by the postcondition, or remove/simplify the postcondition.",
+        "doc": "docs/FORMAL_CORE.md",
+    },
+    "PX_SEM_LOGIC_CONTRADICTORY_PRECONDITION": {
+        "hint": "All preconditions must hold together; remove duplicate equality constraints or align literal values.",
+        "doc": "docs/FORMAL_CORE.md#43-well-formedness-phase",
+    },
+    "PX_SEM_LOGIC_REQUIRED_EFFECT": {
+        "hint": "metadata.source_map.logic_required_effects lists effect names that must appear in transitions[].",
+        "doc": "src/semantics/ir_logic_validation.py",
+    },
+    "PX_SEM_LOGIC_TQ_MODEL_INPUT": {
+        "hint": "Every tq_model field name must match an ir_goal.inputs[].name (fix the model or inputs list).",
+        "doc": "src/semantics/ir_logic_validation.py",
+    },
     # --- .tq surface (representative PX_TQ_*; unknown codes fall back to tq_parse_extras default) ---
     "PX_TQ_UNKNOWN_FLOW_STEP": {
         "hint": "Use two spaces + create session, emit login_success, or emit login_success when/if <ident> (same guard; see docs/TQ_SURFACE_MAPPING.md P27).",

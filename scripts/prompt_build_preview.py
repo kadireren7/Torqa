@@ -263,7 +263,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--prompt", type=str, default="", help="Inline prompt (or use --prompt-file / stdin)")
     p.add_argument("--prompt-file", type=Path, default=None, help="Read UTF-8 prompt from file")
     p.add_argument("--out", type=str, default="torqa_generated_out", help="Materialize output dir under workspace")
-    p.add_argument("--gen-category", type=str, default=None, choices=["landing", "crud", "automation"])
+    p.add_argument(
+        "--gen-category",
+        type=str,
+        default=None,
+        choices=["landing", "crud", "automation", "crm", "onboarding", "approvals", "dashboard"],
+    )
     p.add_argument("--engine-mode", type=str, default="python_only")
     p.add_argument("--preview-port", type=int, default=5173)
     p.add_argument("--no-preview", action="store_true", help="Skip npm install / dev server")

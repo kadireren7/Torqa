@@ -35,6 +35,22 @@ def test_website_homepage_p36(client):
     assert b"site-theme-toggle" in r.content
 
 
+def test_website_spa_shell_routes_p134(client):
+    """Client-side routes must return the same HTML shell as ``/`` (torqa-console)."""
+    for path in ("/product", "/proof", "/try", "/docs", "/pricing", "/contact"):
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert b"data-torqa-surface=\"website\"" in r.content
+        assert b"id=\"root\"" in r.content
+
+
+def test_openapi_ui_not_at_root_docs_p134(client):
+    """Marketing owns ``/docs``; Swagger lives under ``/api/openapi/docs``."""
+    r = client.get("/api/openapi/docs")
+    assert r.status_code == 200
+    assert b"swagger" in r.content.lower() or b"openapi" in r.content.lower()
+
+
 def test_console_redirects_to_marketing_site(client):
     r = client.get("/console", follow_redirects=False)
     assert r.status_code == 301

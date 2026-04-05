@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="1200" height="520" role="img" aria-label="TORQA desktop demo flow">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#161b22"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="520" fill="url(#bg)"/>
+  <text x="600" y="48" fill="#e6edf3" font-family="system-ui,Segoe UI,sans-serif" font-size="22" font-weight="600" text-anchor="middle">TORQA  desktop video flow</text>
+  <text x="600" y="74" fill="#8b949e" font-family="system-ui,Segoe UI,sans-serif" font-size="13" text-anchor="middle">P138 demo kit ù reference diagrams, not live UI</text>
+  <g font-family="system-ui,Segoe UI,sans-serif" filter="url(#shadow)">
+    <rect x="40" y="110" width="200" height="72" rx="10" fill="#21262d" stroke="#30363d"/>
+    <text x="140" y="145" fill="#58a6ff" font-size="14" font-weight="600" text-anchor="middle">1 ù Folder</text>
+    <text x="140" y="166" fill="#8b949e" font-size="11" text-anchor="middle">Choose workspace</text>
+    <path d="M 250 146 L 290 146" stroke="#484f58" stroke-width="2"/>
+    <rect x="300" y="110" width="200" height="72" rx="10" fill="#21262d" stroke="#30363d"/>
+    <text x="400" y="145" fill="#58a6ff" font-size="14" font-weight="600" text-anchor="middle">2 ù Prompt</text>
+    <text x="400" y="166" fill="#8b949e" font-size="11" text-anchor="middle">NL ù generate / app</text>
+    <path d="M 510 146 L 550 146" stroke="#484f58" stroke-width="2"/>
+    <rect x="560" y="110" width="200" height="72" rx="10" fill="#21262d" stroke="#30363d"/>
+    <text x="660" y="145" fill="#58a6ff" font-size="14" font-weight="600" text-anchor="middle">3 ù Build</text>
+    <text x="660" y="166" fill="#8b949e" font-size="11" text-anchor="middle">Validate + materialize</text>
+    <path d="M 770 146 L 810 146" stroke="#484f58" stroke-width="2"/>
+    <rect x="820" y="110" width="200" height="72" rx="10" fill="#21262d" stroke="#30363d"/>
+    <text x="920" y="145" fill="#58a6ff" font-size="14" font-weight="600" text-anchor="middle">4 ù Preview</text>
+    <text x="920" y="166" fill="#8b949e" font-size="11" text-anchor="middle">Vite embedded / browser</text>
+    <rect x="190" y="260" width="280" height="88" rx="10" fill="#21262d" stroke="#3fb950"/>
+    <text x="330" y="298" fill="#3fb950" font-size="14" font-weight="600" text-anchor="middle">5a ù Proof panel</text>
+    <text x="330" y="320" fill="#8b949e" font-size="11" text-anchor="middle">Activity ù diagnostics ù token hints</text>
+    <text x="330" y="336" fill="#8b949e" font-size="11" text-anchor="middle">Per-run telemetry</text>
+    <rect x="530" y="260" width="280" height="88" rx="10" fill="#21262d" stroke="#d29922"/>
+    <text x="670" y="298" fill="#d29922" font-size="14" font-weight="600" text-anchor="middle">5b ù Comparison</text>
+    <text x="670" y="320" fill="#8b949e" font-size="11" text-anchor="middle">Models tab ù reference table</text>
+    <text x="670" y="336" fill="#8b949e" font-size="11" text-anchor="middle">P136 summary + token proof</text>
+    <path d="M 920 182 L 920 220 L 330 220 L 330 252" fill="none" stroke="#484f58" stroke-width="2"/>
+    <path d="M 920 182 L 920 220 L 670 220 L 670 252" fill="none" stroke="#484f58" stroke-width="2"/>
+  </g>
+  <text x="600" y="420" fill="#6e7681" font-family="system-ui,Segoe UI,sans-serif" font-size="12" text-anchor="middle">Open repo root in Desktop to load reports/token_proof.json and comparison_report.json</text>
+  <text x="600" y="442" fill="#6e7681" font-family="system-ui,Segoe UI,sans-serif" font-size="12" text-anchor="middle">examples/demo_kit ù docs/P138_DEMO_AND_VIDEO_KIT.md</text>
+</svg>

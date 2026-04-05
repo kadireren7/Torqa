@@ -1,21 +1,22 @@
 """
-``torqa`` CLI entrypoint (``pyproject.toml`` console script -> ``main()``).
+``torqa`` CLI entrypoint (``pyproject.toml`` ``[project.scripts]`` → ``torqa`` on PATH after ``pip install``).
 
-Primary flow: ``build`` (then ``project``) materialize to disk; ``surface`` (.tq/.pxir -> IR JSON + diagnostics),
-``validate`` / ``bundle-lint`` (IR bundle JSON only). Other subcommands are tooling (run, patch,
-AI, maintainer checks).
+Same code path as ``python -m torqa`` (``torqa/__main__.py``). Primary flow: ``build`` / ``project``;
+``surface`` (.tq/.pxir → IR JSON + diagnostics); ``validate`` / ``bundle-lint`` (IR bundle JSON only).
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.ai.adapter import suggest_ir_bundle_from_prompt
 from src.ai.tq_adapter import suggest_tq_from_prompt
+from src.benchmarks.token_estimate import ESTIMATOR_ID, estimate_tokens
 from src.control.ir_mutation_json import try_apply_ir_mutations_from_json
 from src.control.patch_preview import build_patch_preview_report
 from src.diagnostics import codes as diag_codes
@@ -56,6 +57,15 @@ from src.torqa_self.validate_open_hints_ir import (
 )
 
 
+def _cli_package_version() -> str:
+    try:
+        from importlib.metadata import version
+
+        return version("torqa")
+    except Exception:
+        return "unknown"
+
+
 def _load_bundle(path: Path) -> Dict[str, Any]:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
@@ -65,6 +75,81 @@ def _emit(obj: Any, args: argparse.Namespace, *, stream=None) -> None:
     stream = stream or sys.stdout
     indent = None if getattr(args, "json", False) else 2
     stream.write(json.dumps(obj, indent=indent, default=str) + "\n")
+
+
+def add_tq_quality_gate_arg(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument(
+        "--no-tq-quality-gate",
+        action="store_true",
+        help=(
+            "Disable P115/P122 post-validation quality floor (parser and diagnostics still apply). "
+            "Also set TORQA_DISABLE_TQ_QUALITY_GATE=1 to disable globally."
+        ),
+    )
+
+
+def tq_quality_gate_enabled(args: argparse.Namespace) -> bool:
+    if (os.environ.get("TORQA_DISABLE_TQ_QUALITY_GATE") or "").strip().lower() in ("1", "true", "yes"):
+        return False
+    return not bool(getattr(args, "no_tq_quality_gate", False))
+
+
+def add_tq_gen_phases_arg(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument(
+        "--tq-gen-phases",
+        type=int,
+        choices=[1, 2, 3],
+        default=None,
+        metavar="N",
+        help=(
+            "P116: LLM passes for .tq generation (1=single shot, 2=base+refine, 3=base+structure+polish). "
+            "Default: env TORQA_TQ_GEN_PHASES or 3."
+        ),
+    )
+
+
+def add_evolve_args(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument(
+        "--evolve-mode",
+        choices=["improve", "add-feature"],
+        default=None,
+        help="P117: refine (improve) or extend (add-feature) an existing .tq; requires --evolve-from",
+    )
+    ap.add_argument(
+        "--evolve-from",
+        type=str,
+        default=None,
+        metavar="REL_PATH",
+        help="Workspace-relative path to the current .tq (use with --evolve-mode)",
+    )
+
+
+def _resolve_evolution_for_workspace(
+    args: argparse.Namespace, root: Path
+) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
+    from src.ai.tq_edition_manifest import peek_next_edition
+    from src.ai.tq_evolve import evolution_dict_for_suggest, normalize_evolve_mode
+
+    em = normalize_evolve_mode(getattr(args, "evolve_mode", None))
+    efrom = (getattr(args, "evolve_from", None) or "").strip().replace("\\", "/")
+    if not em:
+        if efrom:
+            raise ValueError("--evolve-from requires --evolve-mode")
+        return None, None
+    if not efrom:
+        raise ValueError("--evolve-mode requires --evolve-from REL_PATH")
+    root_r = root.resolve()
+    src = (root_r / efrom).resolve()
+    try:
+        src.relative_to(root_r)
+    except ValueError as ex:
+        raise ValueError("--evolve-from must stay inside the workspace") from ex
+    if not src.is_file():
+        raise FileNotFoundError(f"not a file: {efrom}")
+    body = src.read_text(encoding="utf-8")
+    ed = peek_next_edition(root_r, for_evolve=True)
+    ev = evolution_dict_for_suggest(mode=em, source_rel=efrom, edition=ed, current_tq=body)
+    return ev, efrom
 
 
 def _open_json_bundle_file(path: Path) -> tuple[Dict[str, Any] | None, Dict[str, Any] | None]:
@@ -407,6 +492,23 @@ def cmd_project(args: argparse.Namespace) -> int:
         _merge_pipeline_json(payload, args, pipeline_trace)
     if getattr(args, "json", False) and summary.get("projection_surfaces") is not None:
         payload["projection_surfaces"] = summary["projection_surfaces"]
+    if getattr(args, "json", False) and ok and (diag is None or bool(diag.get("ok", False))):
+        try:
+            tq_text = src_path.read_text(encoding="utf-8")
+            tq_est = estimate_tokens(tq_text)
+            ir_compact = json.dumps(bundle, separators=(",", ":"), ensure_ascii=False)
+            ir_est = estimate_tokens(ir_compact)
+            denom = max(1, ir_est)
+            payload["token_hint"] = {
+                "prompt_token_estimate": ir_est,
+                "tq_token_estimate": tq_est,
+                "reduction_percent": round(100.0 * (1.0 - tq_est / denom), 2),
+                "compression_ratio": round(ir_est / max(1, tq_est), 4),
+                "estimator_id": ESTIMATOR_ID,
+                "comparison_basis": "ir_bundle_json",
+            }
+        except OSError:
+            pass
     if diag is not None and not diag.get("ok", False):
         _emit_project_payload(args, payload, sys.stderr)
         return 1
@@ -565,17 +667,32 @@ def cmd_generate_tq(args: argparse.Namespace) -> int:
             stream=sys.stderr,
         )
         return 1
+    try:
+        evolution, _evo_from = _resolve_evolution_for_workspace(args, root)
+    except (ValueError, OSError, FileNotFoundError) as ex:
+        _emit(
+            {"ok": False, "failure_axis": "setup", "stage": "bad_evolve_args", "message": str(ex)},
+            args,
+            stream=sys.stderr,
+        )
+        return 1
     gc = getattr(args, "gen_category", None)
+    lp = getattr(args, "llm_provider", None)
     res = suggest_tq_from_prompt(
         prompt,
         workspace_root=root,
-        max_retries=int(getattr(args, "max_retries", 3) or 3),
+        max_retries=getattr(args, "max_retries", None),
         model=getattr(args, "model", None),
         gen_category=gc.strip() if isinstance(gc, str) and gc.strip() else None,
+        llm_provider=lp.strip() if isinstance(lp, str) and lp.strip() else None,
+        llm_fallback=not bool(getattr(args, "no_llm_fallback", False)),
+        tq_quality_gate=tq_quality_gate_enabled(args),
+        tq_gen_phases=getattr(args, "tq_gen_phases", None),
+        evolution=evolution,
+        llm_gen_mode=getattr(args, "llm_gen_mode", None),
+        fallback_model=getattr(args, "fallback_model", None),
     )
     if res.get("ok") and isinstance(res.get("tq_text"), str):
-        from src.benchmarks.token_estimate import estimate_tokens
-
         tq_body = str(res["tq_text"])
         pt_est = estimate_tokens(prompt)
         tq_est = estimate_tokens(tq_body)
@@ -584,6 +701,9 @@ def cmd_generate_tq(args: argparse.Namespace) -> int:
             "prompt_token_estimate": pt_est,
             "tq_token_estimate": tq_est,
             "reduction_percent": round(100.0 * (1.0 - tq_est / max(1, pt_est)), 2),
+            "compression_ratio": round(pt_est / max(1, tq_est), 4),
+            "estimator_id": ESTIMATOR_ID,
+            "comparison_basis": "nl_prompt",
         }
         res = out
     if not res.get("ok"):
@@ -601,8 +721,6 @@ def cmd_prompt_app(args: argparse.Namespace) -> int:
     IR bundle execution remains ``torqa run BUNDLE.json``.
     """
     from datetime import datetime, timezone
-
-    from src.benchmarks.token_estimate import estimate_tokens
 
     prompt = (getattr(args, "prompt", "") or "").strip()
     if getattr(args, "prompt_stdin", False):
@@ -637,19 +755,49 @@ def cmd_prompt_app(args: argparse.Namespace) -> int:
     stages: Dict[str, Any] = {}
     use_json = bool(getattr(args, "json", False))
 
+    try:
+        evolution, evolve_from_norm = _resolve_evolution_for_workspace(args, root)
+    except (ValueError, OSError, FileNotFoundError) as ex:
+        _emit(
+            {"ok": False, "failure_axis": "setup", "stage": "bad_evolve_args", "message": str(ex)},
+            args,
+            stream=sys.stderr,
+        )
+        return 1
+
     gc = getattr(args, "gen_category", None)
+    lp = getattr(args, "llm_provider", None)
     gen = suggest_tq_from_prompt(
         prompt,
         workspace_root=root,
-        max_retries=int(getattr(args, "max_retries", 3) or 3),
+        max_retries=getattr(args, "max_retries", None),
         model=getattr(args, "model", None),
         gen_category=gc.strip() if isinstance(gc, str) and gc.strip() else None,
+        llm_provider=lp.strip() if isinstance(lp, str) and lp.strip() else None,
+        llm_fallback=not bool(getattr(args, "no_llm_fallback", False)),
+        tq_quality_gate=tq_quality_gate_enabled(args),
+        tq_gen_phases=getattr(args, "tq_gen_phases", None),
+        evolution=evolution,
+        llm_gen_mode=getattr(args, "llm_gen_mode", None),
+        fallback_model=getattr(args, "fallback_model", None),
     )
     stages["generate"] = {
         "ok": bool(gen.get("ok")),
         "attempts": gen.get("attempts", []),
         "tq_gen_intent": gen.get("tq_gen_intent"),
         "api_metrics": gen.get("api_metrics"),
+        "llm_provider": gen.get("llm_provider"),
+        "llm_fallback_used": gen.get("llm_fallback_used"),
+        "llm_same_provider_fallback_used": gen.get("llm_same_provider_fallback_used"),
+        "llm_generation_profile": gen.get("llm_generation_profile"),
+        "llm_comparison_metrics": gen.get("llm_comparison_metrics"),
+        "tq_quality_score": gen.get("tq_quality_score"),
+        "tq_gen_phases": gen.get("tq_gen_phases"),
+        "phase_trace": gen.get("phase_trace"),
+        "evolution": gen.get("evolution"),
+        # P130: same structured recovery telemetry as ``generate-tq`` (desktop / automation).
+        "reliability": gen.get("reliability"),
+        "reliability_pipeline": gen.get("reliability_pipeline"),
     }
     if not gen.get("ok"):
         err_body = {k: v for k, v in gen.items() if k != "tq_text"}
@@ -657,19 +805,49 @@ def cmd_prompt_app(args: argparse.Namespace) -> int:
         _emit({"ok": False, "stages": stages, **err_body}, args, stream=sys.stderr)
         return 1
 
+    from src.ai.tq_edition_manifest import peek_next_edition, register_edition
+    from src.ai.tq_evolve import normalize_evolve_mode
+
     tq_text = str(gen["tq_text"])
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    rel_name = f"app_prompt_{ts}.tq"
+    em = normalize_evolve_mode(getattr(args, "evolve_mode", None))
+    if em:
+        edn = peek_next_edition(root, for_evolve=True)
+        rel_name = f"app_edition_{edn:03d}_{ts}.tq"
+    else:
+        rel_name = f"app_prompt_{ts}.tq"
     tq_path = (root / rel_name).resolve()
     tq_path.write_text(tq_text, encoding="utf-8")
 
+    written_ed = register_edition(
+        root,
+        relative_path=rel_name.replace("\\", "/"),
+        kind=str(em) if em else "initial",
+        parent_relative=evolve_from_norm if em else None,
+    )
+
     pt_est = estimate_tokens(prompt)
     tq_est = estimate_tokens(tq_text)
-    stages["write_tq"] = {"ok": True, "relative_path": rel_name.replace("\\", "/")}
+    stages["write_tq"] = {
+        "ok": True,
+        "relative_path": rel_name.replace("\\", "/"),
+        "edition": written_ed,
+        **(
+            {
+                "evolution_mode": em,
+                "evolved_from": evolve_from_norm,
+            }
+            if em
+            else {}
+        ),
+    }
     stages["token_hint"] = {
         "prompt_token_estimate": pt_est,
         "tq_token_estimate": tq_est,
         "reduction_percent": round(100.0 * (1.0 - tq_est / max(1, pt_est)), 2),
+        "compression_ratio": round(pt_est / max(1, tq_est), 4),
+        "estimator_id": ESTIMATOR_ID,
+        "comparison_basis": "nl_prompt",
     }
 
     pipeline_trace: List[Dict[str, Any]] | None = [] if use_json else None
@@ -1199,12 +1377,18 @@ def main(argv: list[str] | None = None) -> int:
         "  torqa package publish examples/packages/minimal_auth --registry ./registry\n"
         "  torqa package fetch torqa/minimal-auth 1.0.0 --registry ./registry --out ./fetched\n"
         "  torqa package list --registry ./registry\n"
+        "  torqa --version\n"
         "\nSee docs/QUICKSTART.md for install and first build.\n",
     )
     p.add_argument(
         "--json",
         action="store_true",
         help="Emit compact JSON (place before subcommand: torqa --json validate FILE)",
+    )
+    p.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {_cli_package_version()}",
     )
 
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -1215,6 +1399,41 @@ def main(argv: list[str] | None = None) -> int:
             type=str,
             default=default_engine,
             choices=["rust_preferred", "python_only", "rust_only"],
+        )
+
+    def add_llm_provider_args(ap: argparse.ArgumentParser) -> None:
+        ap.add_argument(
+            "--llm-provider",
+            type=str,
+            default=None,
+            choices=["openai", "anthropic", "google"],
+            help=(
+                "LLM vendor for .tq generation (default: TORQA_LLM_PROVIDER or openai). "
+                "Keys: OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY or GEMINI_API_KEY."
+            ),
+        )
+        ap.add_argument(
+            "--no-llm-fallback",
+            action="store_true",
+            help="Do not fall back to OpenAI if the selected provider fails",
+        )
+
+    def add_p129_llm_strategy_args(ap: argparse.ArgumentParser) -> None:
+        ap.add_argument(
+            "--llm-gen-mode",
+            type=str,
+            default=None,
+            choices=["balanced", "cheapest", "fastest", "highest_quality", "most_reliable"],
+            help=(
+                "P129: preset for default model tier, phase count, and repair retries "
+                "(explicit --model / --max-retries / --tq-gen-phases override where set)."
+            ),
+        )
+        ap.add_argument(
+            "--fallback-model",
+            type=str,
+            default=None,
+            help="P129: optional same-provider model to try after the primary exhausts retries.",
         )
 
     pbuild = sub.add_parser(
@@ -1531,13 +1750,26 @@ def main(argv: list[str] | None = None) -> int:
         help="Workspace / project root (written .tq and output tree live here)",
     )
     papp.add_argument("--prompt-stdin", action="store_true", help="Read prompt from stdin (UTF-8)")
-    papp.add_argument("--max-retries", type=int, default=3)
+    papp.add_argument(
+        "--max-retries",
+        type=int,
+        default=None,
+        help="Repair rounds per phase (default: mode-based via --llm-gen-mode or 3 for balanced).",
+    )
     papp.add_argument("--model", type=str, default=None)
     papp.add_argument(
         "--gen-category",
         type=str,
         default=None,
-        choices=["landing", "crud", "automation"],
+        choices=[
+            "landing",
+            "crud",
+            "automation",
+            "crm",
+            "onboarding",
+            "approvals",
+            "dashboard",
+        ],
         help="Force .tq generation profile (overrides heuristic intent from prompt text)",
     )
     papp.add_argument(
@@ -1546,6 +1778,11 @@ def main(argv: list[str] | None = None) -> int:
         default="torqa_generated_out",
         help="Materialize under <workspace>/<out> (default: torqa_generated_out)",
     )
+    add_llm_provider_args(papp)
+    add_p129_llm_strategy_args(papp)
+    add_tq_quality_gate_arg(papp)
+    add_tq_gen_phases_arg(papp)
+    add_evolve_args(papp)
     add_engine_mode(papp)
     papp.set_defaults(func=cmd_prompt_app)
 
@@ -1559,13 +1796,26 @@ def main(argv: list[str] | None = None) -> int:
     pquick.add_argument("prompt", nargs="?", default="", help="Natural-language intent (or --prompt-stdin)")
     pquick.add_argument("--workspace", type=str, default=".", metavar="DIR", help="Project root (default: .)")
     pquick.add_argument("--prompt-stdin", action="store_true", help="Read prompt from stdin (UTF-8)")
-    pquick.add_argument("--max-retries", type=int, default=3)
+    pquick.add_argument(
+        "--max-retries",
+        type=int,
+        default=None,
+        help="Repair rounds per phase (default: mode-based or 3 for balanced).",
+    )
     pquick.add_argument("--model", type=str, default=None)
     pquick.add_argument(
         "--gen-category",
         type=str,
         default=None,
-        choices=["landing", "crud", "automation"],
+        choices=[
+            "landing",
+            "crud",
+            "automation",
+            "crm",
+            "onboarding",
+            "approvals",
+            "dashboard",
+        ],
         help="Force .tq generation profile (overrides heuristic intent from prompt text)",
     )
     pquick.add_argument(
@@ -1574,24 +1824,47 @@ def main(argv: list[str] | None = None) -> int:
         default="torqa_generated_out",
         help="Materialize under <workspace>/<out> (default: torqa_generated_out)",
     )
+    add_llm_provider_args(pquick)
+    add_p129_llm_strategy_args(pquick)
+    add_tq_quality_gate_arg(pquick)
+    add_tq_gen_phases_arg(pquick)
+    add_evolve_args(pquick)
     add_engine_mode(pquick)
     pquick.set_defaults(func=cmd_prompt_app)
 
     pgen = sub.add_parser(
         "generate-tq",
-        help="P76: LLM -> valid .tq text (parse + diagnostics; needs OPENAI_API_KEY; use --prompt-stdin)",
+        help="P76/P114: LLM -> valid .tq text (parse + diagnostics; API keys per --llm-provider; use --prompt-stdin)",
     )
     pgen.add_argument("--workspace", type=str, required=True, metavar="DIR", help="Workspace dir (for validation path)")
     pgen.add_argument("--prompt-stdin", action="store_true", help="Read natural-language prompt from stdin (UTF-8)")
-    pgen.add_argument("--max-retries", type=int, default=3)
+    pgen.add_argument(
+        "--max-retries",
+        type=int,
+        default=None,
+        help="Repair rounds per phase (default: mode-based or 3 for balanced).",
+    )
     pgen.add_argument("--model", type=str, default=None)
     pgen.add_argument(
         "--gen-category",
         type=str,
         default=None,
-        choices=["landing", "crud", "automation"],
+        choices=[
+            "landing",
+            "crud",
+            "automation",
+            "crm",
+            "onboarding",
+            "approvals",
+            "dashboard",
+        ],
         help="Force .tq generation profile (overrides heuristic intent from prompt text)",
     )
+    add_llm_provider_args(pgen)
+    add_p129_llm_strategy_args(pgen)
+    add_tq_quality_gate_arg(pgen)
+    add_tq_gen_phases_arg(pgen)
+    add_evolve_args(pgen)
     pgen.set_defaults(func=cmd_generate_tq)
 
     ppatch = sub.add_parser("patch", help="Apply JSON mutations to an IR bundle JSON file")

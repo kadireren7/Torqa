@@ -33,6 +33,34 @@ export type TorqaShellAPI = {
     workspace: string,
     which: "minimal" | "flagship",
   ) => Promise<{ ok: true; relativePath: string } | { ok: false; error: string }>;
+  /** P114: preferred LLM + optional encrypted keys (Electron). */
+  getLlmState: () => Promise<{
+    provider: string;
+    haveOpenAi: boolean;
+    haveAnthropic: boolean;
+    haveGoogle: boolean;
+  }>;
+  setLlmProvider: (p: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  setLlmApiKey: (
+    slot: "openai" | "anthropic" | "google",
+    key: string | null,
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** P135: local trial telemetry — Electron only. */
+  trialGetInfo: () => Promise<{
+    schema: number;
+    sessionId: string;
+    dataDirectory: string;
+    eventsFile: string;
+    feedbackDirectory: string;
+  }>;
+  trialRecordEvent: (
+    payload: { type: string; detail?: Record<string, unknown> },
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  trialSaveFeedback: (body: {
+    useful: string | null;
+    failureCategory: string | null;
+    comment: string | null;
+  }) => Promise<{ ok: true; path: string } | { ok: false; error: string }>;
 };
 
 declare global {

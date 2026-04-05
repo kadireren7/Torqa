@@ -2,6 +2,7 @@
   "generated/cpp/main.cpp",
   "generated/go/main.go",
   "generated/rust/main.rs",
+  "generated/torqa/p124_projection_manifest.json",
   "generated/webapp/README.md",
   "generated/webapp/index.html",
   "generated/webapp/package.json",

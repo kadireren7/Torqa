@@ -1,4 +1,4 @@
-"""``python -m torqa …`` → same entrypoint as the ``torqa`` CLI script."""
+"""``python -m torqa …`` → same ``main()`` as the ``torqa`` executable (``[project.scripts]``)."""
 
 from __future__ import annotations
 

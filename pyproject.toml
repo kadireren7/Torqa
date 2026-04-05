@@ -31,6 +31,8 @@ desktop-webview = [
     "pywebview>=4.4; sys_platform != 'win32'",
 ]
 
+# P121: Console scripts land next to the active Python (e.g. …/Scripts/torqa.exe on Windows).
+# After ``pip install -e .`` or ``pip install .``, run ``torqa`` or ``torqa --version`` (see docs/QUICKSTART.md).
 [project.scripts]
 torqa = "src.cli.main:main"
 torqa-console = "website.server.main:main"
@@ -39,6 +41,7 @@ torqa-compression-bench = "src.benchmarks.cli:main"
 torqa-token-measure = "src.benchmarks.token_measurement_cli:main"
 torqa-token-proof = "src.benchmarks.token_proof_cli:main"
 torqa-token-proof-real = "src.benchmarks.token_proof_real_cli:main"
+torqa-comparison-report = "src.benchmarks.comparison_report_cli:main"
 torqa-benchmark-initial = "src.benchmarks.benchmark_initial_cli:main"
 torqa-validation-gate = "src.benchmarks.validation_gate_cli:main"
 torqa-retry-stats = "src.benchmarks.retry_stats_cli:main"

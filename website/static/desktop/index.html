@@ -76,9 +76,12 @@
         page is only a pointer — the product site is on the home URL.
       </p>
       <ul>
-        <li>Install desktop dependencies from the repository once.</li>
-        <li>Launch the desktop from the same environment where TORQA is installed.</li>
-        <li>Use the guided first-run flow to open a sample workspace.</li>
+        <li>Install the TORQA Python package: <code>pip install -e .</code> at the repo root.</li>
+        <li>
+          <strong>Windows:</strong> run the TORQA Desktop setup <code>.exe</code> (from your trial package), or build it with
+          <code>npm run pack:win</code> in <code>desktop/</code>.
+        </li>
+        <li>Open the native app (not this browser tab). Pick a folder → prompt → Build. See <code>docs/P133_DESKTOP_DISTRIBUTION.md</code> in the repo.</li>
       </ul>
       <div class="actions">
         <a class="btn primary" href="/">Back to site</a>
