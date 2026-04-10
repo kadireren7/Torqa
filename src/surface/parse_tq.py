@@ -1,7 +1,7 @@
 """
 Deterministic subset of `.tq` human surface → canonical ``ir_goal`` bundle.
 
-**tq_v1 (strict)** — see ``docs/TQ_SURFACE_MAPPING.md``.
+**tq_v1 (strict)** — see ``TQ_SURFACE.md`` at the repository root.
 
 Header order: optional ``module``, then ``intent``, ``requires``, at most one ``forbid locked``,
 optional ``ensures session.created``, required ``result`` / ``result …``, then ``flow:``.
@@ -20,8 +20,8 @@ block must be blank or full-line ``#`` comments only.
 ``metadata.source_map.tq_includes`` lists paths in expansion order.
 
 **stub_path (optional, P28):** after ``requires``, zero or more lines ``stub_path <lang> <relpath>`` (single
-path token, no ``..``). Sets ``metadata.source_map.projection_stub_paths`` for codegen layout (see
-``examples/torqa/projection_stub_paths_policy.tq``).
+path token, no ``..``). Sets ``metadata.source_map.projection_stub_paths`` for optional downstream tooling (see
+``EXAMPLES.md``).
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def _parse_requires_clause(stripped: str, lineno: int) -> List[str]:
         raise TQParseError(
             "PX_TQ_UNRECOGNIZED_LINE",
             f"tq: unrecognized line outside flow: {stripped!r} (line {lineno})."
-            f"{_unrecognized_line_suffix(stripped)} See docs/TQ_AUTHOR_CHEATSHEET.md",
+            f"{_unrecognized_line_suffix(stripped)} See TQ_SURFACE.md.",
         )
     parts = stripped.split(None, 1)
     if len(parts) < 2 or not parts[1].strip():
@@ -131,7 +131,7 @@ def _primary_login_field(input_names: List[str]) -> str:
         "PX_TQ_NO_LOGIN_FIELD",
         "tq: requires needs a login field (not only password/ip_address). "
         "Fix: put username or email first, e.g. requires username, password. "
-        "That first non-password field is the primary for verify_* (see docs/TQ_AUTHOR_CHEATSHEET.md).",
+        "That first non-password field is the primary for verify_* (see TQ_SURFACE.md).",
     )
 
 
@@ -258,7 +258,7 @@ def _parse_flow_step_surface(step: str, lineno: int) -> Tuple[str, Optional[str]
         "PX_TQ_UNKNOWN_FLOW_STEP",
         f"tq: unsupported flow step {step!r}. "
         "Allowed: create session — emit login_success — emit login_success when/if <ident>. "
-        "Fix: spelling; see examples/torqa/templates/login_flow.tq",
+        "Fix: spelling; see EXAMPLES.md.",
     )
 
 
@@ -320,7 +320,7 @@ def expand_tq_includes(text: str, base_file: Path) -> Tuple[str, List[str]]:
             raise TQParseError(
                 "PX_TQ_INCLUDE_POSITION",
                 f"tq: include must appear after intent and before requires (line {lineno}). "
-                "See docs/TQ_SURFACE_MAPPING.md",
+                "See TQ_SURFACE.md",
             )
         rel = (m.group(1) or "").strip()
         if not rel:
@@ -441,7 +441,7 @@ def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
             "module (optional), surface torqa_rich v0 (optional), intent, requires, "
             "optional model:/validate:/effects:/stub_path, forbid locked (at most once), "
             "ensures session.created (optional), result (required), flow:. "
-            "See docs/TORQA_RICH_SURFACE.md and docs/TQ_AUTHOR_CHEATSHEET.md.",
+            "See TQ_SURFACE.md.",
         )
 
     lines = text.splitlines()
@@ -642,7 +642,7 @@ def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
             raise TQParseError(
                 "PX_TQ_UNRECOGNIZED_LINE",
                 f"tq: unrecognized line outside flow: {stripped!r} (line {lineno})."
-                f"{_unrecognized_line_suffix(stripped)} See docs/TQ_AUTHOR_CHEATSHEET.md",
+                f"{_unrecognized_line_suffix(stripped)} See TQ_SURFACE.md.",
             )
         i += 1
 
@@ -650,19 +650,19 @@ def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
         raise TQParseError(
             "PX_TQ_MISSING_INTENT",
             "tq: missing intent line. Fix: add `intent your_flow_name` after optional module. "
-            "See docs/TQ_AUTHOR_CHEATSHEET.md",
+            "See TQ_SURFACE.md",
         )
     if not requires:
         raise TQParseError(
             "PX_TQ_MISSING_REQUIRES",
             "tq: missing requires line. Fix: after intent, add e.g. `requires username, password`. "
-            "See examples/torqa/templates/minimal.tq",
+            "See EXAMPLES.md",
         )
     if result_line is None:
         raise TQParseError(
             "PX_TQ_MISSING_RESULT",
             "tq: missing required 'result' line before flow:. Fix: add e.g. `result OK` above flow:. "
-            "See docs/TQ_AUTHOR_CHEATSHEET.md",
+            "See TQ_SURFACE.md",
         )
     return module, intent, requires, ensures, result_line, forbid_phrases, flow_steps, stub_paths
 

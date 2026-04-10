@@ -1,8 +1,8 @@
 """
 P29: TORQA-authored **non-blocking** semantic advisories (warning toggles + soft limits).
 
-Loaded from ``examples/torqa/semantic_warning_policy_bundle.json`` (surface output of
-``semantic_warning_policy.tq``). **Core semantic errors** (unknown effects, arity, guarantees,
+Optionally loaded from ``semantic_warning_policy_bundle.json`` at the repository root (IR bundle).
+**Core semantic errors** (unknown effects, arity, guarantees,
 undefined identifiers) always stay in ``ir_semantics.validate_ir_semantics`` and are not
 configurable here.
 """
@@ -18,7 +18,7 @@ from typing import FrozenSet, List, Optional, Set, Tuple
 from src.ir.canonical_ir import IRGoal
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_POLICY_BUNDLE = _REPO_ROOT / "examples" / "torqa" / "semantic_warning_policy_bundle.json"
+_POLICY_BUNDLE = _REPO_ROOT / "semantic_warning_policy_bundle.json"
 
 _WARN_SLUG_PREFIX = "sem_warn_"
 _ADVISORY_MAX_TRANS_RE = re.compile(r"^sem_advisory_max_transitions_(\d+)$")
@@ -61,7 +61,7 @@ def _parse_policy_inputs(names: List[str]) -> Tuple[Set[str], Optional[int]]:
 
 
 def load_global_semantic_policy(*, bundle_path: Optional[Path] = None) -> TorqaSemanticPolicy:
-    """Defaults from committed TORQA policy bundle; fallback matches pre-P29 behavior."""
+    """Optional root policy bundle; if missing, built-in defaults apply (pre-P29 behavior)."""
     global _policy_cache
     path = bundle_path or _POLICY_BUNDLE
     if bundle_path is None and _policy_cache is not None:

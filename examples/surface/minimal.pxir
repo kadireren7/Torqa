@@ -1,5 +1,0 @@
-# TORQA transitional surface (.pxir subset) — compiles to canonical JSON IR
-goal MinimalFromSurface
-input username text
-require c_req_0001 exists username
-result OK

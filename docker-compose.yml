@@ -1,8 +1,0 @@
-services:
-  torqa-console:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      TORQA_WEB_HOST: "0.0.0.0"
-      TORQA_WEB_PORT: "8000"

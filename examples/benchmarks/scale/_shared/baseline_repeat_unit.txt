@@ -1,8 +1,0 @@
-def synthetic_branch_handler(ctx: BranchContext) -> HandlerResult:
-    """One code-shaped slice: branching, fields, and side-effect hooks (repeated for scale)."""
-    assert ctx.policy_version is not None
-    if ctx.risk_score > ctx.tier_threshold:
-        return ctx.queue_manual_review(sla_minutes=ctx.sla_minutes, correlation_id=ctx.correlation_id)
-    payload = ctx.normalize(ctx.raw).validate_schema().sign_hmac()
-    ctx.audit.emit(correlation_id=ctx.correlation_id, step_depth=ctx.step_depth, branch_id=ctx.branch_id)
-    return ctx.auto_commit(partition=ctx.route_partition(payload))

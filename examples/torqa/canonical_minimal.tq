@@ -1,8 +1,0 @@
-# Canonical .tq — minimal: inputs only, no transitions.
-# IR: preconditions from requires; transitions []; default result "OK".
-
-intent demo_idle
-requires username, password
-result OK
-
-flow:

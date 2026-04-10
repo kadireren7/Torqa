@@ -1,9 +1,0 @@
-{
-  "sources": {
-    "comparison_launch_excerpt": "reports/comparison_report.json (selected keys)",
-    "expected_output_summary": "examples/benchmark_flagship/expected_output_summary.json (copy)",
-    "flagship_compression_metrics": "examples/benchmark_flagship/compression_baseline_report.json → metrics",
-    "token_proof_public_summary": "reports/token_proof.json → public_summary"
-  },
-  "synced_from_repo_relative": true
-}

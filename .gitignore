@@ -11,10 +11,6 @@ venv/
 dist/
 build/
 
-# Rust
-rust-core/target/
-**/target/
-
 # IDE / OS
 .idea/
 .vscode/
