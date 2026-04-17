@@ -14,6 +14,8 @@
 pip install -e ".[dev]"
 ```
 
+If the `torqa` command is not found (common on Windows when Python’s **Scripts** folder is not on `PATH`), run the same CLI with **`python -m src.torqa_cli`** from the repo root—for example `python -m src.torqa_cli validate demo.tq`. See [Quickstart](docs/quickstart.md#if-torqa-is-not-found-often-on-windows).
+
 Then:
 
 1. **[First run](docs/first-run.md)** — Shortest path: two files, one command, what “success” looks like.  
@@ -25,6 +27,10 @@ Then:
 ## Flagship Demo
 
 **[Flagship demo](docs/flagship-demo.md)** — One end-to-end story: author `.tq` or JSON, validate with `torqa`, and treat the checked IR as the handoff artifact (same contract, no runtime in-repo).
+
+## Starter use cases
+
+**[Use cases](docs/use-cases.md)** — What the runnable files in **[`examples/`](examples/)** show (approval metadata, generated JSON, CI validation). Start there for copy-paste commands.
 
 ## Architecture at a Glance
 
@@ -101,6 +107,7 @@ Models and templates can emit content at volume; without a **canonical, checkabl
 ## Documentation
 
 - [Overview](docs/overview.md) — scope and positioning  
+- [Starter use cases](docs/use-cases.md) — `examples/` walkthrough  
 - [Flagship demo](docs/flagship-demo.md) — one guided `.tq` / JSON path  
 - [Why now?](docs/why-now.md) — context and who benefits  
 - [First run](docs/first-run.md) — minimal successful run  

@@ -53,6 +53,11 @@ def _goal_from_bundle(bundle: Dict[str, Any]) -> Tuple[Any, Optional[str]]:
         return None, f"Invalid ir_goal payload: {ex}"
 
 
+def _print_validate_header(input_type: str, path: Path) -> None:
+    print(f"Input type: {input_type}")
+    print(f"File: {path}")
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     path: Path = args.file
     if not path.is_file():
@@ -64,64 +69,76 @@ def cmd_validate(args: argparse.Namespace) -> int:
         print(f"torqa validate: {err}", file=sys.stderr)
         return 1
 
-    print(f"Input type: {input_type}")
-    print(f"  file: {path}")
-
     if err is not None:
+        _print_validate_header(input_type, path)
+        print()
         if isinstance(err, TQParseError):
-            print("Structural: .tq parse failed", file=sys.stderr)
-            print(f"  code:    {err.code}", file=sys.stderr)
+            print("Parse: FAIL")
+            print(f"Error: {err.code}")
             if err.line is not None:
-                print(f"  line:    {err.line}", file=sys.stderr)
-            print(f"  message: {err}", file=sys.stderr)
+                print(f"Line: {err.line}")
+            print(f"Message: {err}")
         elif input_type == "json":
-            print("Structural: JSON load failed", file=sys.stderr)
-            print(f"  {err}", file=sys.stderr)
+            print("Load: FAIL")
+            print(f"Error: {err}")
         else:
-            print("Structural: input failed", file=sys.stderr)
-            print(f"  {err}", file=sys.stderr)
+            print("Load: FAIL")
+            print(f"Error: {err}")
+        print()
+        print("Result: FAIL")
         return 1
 
     assert bundle is not None
     goal, gerr = _goal_from_bundle(bundle)
     if gerr is not None:
-        print(f"Structural: {gerr}", file=sys.stderr)
+        _print_validate_header(input_type, path)
+        print()
+        print("IR payload: FAIL")
+        print(f"Error: {gerr}")
+        print()
+        print("Result: FAIL")
         return 1
+
+    load_word = "Parse" if input_type == "tq" else "Load"
+    _print_validate_header(input_type, path)
+    print()
+    print(f"{load_word}: OK")
 
     struct = validate_ir(goal)
     if struct:
-        print("Structural validation: FAILED (validate_ir)")
+        print("Structural validation: FAIL")
         for line in struct:
             print(f"  - {line}")
+        print()
+        print("Result: FAIL")
         return 1
+
+    print("Structural validation: PASS")
 
     reg = default_ir_function_registry()
     report = build_ir_semantic_report(goal, reg)
     sem_ok = bool(report.get("semantic_ok"))
     logic_ok = bool(report.get("logic_ok"))
 
-    load_label = "parse" if input_type == "tq" else "load"
-    print(f"  {load_label}:          OK")
-    print("Torqa validation")
-    print("  structural:     OK")
-    print(f"  semantic_ok:    {sem_ok}")
-    print(f"  logic_ok:       {logic_ok}")
-
     errs: List[str] = list(report.get("errors") or [])
     warns: List[str] = list(report.get("warnings") or [])
-    if errs:
-        print("  semantic errors:")
-        for e in errs:
-            print(f"    - {e}")
-    if warns:
-        print("  warnings:")
-        for w in warns:
-            print(f"    - {w}")
 
+    print(f"Semantic validation: {'PASS' if sem_ok else 'FAIL'}")
+    print(f"Logic validation: {'PASS' if logic_ok else 'FAIL'}")
+    if errs:
+        print("Semantic errors:")
+        for e in errs:
+            print(f"  - {e}")
+    if warns:
+        print("Warnings:")
+        for w in warns:
+            print(f"  - {w}")
+
+    print()
     if sem_ok and logic_ok:
         print("Result: PASS")
         return 0
-    print("Result: FAIL (semantic or logic errors)", file=sys.stderr)
+    print("Result: FAIL")
     return 1
 
 
@@ -151,8 +168,13 @@ def cmd_inspect(args: argparse.Namespace) -> int:
         print(f"torqa inspect: {gerr}", file=sys.stderr)
         return 1
 
-    # Keep stdout as JSON-only for piping (e.g. jq); input kind on stderr.
+    # Stderr only: metadata for humans. Stdout: JSON only (pipe-friendly).
     print(f"Input type: {input_type}", file=sys.stderr)
+    print(f"File: {path.resolve()}", file=sys.stderr)
+    print(
+        "Stdout: full canonical ir_goal JSON (pipe to jq, redirect to a file, or diff).",
+        file=sys.stderr,
+    )
     out = ir_goal_to_json(goal)
     print(json.dumps(out, indent=2, ensure_ascii=False, sort_keys=True))
     return 0
@@ -164,58 +186,86 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print(f"torqa doctor: not a file: {path}", file=sys.stderr)
         return 1
 
-    print(f"Torqa doctor — {path.resolve()}")
-    print("-" * 60)
+    print("Torqa doctor")
+    print()
 
     bundle, err, input_type = _load_input(path)
     if input_type == "unknown":
-        print(f"• Input type:   unknown")
-        print(f"  {err}")
+        print("Input")
+        print(f"  Type: unknown")
+        print(f"  Path: {path.resolve()}")
+        print(f"  Error: {err}")
+        print()
+        print("Summary")
+        print("  Status: FAIL (unsupported input type)")
         return 1
 
-    print(f"• Input type:   {input_type}")
+    print("Input")
+    print(f"  Type: {input_type}")
+    print(f"  Path: {path.resolve()}")
+    print()
 
     if err is not None:
+        print("Parse" if input_type == "tq" else "Load")
         if isinstance(err, TQParseError):
-            print("• Source load:  FAILED (.tq parse)")
-            print(f"  Error code:   {err.code}")
+            print("  Status: FAIL")
+            print(f"  Error: {err.code}")
             if err.line is not None:
-                print(f"  Line:         {err.line}")
-            print(f"  Details:      {err}")
+                print(f"  Line: {err.line}")
+            print(f"  Message: {err}")
         else:
-            print("• Source load:  FAILED (JSON)")
-            print(f"  Details:      {err}")
+            print("  Status: FAIL")
+            print(f"  Error: {err}")
         print()
-        print("Fix the error above, then re-run torqa validate.")
+        print("Structure")
+        print("  Status: (not reached)")
+        print()
+        print("Semantics")
+        print("  Status: (not reached)")
+        print()
+        print("Summary")
+        print("  Status: FAIL — fix load/parse, then re-run torqa validate.")
         return 1
 
     assert bundle is not None
     goal, gerr = _goal_from_bundle(bundle)
     if gerr is not None:
-        print("• Source load:  FAILED (ir_goal)")
-        print(f"  {gerr}")
+        print("Parse" if input_type == "tq" else "Load")
+        print("  Status: OK")
+        print()
+        print("Structure")
+        print("  Status: FAIL (IR payload)")
+        print(f"  Error: {gerr}")
+        print()
+        print("Semantics")
+        print("  Status: (not reached)")
+        print()
+        print("Summary")
+        print("  Status: FAIL")
         return 1
 
-    load_ok = "Parse:        OK" if input_type == "tq" else "Load:         OK"
-    print(f"• {load_ok}")
+    load_word = "Parse" if input_type == "tq" else "Load"
+    print(load_word)
+    print("  Status: OK")
+    print()
 
     struct = validate_ir(goal)
+    print("Structure")
     if struct:
-        print("• Structural:   ISSUES")
+        print("  Status: FAIL (validate_ir)")
         for line in struct:
-            print(f"    - {line}")
+            print(f"  - {line}")
     else:
-        print("• Structural:   OK")
+        print("  Status: PASS")
+    print()
 
     report = build_ir_semantic_report(goal, default_ir_function_registry())
     sem_ok = bool(report.get("semantic_ok"))
     logic_ok = bool(report.get("logic_ok"))
 
-    if sem_ok and logic_ok:
-        print("• Semantic:     OK (default effect registry)")
-    else:
-        print("• Semantic:     NEEDS ATTENTION")
-
+    print("Semantics")
+    print(f"  Semantic validation: {'PASS' if sem_ok else 'FAIL'}")
+    print(f"  Logic validation: {'PASS' if logic_ok else 'FAIL'}")
     warns = list(report.get("warnings") or [])
     errs = list(report.get("errors") or [])
     if errs:
@@ -226,12 +276,13 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print("  Warnings:")
         for w in warns:
             print(f"    - {w}")
+    print()
 
-    print("-" * 60)
+    print("Summary")
     if struct or not sem_ok or not logic_ok:
-        print("Summary: not fully healthy — see above.")
+        print("  Status: FAIL — see Structure and Semantics above.")
         return 1
-    print("Summary: looks good for the default registry.")
+    print("  Status: PASS (default effect registry)")
     return 0
 
 
@@ -240,8 +291,7 @@ def cmd_version(_args: argparse.Namespace) -> int:
         v = pkg_version("torqa")
     except Exception:
         v = "unknown"
-    print(f"torqa {v}")
-    print(f"canonical IR version: {CANONICAL_IR_VERSION}")
+    print(f"torqa {v} · canonical IR {CANONICAL_IR_VERSION}")
     return 0
 
 

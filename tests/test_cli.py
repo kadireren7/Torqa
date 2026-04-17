@@ -35,9 +35,10 @@ def test_cli_validate_passes_on_good_file(tmp_path: Path, capsys):
     assert code == 0
     out = capsys.readouterr().out
     assert "Input type: tq" in out
-    assert "PASS" in out
-    assert "semantic_ok:    True" in out
-    assert "parse:          OK" in out
+    assert "Result: PASS" in out
+    assert "Semantic validation: PASS" in out
+    assert "Logic validation: PASS" in out
+    assert "Parse: OK" in out
 
 
 def test_cli_validate_fails_on_parse_error(tmp_path: Path, capsys):
@@ -48,8 +49,10 @@ def test_cli_validate_fails_on_parse_error(tmp_path: Path, capsys):
     )
     code = main(["validate", str(p)])
     assert code == 1
-    err = capsys.readouterr().err
-    assert "PX_TQ_MISSING_FLOW" in err or "parse failed" in err.lower()
+    out = capsys.readouterr().out
+    assert "Parse: FAIL" in out
+    assert "PX_TQ_MISSING_FLOW" in out or "PX_TQ_" in out
+    assert "Result: FAIL" in out
 
 
 def test_cli_inspect_prints_json(tmp_path: Path, capsys):
@@ -69,8 +72,10 @@ def test_cli_doctor_ok(tmp_path: Path, capsys):
     code = main(["doctor", str(p)])
     assert code == 0
     out = capsys.readouterr().out
-    assert "Parse:        OK" in out
-    assert "looks good" in out.lower()
+    assert "Parse" in out
+    assert "Status: OK" in out
+    assert "Summary" in out
+    assert "Status: PASS" in out
 
 
 def test_cli_doctor_fails_on_bad_file(tmp_path: Path, capsys):
@@ -79,7 +84,7 @@ def test_cli_doctor_fails_on_bad_file(tmp_path: Path, capsys):
     code = main(["doctor", str(p)])
     assert code == 1
     out = capsys.readouterr().out
-    assert "FAILED" in out
+    assert "Status: FAIL" in out
 
 
 def test_cli_validate_missing_file(capsys):

@@ -26,13 +26,15 @@ The **`torqa`** command picks the loader by **file extension**:
 - **`.tq`** — reference text parser (`parse_tq_source`).
 - **`.json`** — UTF-8 JSON: either a **bundle** `{"ir_goal": {...}}` (optional `library_refs`) validated with **`validate_bundle_envelope`**, or a **bare `ir_goal`** object whose top-level keys match the wire shape (required fields per schema; optional `result`).
 
-After load, **`ir_goal_from_json`**, **`validate_ir`**, and **`build_ir_semantic_report`** run the same way for both. **`torqa inspect`** prints only JSON on **stdout** (input type is on **stderr** so pipes stay clean).
+After load, **`ir_goal_from_json`**, **`validate_ir`**, and **`build_ir_semantic_report`** run the same way for both. **`torqa inspect`** prints only JSON on **stdout** (path and a short note on **stderr** so pipes stay clean).
+
+Parse errors for **wrong header order** use code **`PX_TQ_HEADER_ORDER`** and name the **expected next header** (tq_v1 sequence: optional `module` → `intent` → `requires` → … → `result` → `flow:`). Unknown **`flow:`** steps use **`PX_TQ_UNKNOWN_FLOW_STEP`** with the allowed step names spelled out.
 
 ## `.tq` — optional ergonomic authoring surface
 
 **`.tq`** is **strict, line-oriented text** so humans (and tools that emit text) can author specs **without hand-writing JSON**. It is **not** the only way to produce IR—only the **reference** path implemented here for **readable** workflow files.
 
-Files use the **`.tq`** extension. Headers follow a fixed order; steps under **`flow:`** use **two-space** indentation (not tabs). That rigidity keeps parsing **deterministic** for this surface.
+Files use the **`.tq`** extension. Headers follow a **fixed order**; putting `result` before `intent`, or `requires` before `intent`, triggers an explicit order error (not a generic “missing line” only). Steps under **`flow:`** use **two-space** indentation (not tabs). That rigidity keeps parsing **deterministic** for this surface.
 
 Minimal shape:
 

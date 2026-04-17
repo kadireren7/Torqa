@@ -35,8 +35,8 @@ torqa inspect lead_intake.tq
 
 **What you should see**
 
-- **`torqa validate`** prints `Input type: tq`, `parse: OK`, structural and semantic lines, then `Result: PASS` when the default registry accepts the effects.
-- **`torqa inspect`** writes `Input type: tq` on **stderr** and prints **canonical `ir_goal` JSON** on **stdout** (sorted keys), suitable for piping to other tools. Metadata includes `surface_meta` with `owner` and `severity`.
+- **`torqa validate`** prints `Input type`, `File:`, then `Parse: OK`, `Structural validation: PASS`, `Semantic validation: PASS`, `Logic validation: PASS`, and `Result: PASS` when the default registry accepts the effects.
+- **`torqa inspect`** writes `Input type`, `File:`, and a short stderr note; **stdout** is the **full** canonical **`ir_goal` JSON** (sorted keys) for piping, review, or tooling. Metadata includes `surface_meta` with `owner` and `severity`.
 
 ## Path B — JSON bundle input
 
@@ -64,8 +64,8 @@ torqa inspect lead_intake.json
 
 **What you should see**
 
-- **`torqa validate`** prints `Input type: json`, `load: OK`, then the same structural/semantic summary as Path A when the bundle matches the parsed result.
-- **`torqa inspect`** prints `Input type: json` on **stderr** and the same shape of **`ir_goal` JSON** on **stdout** as for the `.tq` path (minor key ordering may differ; content is equivalent).
+- **`torqa validate`** prints `Input type: json`, `Load: OK`, then the same structural and semantic/logic lines as Path A when the bundle matches the parsed result.
+- **`torqa inspect`** uses the same stderr/stdout split as Path A; JSON on **stdout** is the full artifact, not a summary.
 
 You can also construct or export `ir_goal` from another tool; if it passes **`validate_ir`** and semantics for the registry you use, **`torqa validate`** behaves the same.
 

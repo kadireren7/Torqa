@@ -32,8 +32,8 @@ def test_cli_validate_full_bundle_json(tmp_path: Path, capsys, sample_bundle):
     assert code == 0
     out = capsys.readouterr().out
     assert "Input type: json" in out
-    assert "PASS" in out
-    assert "load:          OK" in out
+    assert "Result: PASS" in out
+    assert "Load: OK" in out
 
 
 def test_cli_validate_bare_ir_goal_json(tmp_path: Path, capsys, sample_bundle):
@@ -50,8 +50,9 @@ def test_cli_validate_invalid_json_syntax(tmp_path: Path, capsys):
     p.write_text("{ not json", encoding="utf-8")
     code = main(["validate", str(p)])
     assert code == 1
-    err = capsys.readouterr().err
-    assert "invalid JSON" in err.lower() or "JSON load failed" in err
+    out = capsys.readouterr().out
+    assert "Load: FAIL" in out
+    assert "invalid JSON" in out.lower() or "Error:" in out
 
 
 def test_cli_validate_invalid_envelope(tmp_path: Path, capsys):
@@ -59,8 +60,9 @@ def test_cli_validate_invalid_envelope(tmp_path: Path, capsys):
     p.write_text(json.dumps({"ir_goal": {}, "extra_top": 1}), encoding="utf-8")
     code = main(["validate", str(p)])
     assert code == 1
-    err = capsys.readouterr().err
-    assert "unknown top-level" in err.lower() or "Bundle envelope" in err
+    out = capsys.readouterr().out
+    assert "Load: FAIL" in out
+    assert "unknown top-level" in out.lower() or "Bundle envelope" in out
 
 
 def test_cli_inspect_json_stdout_pure(tmp_path: Path, capsys, sample_bundle):
@@ -70,6 +72,9 @@ def test_cli_inspect_json_stdout_pure(tmp_path: Path, capsys, sample_bundle):
     assert code == 0
     captured = capsys.readouterr()
     assert "Input type: json" in captured.err
+    assert "File:" in captured.err
+    assert "canonical ir_goal json" in captured.err.lower()
+    assert captured.out.strip().startswith("{")
     data = json.loads(captured.out)
     assert data["ir_goal"]["goal"] == "ExampleFlow"
 
@@ -80,8 +85,9 @@ def test_cli_doctor_json(tmp_path: Path, capsys, sample_bundle):
     code = main(["doctor", str(p)])
     assert code == 0
     out = capsys.readouterr().out
-    assert "Input type:   json" in out
-    assert "Load:         OK" in out
+    assert "Type: json" in out
+    assert "Load" in out
+    assert "Status: OK" in out
 
 
 def test_cli_unsupported_extension(tmp_path: Path, capsys):

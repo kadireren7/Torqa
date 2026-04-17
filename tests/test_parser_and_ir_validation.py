@@ -56,7 +56,41 @@ flow:
         parse_tq_source(src)
     assert ei.value.code == "PX_TQ_HEADER_ORDER"
     assert ei.value.line == 2
-    assert "Current position in strict header sequence" in str(ei.value)
+    assert "Expected next header:" in str(ei.value)
+    assert "strict header order (tq_v1)" in str(ei.value)
+
+
+def test_parse_header_order_result_before_intent():
+    """`result` at line 1 must not read as a vague missing-header error."""
+    src = """
+result Done
+intent wrong_order
+requires u, password, ip_address
+flow:
+  create session
+"""
+    with pytest.raises(TQParseError) as ei:
+        parse_tq_source(src)
+    assert ei.value.code == "PX_TQ_HEADER_ORDER"
+    assert ei.value.line == 2
+    assert "Expected next header:" in str(ei.value)
+    assert "`intent`" in str(ei.value)
+
+
+def test_parse_unknown_flow_step_message():
+    src = """
+intent x
+requires u, password, ip_address
+result OK
+flow:
+  notify admin
+"""
+    with pytest.raises(TQParseError) as ei:
+        parse_tq_source(src)
+    assert ei.value.code == "PX_TQ_UNKNOWN_FLOW_STEP"
+    assert ei.value.line == 6
+    assert "unknown flow step" in str(ei.value).lower()
+    assert "create session" in str(ei.value)
 
 
 def test_parse_error_includes_line_on_duplicate_header():

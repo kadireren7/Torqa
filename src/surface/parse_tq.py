@@ -261,9 +261,11 @@ def _parse_flow_step_surface(step: str, lineno: int) -> Tuple[str, Optional[str]
         )
     raise TQParseError(
         "PX_TQ_UNKNOWN_FLOW_STEP",
-        f"tq: unsupported flow step {step!r}. "
-        "Allowed: create session — emit login_success — emit login_success when/if <ident>. "
-        "Fix: spelling; see docs/quickstart.md.",
+        f"tq: unknown flow step {step!r} (line {lineno}). "
+        "Strict tq_v1 allows only: `create session`, `emit login_success`, or guarded "
+        "`emit login_success when <input>` / `if <input>`. "
+        "Use exactly two spaces before the step, then check spelling. See docs/quickstart.md.",
+        line=lineno,
     )
 
 
@@ -296,6 +298,17 @@ _PHASE_HINT: Dict[str, str] = {
     "post_b": "after optional ensures (expected: result, then flow:)",
     "post_c": "after result (expected: flow:)",
     "in_flow": "inside flow: block",
+}
+
+# What the next header should be at each phase (for clearer PX_TQ_HEADER_ORDER messages).
+_EXPECTED_NEXT: Dict[str, str] = {
+    "start": "`intent` (or optional `module` before it)",
+    "need_intent": "`intent`",
+    "need_requires": "`requires`",
+    "post_a": "`result` (after optional stub_path, meta:, forbid, ensures)",
+    "post_b": "`result`",
+    "post_c": "`flow:`",
+    "in_flow": "indented flow steps only",
 }
 
 
@@ -459,11 +472,14 @@ def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
 
     def _header_order(msg: str, lineno: int) -> TQParseError:
         hint = _PHASE_HINT.get(phase, repr(phase))
+        next_hdr = _EXPECTED_NEXT.get(phase, repr(phase))
         return TQParseError(
             "PX_TQ_HEADER_ORDER",
-            f"tq: {msg} (line {lineno}). Current position in strict header sequence: {hint}. "
-            "Expected order: module (optional), intent, requires, optional stub_path/forbid/ensures, "
-            "result (required), flow:. See docs/concepts.md.",
+            f"tq: strict header order (tq_v1): {msg} (line {lineno}). "
+            f"Expected next header: {next_hdr}. "
+            f"Parser position: {hint}. "
+            "Full order: module (optional) -> intent -> requires -> optional stub_path / meta / forbid / ensures "
+            "-> result -> flow:. See docs/concepts.md.",
             line=lineno,
         )
 
@@ -746,20 +762,23 @@ def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
     if not intent:
         raise TQParseError(
             "PX_TQ_MISSING_INTENT",
-            "tq: missing intent line. Fix: add `intent your_flow_name` after optional module. "
-            "See docs/concepts.md",
+            "tq: end of file with no `intent` line. tq_v1 headers must follow strict order starting with "
+            "optional `module`, then **`intent`**, then `requires`, ... "
+            "Fix: add `intent your_flow_name` near the top. See docs/concepts.md.",
         )
     if not requires:
         raise TQParseError(
             "PX_TQ_MISSING_REQUIRES",
-            "tq: missing requires line. Fix: after intent, add e.g. `requires username, password`. "
-            "See docs/quickstart.md",
+            "tq: `intent` was seen but no `requires` line before end of file. "
+            "Fix: add `requires ...` immediately after `intent` (see strict header order in docs/concepts.md). "
+            "Example: `requires username, password, ip_address`.",
         )
     if result_line is None:
         raise TQParseError(
             "PX_TQ_MISSING_RESULT",
-            "tq: missing required 'result' line before flow:. Fix: add e.g. `result OK` above flow:. "
-            "See docs/concepts.md",
+            "tq: missing required `result` line before `flow:`. "
+            "Fix: add e.g. `result OK` or `result Done` after optional meta/forbid/ensures and before `flow:`. "
+            "See docs/concepts.md.",
         )
     if not flow_declared:
         rl = result_lineno or 1

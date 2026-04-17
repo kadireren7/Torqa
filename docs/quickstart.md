@@ -15,20 +15,57 @@ pip install -e ".[dev]"
 
 This installs the `torqa` package in editable mode and pulls **pytest** + **jsonschema** for tests and optional schema checks. It also installs the **`torqa`** command-line tool (see below).
 
+### If `torqa` is not found (often on Windows)
+
+`pip` puts `torqa.exe` in Python’s **Scripts** directory. If that directory is **not** on your system `PATH`, the shell will say the command is not recognized—even though install succeeded.
+
+**Option A — use the module (no PATH change)** from the **repository root**:
+
+```bash
+python -m src.torqa_cli validate demo.tq
+python -m src.torqa_cli --help
+```
+
+Use the same pattern for `doctor`, `inspect`, and `version`.
+
+**Option B — add Scripts to `PATH`**
+
+Print where Scripts lives:
+
+```bash
+python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+```
+
+Add that folder to your **user** environment `Path`, then open a **new** terminal. After that, `torqa validate …` should work.
+
 ## CLI (terminal)
 
-After install, use the **`torqa`** executable on your PATH (or `python -m src.torqa_cli` from the repo root with `PYTHONPATH=.`).
+After install, prefer **`torqa`** when it is on your `PATH`; otherwise use **`python -m src.torqa_cli`** as above.
 
 | Command | What it does |
 |---------|----------------|
-| `torqa validate FILE` | **`.tq`:** parse → `validate_ir` → semantic report. **`.json`:** load bundle or bare `ir_goal` → same validation. **Exit 0** only on full pass. |
-| `torqa inspect FILE` | Canonical IR JSON on **stdout** (`ir_goal` envelope). **Stderr:** `Input type: tq` or `json` (for piping). |
-| `torqa doctor FILE` | Human-readable diagnostics (load → structural → semantic). |
-| `torqa version` | Package version and canonical IR version. |
+| `torqa validate FILE` | **`.tq`:** parse → `validate_ir` → semantic + logic checks. **`.json`:** load bundle or bare `ir_goal` → same path. Prints a short, line-oriented report; **exit 0** only on full pass. |
+| `torqa inspect FILE` | **Stdout:** full canonical **`ir_goal` JSON** (the handoff artifact). **Stderr:** `Input type`, `File:`, and a one-line note that stdout is for piping / tools (e.g. `jq`), not for reading as the primary UX. |
+| `torqa doctor FILE` | Human-readable sections: Input, Parse/Load, Structure, Semantics, Summary. |
+| `torqa version` | One line: package version and canonical IR version (e.g. `torqa 0.1.0 · canonical IR 1.4`). |
 
 **File types:** extension **`.tq`** uses the reference text parser; **`.json`** accepts either a **full bundle** `{"ir_goal": {...}}` (optional `library_refs`) or a **bare `ir_goal`** object with the required top-level keys (see `spec/IR_BUNDLE.schema.json`). Malformed JSON or envelope errors fail with a clear message.
 
-Examples:
+**Example (`torqa validate` success):**
+
+```text
+Input type: tq
+File: demo.tq
+
+Parse: OK
+Structural validation: PASS
+Semantic validation: PASS
+Logic validation: PASS
+
+Result: PASS
+```
+
+Examples (replace `torqa` with `python -m src.torqa_cli` if needed):
 
 ```bash
 torqa validate demo.tq

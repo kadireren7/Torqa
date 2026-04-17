@@ -1,0 +1,9 @@
+intent trial_login
+requires username, password, ip_address
+meta:
+  owner security_team
+  severity medium
+result Done
+flow:
+  create session
+  emit login_success
