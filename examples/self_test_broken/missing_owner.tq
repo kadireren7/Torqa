@@ -1,0 +1,9 @@
+# Self-test fixture: policy should fail (missing surface_meta.owner)
+intent broken_owner
+requires username, password, ip_address
+meta:
+  severity low
+result Done
+flow:
+  create session
+  emit login_success

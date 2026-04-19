@@ -18,7 +18,15 @@ Run that from the repository root.
 
 ## 3. Create the two files
 
-**`demo.tq`** — copy exactly (indent with **two spaces** in the `flow:` block):
+**Option A — generate `demo.tq`** (from the repo root, non-interactive):
+
+```bash
+python -m src.torqa_cli init login --output demo.tq
+```
+
+Or run **`python -m src.torqa_cli init`** for the interactive wizard (requires a TTY).
+
+**`demo.tq`** — or copy exactly below (indent with **two spaces** in the `flow:` block):
 
 ```text
 intent example_flow
@@ -71,7 +79,7 @@ If you see that, Torqa parsed and validated your first spec.
 
 | Problem | Fix |
 |--------|-----|
-| `torqa` is not recognized (Windows) | Use `python -m src.torqa_cli validate demo.tq` from the repo root, or add Python’s **Scripts** folder to your `PATH` (see [Quickstart](quickstart.md#if-torqa-is-not-found-often-on-windows)). |
+| `torqa` is not recognized (Windows) | Use `python -m src.torqa_cli validate demo.tq` or `python -m src.torqa_cli check demo.tq` from the repo root, or add Python’s **Scripts** folder to your `PATH` (see [Quickstart](quickstart.md#if-torqa-is-not-found-often-on-windows)). |
 | `ModuleNotFoundError: src` | Run `pip install -e ".[dev]"` from the **repo root**, then run `python demo.py` again from the same folder. |
 | `FileNotFoundError: demo.tq` | Run `python demo.py` from the directory that **contains** `demo.tq`. |
 | `PX_TQ_*` parse error | Check **two spaces** before `create session` / `emit login_success` (no tabs). Keep header order: `intent` → `requires` → `result` → `flow:`. |

@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here. The format is loosely inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+- **Docs:** Added [Repository status & pre-v1 readiness](docs/status.md) — audit of product clarity, CLI, trust model, docs, adoption bar, and typical gaps before a 1.0-style freeze; linked from README.
+
 ## [0.1.0] — 2026-04-16
 
 First early public release of the Torqa core: canonical IR, validation, reference `.tq` surface, CLI, and documentation aimed at technical evaluation.

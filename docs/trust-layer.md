@@ -15,7 +15,7 @@ This document summarizes what that means in the **current** repository (v0.x cor
 5. **Assign deterministic risk** — a tier (`low` / `medium` / `high`) and **reasons** (explainability, not ML).
 6. **Expose trust profiles** — **`default`**, **`strict`**, **`review-heavy`** via **`--profile`** so teams can align CLI behavior with how much friction they want before handoff.
 
-Steps 4–6 run **after** structure and semantics succeed. The **`torqa validate`** command is the single entry point for “can we treat this file as a trusted spec artifact?” **Execution remains outside this repo.**
+Steps 4–6 run **after** structure and semantics succeed. **`torqa validate`** prints the full report; **`torqa check`** runs the same pipeline and prints a short **Decision / Risk / Trust profile / Readiness score (0–100)** summary plus **deterministic `Suggested fix:`** lines (aligned with **`torqa doctor`**). The score is **not** ML—it is a fixed weighted sum from parse/load, validation gates, policy pass, risk tier, and review signal. **`torqa explain`** uses the same signals to print a **template-based English walkthrough** (no model calls). **`torqa compare`** evaluates one artifact under **default**, **strict**, and **review-heavy** in a single table. **`torqa scan`** walks a tree of **`.tq`** / bundle **`.json`** files and applies the same trust gate per file with a summary. **`torqa report --format html`** emits a standalone HTML table (reasons and timestamps, no third-party assets). **Execution remains outside this repo.**
 
 ---
 

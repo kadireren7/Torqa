@@ -48,3 +48,22 @@ tests/                       # End-to-end smoke tests
 ## Continuous integration
 
 There is **no** in-repository GitHub Actions workflow. Run **`pip install -e ".[dev]"`** and **`pytest`** locally (or wire the same commands into your own CI).
+
+---
+
+## Contributor notes
+
+These notes are for **contributors** deciding where to edit. They are not a substitute for reading the code and tests in each area.
+
+| Layer | Location | Expectations |
+|-------|----------|--------------|
+| **Surface / `.tq`** | `src/surface/` | Parse errors use stable **`PX_TQ_*`** codes; behavior changes need tests under `tests/`. |
+| **Canonical IR** | `src/ir/` | Wire shape and `CANONICAL_IR_VERSION` are the contract. Changes that alter on-disk JSON usually need a **migration** (`migrate_ir_bundle`) and schema sync (`spec/IR_BUNDLE.schema.json`). Discuss non-trivial changes in an issue first. |
+| **Semantics & registry** | `src/semantics/` | New or changed **effects** affect every spec that references them; keep the default registry small and explicit. |
+| **Policy & trust** | `src/policy/` | Rules stay **deterministic**; align with [Trust policies](trust-policies.md) and [Trust profiles](trust-profiles.md). |
+| **CLI** | `src/torqa_cli/` | Exit codes and stream usage (`stdout` vs `stderr`) matter for scripts; extend `tests/test_cli_*.py` when behavior is user-visible. |
+| **Bundle / JSON load** | `src/torqa_cli/bundle_load.py`, `io.py` | Error strings often include **path hints**; keep them stable where tests assert substrings. |
+
+**Docs:** If users can observe a change (CLI, JSON acceptance, trust output), update the relevant doc or example.
+
+**Process:** See **[CONTRIBUTING.md](../CONTRIBUTING.md)** at the repository root for setup, tests, and PR expectations. For bite-sized ideas, see **[GOOD_FIRST_ISSUES.md](../GOOD_FIRST_ISSUES.md)**.

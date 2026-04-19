@@ -1,77 +1,109 @@
 # Torqa
 
-**Torqa is a canonical, verifiable workflow specification core with a built-in workflow trust layer.**
+**A small, test-backed core for workflow specs:** one canonical **`ir_goal`** representation, structural and semantic validation, and deterministic **policy / risk / profiles**—so you can gate handoff before anything runs. This repo does **not** execute workflows, call models, or host a service.
 
-Human-authored or **generated** workflow specs should **not** be executed blindly. Torqa **validates** structure and semantics, then **trust-checks** and **risk-scores** the same canonical **`ir_goal`**—deterministic **policy** rules, **risk** tier and **reasons**, and optional **trust profiles** (`default` / `strict` / `review-heavy` via **`--profile`**) so teams can apply different **evaluation strictness** without forking the parser. **Execution stays external**: this repository does not run your workflows, call remote APIs, or embed a model.
+---
 
-**Torqa Core** is the **versioned JSON intermediate representation** (`ir_goal` in a bundle) plus **structural validation**, **semantic validation**, and **`build_policy_report`** (policy, risk, profile id)—a single **contract** you can store, diff in review, run in CI, and hand off to other systems. The shipped **reference parser** maps strict **`.tq`** to that bundle; bundle JSON from importers or generators targets the **same** contract.
+## Problem
 
-## Get started
+Workflow intent shows up as prose, ad hoc JSON, vendor formats, or **generated** drafts. Syntax checks alone do not tell you whether a spec is safe to hand off: you still need **structure**, **semantics**, and **agreed rules** (metadata, limits, severity) visible before execution.
 
-**Install** (from a clone of this repository):
+Torqa focuses on that gap: **verifiable IR + explicit trust signals**, not faster runtimes.
+
+---
+
+## Solution
+
+- **Canonical IR** (`ir_goal` in a versioned bundle) as the interchange contract—store it, diff it, run it in CI.
+- **Validation pipeline:** structural (`validate_ir`), semantic (effect registry, logic), then **`build_policy_report`** (policy pass/fail, review signals, deterministic risk tier and reasons).
+- **Trust profiles** (`default`, `strict`, `review-heavy`) so “pass” can mean different strictness without forking parsers.
+- **Reference `.tq` surface** that maps deterministically to the same bundle shape as JSON importers.
+- **Execution stays yours**—orchestrators, executors, and codegen live outside this repository.
+
+---
+
+## Why now
+
+More specs are **produced by tools** and **composed across systems**; teams need reviewable artifacts and **gates** they can repeat in CI, not only happy-path demos. Torqa keeps checks **deterministic and inspectable** (heuristics and rules, not ML inside this core). Context: [Why now?](docs/why-now.md).
+
+---
+
+## Quick start
+
+From a clone of this repository:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-If the `torqa` command is not found (common on Windows when Python’s **Scripts** folder is not on `PATH`), run the same CLI with **`python -m src.torqa_cli`** from the repo root—for example `python -m src.torqa_cli validate demo.tq`. See [Quickstart](docs/quickstart.md#if-torqa-is-not-found-often-on-windows).
+If `torqa` is not on your `PATH` (common on Windows), use:
 
-Then:
+```bash
+python -m src.torqa_cli validate path/to/spec.tq
+```
 
-1. **[First run](docs/first-run.md)** — Shortest path: two files, one command, what “success” looks like.  
-2. **[Quickstart](docs/quickstart.md)** — CLI (`torqa`), parse, validate, trust output.  
-3. **[Examples](docs/examples.md)** — Patterns (CI, imports, audit metadata).  
-4. **[CHANGELOG](CHANGELOG.md)** — What shipped in each version.  
-5. **[Early release notes](RELEASE_NOTES_v0.md)** — Scope, limits, and how to give feedback.
+Full install notes, every subcommand, and **`.json`** shapes (bundle, bare `ir_goal`, optional batch array): **[Quickstart](docs/quickstart.md)**. Shortest “what success looks like”: **[First run](docs/first-run.md)**.
 
-## Flagship Demo
+---
 
-**[Flagship demo](docs/flagship-demo.md)** — Draft (human or tool-produced) → **`torqa validate`** → trusted **`ir_goal`** artifact → hand off to **external** execution—same contract whether input is `.tq` or bundle JSON, no runtime in-repo.
+## Trust layer demo
 
-## AI Guardrail Demo
+End-to-end walkthroughs using **only** what ships here—valid vs broken specs, policy/risk/profiles, same gate for **`.tq`** and JSON:
 
-**[AI Workflow Guardrail Demo](docs/guardrail-demo.md)** — End-to-end: valid vs broken specs, **policy / risk / profiles**, **`torqa validate`** / **`torqa inspect`**, same gate for **`.tq`** and JSON. No fake integrations—only shipped CLI and examples.
+- **[AI Workflow Guardrail Demo](docs/guardrail-demo.md)** — practical guardrail framing.
+- **[Flagship demo](docs/flagship-demo.md)** — draft → validate → handoff-shaped narrative.
 
-## Starter use cases
+Deeper concept: **[Trust layer](docs/trust-layer.md)**.
 
-**[Use cases](docs/use-cases.md)** — **`examples/`** walkthrough: **AI workflow trust gate** first, then **CI, review, and policy-based approval**. **[`examples/ai_guardrail.md`](examples/ai_guardrail.md)** lists commands and trust framing.
+---
 
-## Architecture at a Glance
+## Commands
 
-Pipeline, in-repo vs external boundaries, and comparison visuals: **[Diagrams](docs/diagrams.md)**.
+| Command | Role |
+|--------|------|
+| `torqa validate` | Full pipeline; exit 0 only when load, structure, semantics, and policy pass. |
+| `torqa check` | Compact trust summary (decision, risk, profile, readiness score). |
+| `torqa scan` / `torqa report` | Directory or multi-spec reports (HTML / Markdown for CI). |
+| `torqa compare` | Same file under each built-in profile (tabular). |
+| `torqa explain` | Plain-English sections from existing signals (no AI). |
+| `torqa inspect` | Canonical IR JSON on stdout (pipelines). |
+| `torqa doctor` | Human-readable diagnostics and readiness. |
+| `torqa init` | Starter `.tq` templates. |
 
-## Why Torqa exists
+Optional **`torqa.toml`** for project defaults: **[Project config](docs/project-config.md)**. CI report artifacts: **[CI reports](docs/ci-report.md)**.
 
-Workflow intent shows up as prose, one-off JSON, vendor-locked formats, or **model-generated drafts**. Torqa concentrates **verification** and **trust** on a **canonical IR**: explicit structure and semantics, then **policy** and **risk**—so bad or non-compliant specs fail **before** execution. **[Trust layer](docs/trust-layer.md)** explains how this goes beyond parsing.
+---
 
-## The core workflow
+## Examples
 
-1. **Obtain a bundle** — Parse **`.tq`** with the reference parser, or load **`ir_goal` JSON** (importer, template, or **generator**). One contract for every source.
-2. **Canonical IR** — **`ir_goal`**: typed inputs, conditions, transitions, metadata (including **`ir_version`**).
-3. **Structural validation** — `validate_ir` rejects malformed or inconsistent IR before semantics.
-4. **Semantic validation** — Default effect registry and workflow logic (`semantic_ok` / `logic_ok`).
-5. **Trust evaluation** — **`build_policy_report`**: **`policy_ok`**, **`review_required`**, deterministic **`risk_level`** and **`reasons`**, **`trust_profile`** from **`--profile`**. Heuristics are not ML.
-6. **Handoff** — Validated IR for **your** executor, orchestrator, or codegen—**outside** this repo.
+- **[Examples guide](docs/examples.md)** — CI, metadata, migration patterns.
+- **`examples/`** — templates (login, approval, onboarding), AI-style JSON samples, **[`examples/ai_guardrail.md`](examples/ai_guardrail.md)** for command-oriented walkthroughs.
 
-## What Torqa is
+---
 
-- **The contract:** canonical **`ir_goal`** + validation + **trust** (policy, risk, profiles) for portable, reviewable workflow specs.
-- **Trust and portability:** one IR shape and schema-backed wire format; teams can agree what “passes” means under a chosen **profile**.
-- **Reference tooling:** **`canonical_ir`**, **`validate_ir`**, **`build_ir_semantic_report`**, **`build_policy_report`**, **`spec/IR_BUNDLE.schema.json`**, optional **`.tq` → bundle** parser.
+## Status
 
-## What Torqa is not
+**Early core (v0.x).** Python under `src/`, schema at `spec/IR_BUNDLE.schema.json`, tests in `tests/`. Prefer **`.tq`** for new text authoring; transitional **`.pxir`** exists for migration only. In scope: **IR**, validation, trust evaluation—not execution, not a hosted product.
 
-- Not a **workflow runtime**, **orchestration engine**, or **no-code / low-code UI**.
-- Not a **hosted service**, **IDE product**, or **LLM API**.
-- Not limited to a single file format for all time—the **core** is IR + checks + trust evaluation; **`.tq`** is one supported authoring path today.
+**Repository audit and pre-v1 gaps (honest, living):** **[docs/status.md](docs/status.md)** — product/CLI/trust/docs/adoption snapshot and what typically precedes a **1.0** contract freeze.
 
-## Why Now
+See **[CHANGELOG](CHANGELOG.md)** and **[Early release notes](RELEASE_NOTES_v0.md)** for what shipped and current limits.
 
-More automation is **generated** and **composed across tools**; teams need **reviewable** definitions and **trust gates**, not only faster runtimes. **[Why now?](docs/why-now.md)** — including why **syntax-only** checks are insufficient for **AI-generated** workflows.
+---
+
+## Roadmap
+
+Planning stays **small API, reference implementation, no platform wraparound**. Near-term: clearer errors, examples that track the real parser, docs that match the code. Long-term possibilities are optional and explicitly **not** runtime/SaaS—see **[Roadmap](docs/roadmap.md)** for non-goals and directions (not release promises).
+
+---
+
+## Architecture at a glance
+
+Pipeline and boundaries: **[Diagrams](docs/diagrams.md)** · **[Architecture](docs/architecture.md)**.
 
 ## Minimal example (`.tq` → validate)
 
-`example.tq` (include **`meta:`** for **`torqa validate`** — policy expects owner and severity; see [Trust policies](docs/trust-policies.md)):
+`example.tq` (policy expects **`meta:`** with owner and severity; see [Trust policies](docs/trust-policies.md)):
 
 ```text
 intent example_flow
@@ -102,37 +134,40 @@ report = build_ir_semantic_report(goal, default_ir_function_registry())
 assert report.get("semantic_ok") is True
 ```
 
-The **same** `validate_ir` / semantic steps apply if you construct or import a conforming **`ir_goal`** without `.tq`. Full **CLI** trust output requires **`torqa validate`** (see [Quickstart](docs/quickstart.md)).
+CLI trust output (policy, risk, profiles): **`torqa validate`** — [Quickstart](docs/quickstart.md).
 
-## Why this matters when specs are generated
+## What Torqa is — and is not
 
-Volume-generated content needs the **same** structural and semantic gates **plus** **policy** and **risk** before handoff. Torqa anchors trust in the spec layer—**audit metadata**, **profiles**, deterministic **reasons**—independent of any single runtime. Nothing here calls an LLM.
+**Is:** a **contract** (`ir_goal` + validation + trust evaluation), portable and reviewable.
 
-## Current project status
+**Is not:** a workflow runtime, orchestration engine, hosted service, IDE product, or bundled LLM API. The core is IR + checks; **`.tq`** is one authoring path today, not a forever lock-in.
 
-**Early core (v0.x).** Python modules under `src/`, `spec/IR_BUNDLE.schema.json`, and tests. For new text authoring use **`.tq`**; a transitional **`.pxir`** parser remains for migration only. The **`torqa`** CLI accepts **`.tq` or `.json`** on one path. In scope: **IR**, validation, **trust** evaluation—not execution.
+## Contributing
+
+We welcome issues and pull requests. Start here:
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — setup, tests, scope, PR expectations  
+- **[GOOD_FIRST_ISSUES.md](GOOD_FIRST_ISSUES.md)** — realistic entry points by area  
+- **[Architecture — contributor notes](docs/architecture.md#contributor-notes)** — where code in each layer usually lives  
 
 ## Documentation
 
+**Landing readers:** the sections above link to the essentials. Everything below is the full map.
+
 - [Overview](docs/overview.md) — scope and positioning  
-- [Trust layer](docs/trust-layer.md) — workflow trust layer (policy, risk, profiles)  
+- [Trust layer](docs/trust-layer.md) — policy, risk, profiles  
 - [Starter use cases](docs/use-cases.md) — `examples/` walkthrough  
-- [Flagship demo](docs/flagship-demo.md) — one guided `.tq` / JSON path  
-- [AI Workflow Guardrail Demo](docs/guardrail-demo.md) — guardrail + trust walkthrough  
-- [Why now?](docs/why-now.md) — context and who benefits  
-- [First run](docs/first-run.md) — minimal successful run  
-- [Quickstart](docs/quickstart.md) — install, CLI, validate  
 - [Concepts](docs/concepts.md) — IR, validation, `.tq` surface  
-- [Trust policies](docs/trust-policies.md) — validation vs semantics vs policy  
-- [Trust risk scoring](docs/trust-scoring.md) — deterministic risk tier and reasons  
-- [Trust profiles](docs/trust-profiles.md) — built-in evaluation modes (`default`, `strict`, `review-heavy`)  
-- [Examples](docs/examples.md) — CI, metadata, migration patterns  
-- [Architecture](docs/architecture.md) — layout and pipeline  
-- [Diagrams](docs/diagrams.md) — core flow and boundaries  
-- [Roadmap](docs/roadmap.md) — limits and direction  
-- [FAQ](docs/faq.md)  
-- [CHANGELOG](CHANGELOG.md) — version history  
-- [Early release notes](RELEASE_NOTES_v0.md) — v0.x scope and feedback  
+- [Trust policies](docs/trust-policies.md) · [Trust scoring](docs/trust-scoring.md) · [Trust profiles](docs/trust-profiles.md)  
+- [Examples](docs/examples.md) — CI, metadata, migration  
+- [Architecture](docs/architecture.md) · [Diagrams](docs/diagrams.md)  
+- [Roadmap](docs/roadmap.md) · [Language evolution](docs/language-evolution.md)  
+- [Why now?](docs/why-now.md) · [Public launch](docs/public-launch.md)  
+- [First run](docs/first-run.md) · [Quickstart](docs/quickstart.md) · [FAQ](docs/faq.md)  
+- [CHANGELOG](CHANGELOG.md) · [Early release notes](RELEASE_NOTES_v0.md)  
+- [CI reports](docs/ci-report.md) · [Project config](docs/project-config.md)  
+- [Repository status & pre-v1 readiness](docs/status.md) — audit snapshot, adoption bar  
+- [Flagship demo](docs/flagship-demo.md) · [AI Guardrail Demo](docs/guardrail-demo.md)
 
 ## Design principles
 

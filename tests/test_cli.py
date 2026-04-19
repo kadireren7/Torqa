@@ -130,6 +130,7 @@ def test_cli_doctor_ok(tmp_path: Path, capsys):
     assert "Risk level: low" in out
     assert "Why:" in out
     assert "Trust: handoff-ready under structural, semantic, and policy checks" in out
+    assert "Readiness score: 100/100" in out
 
 
 def test_cli_doctor_fails_on_bad_file(tmp_path: Path, capsys):
@@ -157,6 +158,12 @@ def test_cli_help_exits_zero():
 def test_cli_subcommand_help():
     with pytest.raises(SystemExit) as ei:
         main(["validate", "--help"])
+    assert ei.value.code == 0
+
+
+def test_cli_check_subcommand_help():
+    with pytest.raises(SystemExit) as ei:
+        main(["check", "--help"])
     assert ei.value.code == 0
 
 

@@ -105,6 +105,7 @@ def test_cli_doctor_json(tmp_path: Path, capsys, sample_bundle):
     assert "Risk level: low" in out
     assert "Why:" in out
     assert "Trust: handoff-ready under structural, semantic, and policy checks" in out
+    assert "Readiness score: 100/100" in out
 
 
 def test_cli_unsupported_extension(tmp_path: Path, capsys):
@@ -113,3 +114,41 @@ def test_cli_unsupported_extension(tmp_path: Path, capsys):
     code = main(["validate", str(p)])
     assert code == 1
     assert ".yaml" in capsys.readouterr().err or "unsupported" in capsys.readouterr().err.lower()
+
+
+def test_cli_validate_json_batch_array_two_bundles(tmp_path: Path, capsys, sample_bundle):
+    p = tmp_path / "batch.json"
+    p.write_text(json.dumps([sample_bundle, sample_bundle]), encoding="utf-8")
+    code = main(["validate", str(p)])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "json (batch: 2 bundles in file)" in out
+    assert "--- Bundle 2/2" in out
+    assert out.count("Result: PASS") == 2
+
+
+def test_cli_validate_json_batch_error_includes_path_index(tmp_path: Path, capsys, sample_bundle):
+    bad = {"ir_goal": {}, "extra_top": 1}
+    p = tmp_path / "batch.json"
+    p.write_text(json.dumps([sample_bundle, bad]), encoding="utf-8")
+    code = main(["validate", str(p)])
+    assert code == 1
+    err = capsys.readouterr().out
+    assert "[1]" in err
+    assert "unknown top-level" in err.lower() or "Bundle envelope" in err
+
+
+def test_cli_inspect_rejects_json_batch(tmp_path: Path, capsys, sample_bundle):
+    p = tmp_path / "batch.json"
+    p.write_text(json.dumps([sample_bundle]), encoding="utf-8")
+    code = main(["inspect", str(p)])
+    assert code == 1
+    assert "batch" in capsys.readouterr().err.lower()
+
+
+def test_cli_compare_rejects_json_batch(tmp_path: Path, capsys, sample_bundle):
+    p = tmp_path / "batch.json"
+    p.write_text(json.dumps([sample_bundle]), encoding="utf-8")
+    code = main(["compare", str(p)])
+    assert code == 1
+    assert "batch" in capsys.readouterr().out.lower() or "array" in capsys.readouterr().out.lower()

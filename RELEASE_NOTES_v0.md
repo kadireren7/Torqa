@@ -15,8 +15,8 @@ This repository ships **spec machinery and reference tooling**, not a workflow r
 - **JSON Schema** for the bundle wire format (`spec/IR_BUNDLE.schema.json`).
 - **Strict `.tq` surface** (`tq_v1`): reference parser **`parse_tq_source`** mapping text to the same bundle shape.
 - **`meta:`** block support for optional **audit strings** in **`metadata.surface_meta`**.
-- **`torqa` CLI**: **`validate`**, **`inspect`**, **`doctor`**, **`version`** for **`.tq`** and **`.json`** inputs on the same pipeline.
-- **Tests** and **documentation** (quickstart, concepts, examples, flagship demo, diagrams, roadmap).
+- **`torqa` CLI** (same pipeline for **`.tq`** and **`.json`**): **`validate`**, **`check`**, **`inspect`**, **`doctor`**, **`explain`**, **`compare`**, **`scan`**, **`report`** (HTML / Markdown), **`init`**, **`version`**. Optional **`torqa.toml`** project defaults; JSON may be a single bundle, bare **`ir_goal`**, or a **batch array** (see [Quickstart](docs/quickstart.md)).
+- **Tests** and **documentation** (quickstart, trust docs, CI reports, project config, examples, demos, diagrams, roadmap, [status](docs/status.md)).
 
 ## What is intentionally not included
 

@@ -1,0 +1,9 @@
+# Self-test fixture: policy should fail (missing surface_meta.severity)
+intent broken_severity
+requires username, password, ip_address
+meta:
+  owner qa_team
+result Done
+flow:
+  create session
+  emit login_success

@@ -24,6 +24,8 @@ You *can* treat the **bundle** (`ir_goal`) as JSON on the wire—but something h
 
 **Use your own criteria.** This is an **early core**: reference Python, a **small** default effect registry, and tests focused on smoke coverage—not a long enterprise support matrix. Production use means **you** validate fit: error handling, registry coverage for your effects, security review of parsers, and your execution layer.
 
+For a concise **repository audit** and what typically precedes a **1.0**-style contract freeze, see **[Repository status](status.md)**.
+
 ## What does `semantic_ok` mean?
 
 **No semantic or logic errors** in the report’s merged error list. **Warnings** may still appear. Structural issues belong to **`validate_ir`** (and parse errors throw before that).

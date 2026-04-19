@@ -102,6 +102,7 @@ flow:
     assert code == 0
     out = capsys.readouterr().out
     assert "Trust profile: strict" in out
+    assert "Readiness score: 100/100" in out
 
 
 def test_cli_invalid_profile_exits_nonzero(tmp_path):

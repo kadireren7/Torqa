@@ -1,5 +1,0 @@
-intent broken_flow
-requires username, password
-result Done
-flow:
-  notify admin

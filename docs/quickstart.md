@@ -26,7 +26,7 @@ python -m src.torqa_cli validate demo.tq
 python -m src.torqa_cli --help
 ```
 
-Use the same pattern for `doctor`, `inspect`, and `version`.
+Use the same pattern for `check`, `compare`, `doctor`, `explain`, `inspect`, `init`, `report`, `scan`, and `version`.
 
 **Option B — add Scripts to `PATH`**
 
@@ -42,14 +42,22 @@ Add that folder to your **user** environment `Path`, then open a **new** termina
 
 After install, prefer **`torqa`** when it is on your `PATH`; otherwise use **`python -m src.torqa_cli`** as above.
 
+Optional **`torqa.toml`** in the project tree sets defaults for **`profile`**, **`fail_on_warning`**, and **`report_format`** when you omit the matching flags. See [Project config](project-config.md).
+
 | Command | What it does |
 |---------|----------------|
 | `torqa validate FILE` | **`.tq`:** parse → `validate_ir` → semantic + logic → **policy** (`build_policy_report`). **`.json`:** load bundle or bare `ir_goal` → same path. Optional **`--profile default|strict|review-heavy`**. On full pass, states the artifact is **ready for external handoff** (nothing runs here); on failure, **blocked before execution**. **Exit 0** only when structure, semantics, and policy all pass. |
+| `torqa check FILE` | **Same checks as `validate`**, but prints only a compact block: **Decision** (`SAFE_TO_HANDOFF` \| `NEEDS_REVIEW` \| `BLOCKED`), **Risk**, **Trust profile**, **Readiness score** (deterministic **0–100** from parse/load, structural + semantic pass, policy pass, risk tier, and review signal), **Top reason**, **Suggested fix** (short, deterministic hints such as missing owner/severity, header order, flow steps, or strict-profile issues), **Suggested next step**. Optional **`--profile`**. **Exit 0** when policy passes (including when Decision is `NEEDS_REVIEW`); **exit 1** when blocked earlier or policy fails. |
+| `torqa explain FILE` | Same pipeline as **`validate`**, then **plain-English sections** (no AI): **what this spec does** (goal, inputs, transitions, effects), **why the risk tier is what it is** (from policy reasons and profile), **blocked or approved for handoff**, **what to improve next** (template text from existing errors and `suggested_*` helpers). Optional **`--profile`**. **Exit 0** when policy passes; **exit 1** when blocked earlier or policy fails. |
+| `torqa compare FILE` | Load and validate **once**, then run **`build_policy_report`** for **`default`**, **`strict`**, and **`review-heavy`**. Prints a table: **Profile \| Decision \| Risk \| Review \| Notes**. **Exit 1** if the file is missing or the spec stops before policy (same rows repeated); **exit 0** when all three profile evaluations complete. |
+| `torqa scan PATH` | Recursively find **`.tq`** and **`.json`** files under **`PATH`** (or evaluate a single **`.tq` / `.json`** file). For each, same trust gate as **`torqa check`** (optional **`--profile`**). Prints **File \| Decision \| Risk \| Profile result** and summary **Total / Safe / Needs review / Blocked**. **Exit 1** if any file is **BLOCKED**; **exit 0** otherwise. |
+| `torqa report PATH_OR_FILE --format html` or `--format md` | Same evaluations as **`scan`**. **html:** one standalone page (embedded CSS; no CDN). **md:** Markdown for PRs/CI — **summary**, **blocked files**, **recommendations**, plus full table (reasons + timestamps). **`--output` / `-o`** (defaults: **`torqa-report.html`** or **`torqa-report.md`**). Optional **`--profile`**. **Exit 1** if any file is **BLOCKED**. See [CI reports](ci-report.md). |
 | `torqa inspect FILE` | **Stdout:** full canonical **`ir_goal` JSON** only (pipelines, diffs). **Stderr:** `Input type`, `File:`, and notes that stdout is the machine-readable artifact for tooling, review, and pipelines — **no execution**. |
-| `torqa doctor FILE` | Human-readable sections: Input, Parse/Load, Structure, Semantics, **Policy**, Summary — plus **readiness / trust** lines when checks pass. Optional **`--profile`**. |
+| `torqa doctor FILE` | Human-readable sections: Input, Parse/Load, Structure, Semantics, **Policy**, Summary — **Readiness score: N/100** in **Summary** (same formula as **`torqa check`**); plus **readiness / trust** lines when checks pass; **`Suggested fix:`** lines after failures (same deterministic hints as **`torqa check`**: e.g. **Add metadata owner**, **Use strict tq_v1 header order**, **Use supported flow steps**, **Lower severity or use review path** under **`--profile strict`**). Optional **`--profile`**. |
+| `torqa init` | **Interactive wizard** (TTY): prompts for flow name, owner, severity, template, and output path. **Non-interactive:** `torqa init TEMPLATE --output FILE` with **`TEMPLATE`** = `login` \| `approval` \| `onboarding` \| `blank`; optional **`--flow`**, **`--owner`**, **`--severity`**; **`--force`** overwrites an existing file. Writes a **policy-valid** `.tq` starter. |
 | `torqa version` | One line: package version and canonical IR version (e.g. `torqa 0.1.0 · canonical IR 1.4`). |
 
-**File types:** extension **`.tq`** uses the reference text parser; **`.json`** accepts either a **full bundle** `{"ir_goal": {...}}` (optional `library_refs`) or a **bare `ir_goal`** object with the required top-level keys (see `spec/IR_BUNDLE.schema.json`). Malformed JSON or envelope errors fail with a clear message.
+**File types:** extension **`.tq`** uses the reference text parser; **`.json`** accepts a **full bundle** `{"ir_goal": {...}}` (optional `library_refs`), a **bare `ir_goal`** object with the required top-level keys (see `spec/IR_BUNDLE.schema.json`), or a **JSON array of bundles** `[{...}, {...}]` for batch validation (`validate`, `check`, `scan`, `report`). Load and IR errors include **path hints** (e.g. `file.json[1].ir_goal`). **`inspect`**, **`doctor`**, **`explain`**, and **`compare`** expect a **single** bundle per file (not a root array). Malformed JSON or envelope errors fail with a clear message.
 
 **Example (`torqa validate` success):**
 
@@ -84,9 +92,24 @@ torqa inspect demo.tq
 torqa inspect bundle.json
 torqa doctor demo.tq
 torqa doctor bundle.json
+torqa check demo.tq
+torqa check bundle.json
+torqa explain demo.tq
+torqa explain bundle.json
+torqa compare demo.tq
+torqa scan ./examples
+torqa report . --format html -o trust-report.html
+torqa report . --format md -o torqa-report.md
+torqa init login --output demo.tq
 torqa version
 torqa --help
 torqa validate --help
+torqa check --help
+torqa explain --help
+torqa compare --help
+torqa scan --help
+torqa report --help
+torqa init --help
 ```
 
 ## Create demo.tq

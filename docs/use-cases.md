@@ -4,6 +4,30 @@ Runnable artifacts under [`examples/`](../examples/) show how Torqa helps **toda
 
 ---
 
+## Production templates (`examples/templates/`)
+
+Curated starters that pair **human-readable `.tq`** with **bundle JSON** so you can compare the same trust pipeline across sources. Each file includes header comments (`.tq`) or `metadata.source_map.trust_note` (JSON) describing the **expected trust outcome** under the default profile.
+
+| File | Role | Typical trust outcome (default profile) |
+|------|------|-------------------------------------------|
+| [`templates/login_flow.tq`](../examples/templates/login_flow.tq) | Baseline login-shaped flow | Policy **PASS**, risk **low**, review **not** required |
+| [`templates/approval_flow.tq`](../examples/templates/approval_flow.tq) | High severity label | Policy **PASS**, risk **high**, **review required** |
+| [`templates/onboarding_flow.tq`](../examples/templates/onboarding_flow.tq) | Extra inputs (`email`, …), same shipped flow steps | Policy **PASS**, risk **low** when severity stays low |
+| [`templates/ai_generated_safe.json`](../examples/templates/ai_generated_safe.json) | Generator-style bundle aligned with `login_flow` | Same as safe login: **low** risk handoff |
+| [`templates/ai_generated_risky.json`](../examples/templates/ai_generated_risky.json) | Same IR shape with **high** severity in `surface_meta` | Policy **PASS** by default; **`torqa validate --profile strict` fails** (severity `high` blocked) |
+
+```bash
+torqa validate examples/templates/login_flow.tq
+torqa check examples/templates/approval_flow.tq
+torqa validate examples/templates/ai_generated_safe.json
+torqa validate examples/templates/ai_generated_risky.json
+torqa validate --profile strict examples/templates/ai_generated_risky.json
+```
+
+The last command should **fail** under **`strict`**, illustrating a **stricter trust gate** for the same JSON that passes under **`default`**.
+
+---
+
 ## 1. AI workflow trust gate
 
 **What it is:** A single pipeline for **any** workflow-shaped input—human **`.tq`**, **bundle JSON** from a template, importer, or **generator**—with **no** separate “AI bypass.” After load, Torqa runs **structural validation**, **semantic validation**, then **`build_policy_report`** (policy gates, deterministic **risk level**, **`reasons`**, optional **`--profile`**). See **[Trust layer](trust-layer.md)** for how this differs from parse-only checks.

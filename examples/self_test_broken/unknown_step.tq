@@ -1,0 +1,7 @@
+# Self-test fixture: parse should fail (unknown flow step)
+intent broken_step
+requires username, password, ip_address
+result Done
+flow:
+  create session
+  notify lead
