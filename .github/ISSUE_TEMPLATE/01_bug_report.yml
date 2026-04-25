@@ -1,0 +1,60 @@
+name: Bug report
+description: Something is wrong with Torqa (CLI, validation, docs, packaging).
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. A **minimal repro** (file + command) gets the fastest fix.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: One or two sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Commands, paths, and (if possible) attach or paste a minimal `.tq` / `.json`.
+      placeholder: |
+        1. `torqa validate path/to/spec.tq`
+        2. …
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Torqa version
+      description: Output of `torqa version` or `pip show torqa`.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, trust profile (`--profile`), optional.

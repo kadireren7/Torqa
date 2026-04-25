@@ -37,14 +37,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from src.ir.canonical_ir import CANONICAL_IR_VERSION, DEFAULT_IR_METADATA
 from src.surface.tq_errors import TQParseError
-from src.surface.tq_rich_parse import (
-    flatten_rich_flow,
-    ir_input_type_for_model_field,
-    parse_effects_block,
-    parse_model_block,
-    parse_rich_flow_tree,
-    parse_validate_block,
-)
 
 
 def _ident_expr(name: str) -> Dict[str, Any]:
@@ -438,7 +430,6 @@ def _str_lit_expr(value: str) -> Dict[str, Any]:
 
 def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
     module: Optional[str] = None
-    surface_kind = "tq_v1"
     intent = ""
     requires: List[str] = []
     ensures: Optional[str] = None
@@ -447,10 +438,6 @@ def _parse_header_and_flow(text: str) -> _ParsedTqSurface:
     flow_steps: List[Tuple[str, Optional[str]]] = []
     stub_paths: Dict[str, str] = {}
     surface_meta: Dict[str, str] = {}
-    model_fields: List[Dict[str, Any]] = []
-    validate_rules: List[Dict[str, Any]] = []
-    effects_lines: List[str] = []
-    rich_flow_nodes: List[Any] = []
     in_flow = False
     after_flow = False
     flow_declared = False

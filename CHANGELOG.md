@@ -1,10 +1,37 @@
 # Changelog
 
-All notable changes to this project are documented here. The format is loosely inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to this project are documented in this file.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- **Docs:** Added [Repository status & pre-v1 readiness](docs/status.md) — audit of product clarity, CLI, trust model, docs, adoption bar, and typical gaps before a 1.0-style freeze; linked from README.
+## [0.1.1] — 2026-04-26
+
+### Added
+
+- **n8n adapter** (`src/integrations/n8n/`): parse exported workflow JSON, static findings, CLI **`--source n8n`** on validate / scan / inspect / doctor, and **`torqa import n8n … --out`**.
+- **Ruff** configuration in `pyproject.toml` and a **`ruff check src tests`** step in the **Packaging** GitHub Actions workflow.
+
+### Fixed
+
+- **Trust scoring:** failures in modular **advanced analysis** are no longer ignored. `compute_trust_score` records **`trust_scoring_issues`** (structured `code` + `message`), appends **policy warnings**, adds an **`advanced_analysis_failed`** score factor (0 points, explicit detail), and notes the situation in **`score_rationale`**. **`torqa validate --json`** exposes **`policy.trust_scoring_issues`**.
+- **n8n → IR:** the adapter emits a **single** `integration_external_step` transition so canonical IR **duplicate (effect, from, to) triple** rules are satisfied; **node-level** context remains in **`metadata.integration.findings`** and **`metadata.integration.transition_to_node`** (`n8n_nodes_ordered`).
+
+### Changed
+
+- **Project identity:** `pyproject.toml` **Repository / Issues / Changelog** URLs and README badges and clone instructions point to **`https://github.com/kadireren7/Torqa`** (default directory **`Torqa`** after `git clone`).
+- **Documentation:** README and **`docs/integrations/n8n.md`** clarify that Torqa **does not execute** n8n, that n8n is an **adapter layer**, how the **IR** and **scan JSON** relate to **findings** and **n8n node ids**.
+
+### Maintenance
+
+- **`.gitignore`:** ignore **`dashboard/node_modules`**, **`.next`**, **`.turbo`**, and related generated frontend paths.
+- **`CONTRIBUTING.md`**, **`.github/ISSUE_TEMPLATE/`**, **`SECURITY.md`**, **`docs/roadmap.md`:** links updated to the **Torqa** repository.
+- **`pyproject.toml`:** **`torqa[dev]`** now includes **Ruff** for local linting.
+
+### Testing
+
+- Full **`pytest`** suite kept green; added regression coverage for trust scoring when advanced analysis raises.
 
 ## [0.1.0] — 2026-04-16
 
@@ -37,4 +64,8 @@ First early public release of the Torqa core: canonical IR, validation, referenc
 
 ---
 
-Earlier development history is folded into this release for clarity; subsequent versions will list incremental changes here.
+Earlier development history is folded into **0.1.0** for clarity; subsequent versions list incremental changes here.
+
+[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/kadireren7/Torqa/releases/tag/v0.1.1
+[0.1.0]: https://github.com/kadireren7/Torqa/releases/tag/v0.1.0

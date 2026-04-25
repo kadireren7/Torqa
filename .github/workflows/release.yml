@@ -1,0 +1,35 @@
+# Publish to PyPI when a SemVer tag is pushed (e.g. v0.1.1).
+# Prerequisite: configure "Trusted Publishing" for this repo on https://pypi.org
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Optional: add `environment: release` in GitHub Settings for approval gates + OIDC.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build
+        run: pip install --upgrade pip build
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true

@@ -5,14 +5,16 @@
 from __future__ import annotations
 
 import html
+import json
 import sys
 from dataclasses import dataclass
-
-from src.surface.parse_tq import TQParseError
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Tuple
 
+from rich.console import Console
+
+from src.surface.parse_tq import TQParseError
 from src.torqa_cli.check_cmd import (
     DECISION_BLOCKED,
     DECISION_REVIEW,
@@ -20,25 +22,9 @@ from src.torqa_cli.check_cmd import (
     TrustEvalResult,
     evaluate_trust_from_bundle,
 )
+from src.torqa_cli.cli_printers import cli_json, cli_no_color, cli_quiet, print_banner
+from src.torqa_cli.fs_discovery import discover_spec_files, display_path_relative
 from src.torqa_cli.io import bundle_jobs, load_input
-
-
-def _discover_spec_files(root: Path) -> List[Path]:
-    out: List[Path] = []
-    for p in root.rglob("*"):
-        if not p.is_file():
-            continue
-        suf = p.suffix.lower()
-        if suf in (".tq", ".json"):
-            out.append(p.resolve())
-    return sorted(out)
-
-
-def _display_path(scan_root: Path, file_path: Path) -> str:
-    try:
-        return str(file_path.resolve().relative_to(scan_root.resolve()))
-    except ValueError:
-        return str(file_path)
 
 
 @dataclass
@@ -61,12 +47,12 @@ def _rows_for_path(path: Path, profile: str) -> Tuple[Path, List[_ReportRow]]:
         scan_root = path.parent.resolve()
     else:
         scan_root = path.resolve()
-        files = _discover_spec_files(path)
+        files = discover_spec_files(path)
 
     rows: List[_ReportRow] = []
     for fp in files:
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        rel_base = _display_path(scan_root, fp)
+        rel_base = display_path_relative(scan_root, fp)
         bundle, err, input_type = load_input(fp)
         if err is not None:
             rs = f"{err.code}: {err}" if isinstance(err, TQParseError) else str(err)
@@ -177,7 +163,6 @@ def _build_html(
 
 
 def _md_escape(text: str) -> str:
-    """Escape minimal markdown special chars in inline text."""
     return (
         text.replace("\\", "\\\\")
         .replace("|", "\\|")
@@ -298,23 +283,37 @@ def cmd_report(args: object) -> int:
     output: Path | None = getattr(args, "output", None)
     profile = getattr(args, "profile", None) or "default"
     fail_on_warning = bool(getattr(args, "fail_on_warning", False))
+    json_mode = cli_json(args)
 
     if not path.exists():
-        print(f"torqa report: not found: {path}", file=sys.stderr)
+        if json_mode:
+            print(json.dumps({"schema": "torqa.cli.report.v1", "ok": False, "error": "not found", "path": str(path)}))
+        else:
+            print(f"torqa report: not found: {path}", file=sys.stderr)
         return 1
 
     if fmt not in ("html", "md"):
-        print(f"torqa report: unsupported --format {fmt!r}", file=sys.stderr)
+        if json_mode:
+            print(json.dumps({"schema": "torqa.cli.report.v1", "ok": False, "error": "bad_format", "format": fmt}))
+        else:
+            print(f"torqa report: unsupported --format {fmt!r}", file=sys.stderr)
         return 1
 
     try:
         _, rows = _rows_for_path(path, profile=profile)
     except ValueError as ex:
-        print(f"torqa report: {ex}", file=sys.stderr)
+        if json_mode:
+            print(json.dumps({"schema": "torqa.cli.report.v1", "ok": False, "error": str(ex)}))
+        else:
+            print(f"torqa report: {ex}", file=sys.stderr)
         return 1
 
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     scope = str(path.resolve())
+
+    safe = sum(1 for r in rows if r.decision == DECISION_SAFE)
+    needs = sum(1 for r in rows if r.decision == DECISION_REVIEW)
+    blocked_n = sum(1 for r in rows if r.decision == DECISION_BLOCKED)
 
     if fmt == "html":
         doc = _build_html(scope_label=scope, profile=profile, generated_at=gen, rows=rows)
@@ -330,16 +329,72 @@ def cmd_report(args: object) -> int:
     try:
         out_path.write_text(doc, encoding="utf-8", newline="\n")
     except OSError as ex:
-        print(f"torqa report: could not write {out_path}: {ex}", file=sys.stderr)
+        if json_mode:
+            print(json.dumps({"schema": "torqa.cli.report.v1", "ok": False, "error": "write_failed", "detail": str(ex)}))
+        else:
+            print(f"torqa report: could not write {out_path}: {ex}", file=sys.stderr)
         return 1
 
-    print(f"Wrote {out_path.resolve()}")
-    if any(r.decision == DECISION_BLOCKED for r in rows):
-        return 1
-    if fail_on_warning and any(r.has_warnings for r in rows):
+    blocked_any = any(r.decision == DECISION_BLOCKED for r in rows)
+    warn_any = fail_on_warning and any(r.has_warnings for r in rows)
+    exit_code = 1 if blocked_any or warn_any else 0
+
+    if json_mode:
         print(
-            "torqa report: semantic or policy warnings present (fail-on-warning); exiting with status 1.",
-            file=sys.stderr,
+            json.dumps(
+                {
+                    "schema": "torqa.cli.report.v1",
+                    "ok": exit_code == 0,
+                    "written": str(out_path.resolve()),
+                    "format": fmt,
+                    "profile": profile,
+                    "scope": scope,
+                    "summary": {
+                        "total": len(rows),
+                        "safe": safe,
+                        "needs_review": needs,
+                        "blocked": blocked_n,
+                    },
+                    "rows": [
+                        {
+                            "file": r.rel_path,
+                            "decision": r.decision,
+                            "risk": r.risk,
+                            "trust_profile": r.trust_profile,
+                            "reason": r.reason,
+                            "has_warnings": r.has_warnings,
+                        }
+                        for r in rows
+                    ],
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
         )
-        return 1
+        return exit_code
+
+    if not cli_quiet(args):
+        print_banner("torqa report", f"{scope} · {fmt} · profile {profile}", args=args)
+
+    c = Console(
+        file=sys.stdout,
+        highlight=False,
+        no_color=cli_no_color(args),
+        force_terminal=sys.stdout.isatty() and not cli_no_color(args),
+    )
+    c.print(f"[green]Wrote[/] [bold]{out_path.resolve()}[/]")
+    if blocked_any:
+        c.print(f"[red]{blocked_n} blocked[/] · [yellow]{needs} need review[/] · [green]{safe} safe[/]")
+    elif needs:
+        c.print(f"[yellow]{needs} need review[/] · [green]{safe} safe[/] · [dim]0 blocked[/]")
+    else:
+        c.print(f"[green]All {len(rows)} row(s) passed the trust gate under this profile.[/]")
+
+    if blocked_any or warn_any:
+        if warn_any and not blocked_any:
+            print(
+                "torqa report: semantic or policy warnings present (fail-on-warning); exiting with status 1.",
+                file=sys.stderr,
+            )
+        return exit_code
     return 0

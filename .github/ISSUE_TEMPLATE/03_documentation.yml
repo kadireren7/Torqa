@@ -1,0 +1,29 @@
+name: Documentation
+description: Fix or improve docs, examples, or onboarding.
+labels: ["documentation", "triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - README / root onboarding
+        - docs/*.md
+        - examples/
+        - CONTRIBUTING / issue templates
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is confusing, wrong, or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Optional draft text, links to canonical sections, or a PR is welcome.

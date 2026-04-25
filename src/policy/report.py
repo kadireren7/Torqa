@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Literal
 
 from src.ir.canonical_ir import IRGoal
 from src.policy.profiles import TrustProfileId, normalize_trust_profile
+from src.policy.risk_engine import compute_trust_score
 
 RiskLevel = Literal["low", "medium", "high"]
 
@@ -274,6 +275,13 @@ def _report_review_heavy(ir_goal: IRGoal) -> Dict[str, Any]:
     }
 
 
+def _report_enterprise(ir_goal: IRGoal) -> Dict[str, Any]:
+    """Same gates as review-heavy; distinct profile id for stricter trust-score floor."""
+    out = _report_review_heavy(ir_goal)
+    out["reasons"] = [s.replace("review-heavy", "enterprise") for s in out["reasons"]]
+    return out
+
+
 def build_policy_report(ir_goal: IRGoal, profile: str = "default") -> Dict[str, Any]:
     """
     Evaluate shipped trust rules and deterministic risk heuristics against ``ir_goal``.
@@ -281,14 +289,45 @@ def build_policy_report(ir_goal: IRGoal, profile: str = "default") -> Dict[str, 
     ``profile`` must be a built-in name (see ``normalize_trust_profile``).
 
     Returns:
-      policy_ok, review_required, risk_level, reasons, errors, warnings, trust_profile.
+      policy_ok, review_required, risk_level, reasons, errors, warnings, trust_profile,
+      plus transparent scoring: trust_score, confidence, trust_decision, score_factors, …
     """
     pid: TrustProfileId = normalize_trust_profile(profile)
     if pid == "default":
         out = _report_default(ir_goal)
     elif pid == "strict":
         out = _report_strict(ir_goal)
+    elif pid == "enterprise":
+        out = _report_enterprise(ir_goal)
     else:
         out = _report_review_heavy(ir_goal)
     out["trust_profile"] = pid
+
+    st = _read_meta_and_transitions(ir_goal)
+    pe = len(out.get("errors") or [])
+    score_payload = compute_trust_score(
+        ir_goal,
+        pid,
+        policy_errors=pe,
+        s_ok=bool(st["s_ok"]),
+        severity=str(st.get("severity") or ""),
+        n_trans=int(st["n_trans"]),
+        legacy_risk_level=str(out.get("risk_level") or "low"),
+    )
+    out.update(score_payload)
+
+    ts_issues = score_payload.get("trust_scoring_issues") or []
+    if ts_issues:
+        warns = out.setdefault("warnings", [])
+        if isinstance(warns, list):
+            for issue in ts_issues:
+                if not isinstance(issue, dict):
+                    continue
+                code = str(issue.get("code") or "TORQA_TRUST_SCORING")
+                msg = str(issue.get("message") or "")
+                warns.append(
+                    f"Trust scoring ({code}): {msg} "
+                    "Advanced analysis deductions were not applied; the score may be optimistic until this is fixed."
+                )
+
     return out

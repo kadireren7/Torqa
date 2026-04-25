@@ -25,7 +25,6 @@ from src.ir.canonical_ir import (
     IRBinary,
     IRBooleanLiteral,
     IRCall,
-    IRCondition,
     IRExpr,
     IRGoal,
     IRIdentifier,
@@ -71,7 +70,7 @@ class IRFunctionSignature:
 
 
 def default_ir_function_registry() -> Dict[str, IRFunctionSignature]:
-    T, N, B, V, AB = "text", "number", "boolean", "void", "bound_input"
+    T, _, B, V, AB = "text", "number", "boolean", "void", "bound_input"
     return {
         "exists": IRFunctionSignature("exists", [AB], B),
         "verify_username": IRFunctionSignature("verify_username", [T], B),
@@ -106,6 +105,14 @@ def default_ir_function_registry() -> Dict[str, IRFunctionSignature]:
             guarantees_after=[IRAfterGuaranteeSpec(0, "exists")],
         ),
         "strings_equal": IRFunctionSignature("strings_equal", [T, T], B),
+        # Integration adapters (n8n, …): documented external step with no built-in semantics.
+        "integration_external_step": IRFunctionSignature(
+            "integration_external_step",
+            [],
+            V,
+            reads=[],
+            writes=[],
+        ),
         # Post-login / .tq `ensures session.created`: true when world_state.session_user matches bound username.
         "session_stored_for_user": IRFunctionSignature(
             "session_stored_for_user",
@@ -553,17 +560,26 @@ def build_ir_semantic_report(
     ir_goal: IRGoal,
     function_registry: Dict[str, IRFunctionSignature],
 ) -> dict:
+    from src.analysis.engine import advanced_analysis_report
+
     symbol_table = build_ir_symbol_table(ir_goal)
     guarantee_table = build_ir_guarantee_table(ir_goal, function_registry)
     errors, warnings = validate_ir_semantics(ir_goal, function_registry)
     logic_errors = validate_ir_goal_logic(ir_goal)
-    merged_errors = list(errors) + list(logic_errors)
+    adv = advanced_analysis_report(ir_goal, function_registry)
+    adv_err = list(adv.get("advanced_errors") or [])
+    adv_warn = list(adv.get("advanced_warnings") or [])
+    merged_errors = list(errors) + list(logic_errors) + adv_err
+    merged_warnings = list(warnings) + adv_warn
     return {
         "symbol_table": dict(sorted(symbol_table.items())),
         "guarantee_table": _serialize_guarantee_table(guarantee_table),
         "errors": merged_errors,
-        "warnings": list(warnings),
+        "warnings": merged_warnings,
         "semantic_ok": len(merged_errors) == 0,
         "logic_errors": list(logic_errors),
         "logic_ok": len(logic_errors) == 0,
+        "advanced_findings": adv.get("advanced_findings") or [],
+        "advanced_info": adv.get("advanced_info") or [],
+        "advanced_ok": bool(adv.get("advanced_ok", True)),
     }

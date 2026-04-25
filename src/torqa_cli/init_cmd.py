@@ -9,8 +9,12 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from rich.console import Console
+from rich.panel import Panel
+
 from src.surface.parse_tq import parse_tq_source
 from src.surface.tq_errors import TQParseError
+from src.torqa_cli.cli_printers import cli_no_color, cli_quiet
 
 TEMPLATE_CHOICES = ("login", "approval", "onboarding", "blank")
 
@@ -211,5 +215,24 @@ def cmd_init(args: Any) -> int:
         print(f"torqa init: could not write {output}: {ex}", file=sys.stderr)
         return 1
 
-    print(f"Wrote {output.resolve()}")
+    if cli_quiet(args):
+        print(f"Wrote {output.resolve()}")
+    else:
+        c = Console(
+            file=sys.stdout,
+            highlight=False,
+            no_color=cli_no_color(args),
+            force_terminal=sys.stdout.isatty() and not cli_no_color(args),
+        )
+        if sys.stdout.isatty() and not cli_no_color(args):
+            c.print(
+                Panel.fit(
+                    f"[green]Starter workflow written[/]\n[bold]{output.resolve()}[/]\n\n"
+                    "[dim]Next:[/] [bold]torqa validate[/] this file, then edit intent and flow steps.",
+                    title="torqa init",
+                    border_style="green",
+                )
+            )
+        else:
+            print(f"Wrote {output.resolve()}")
     return 0

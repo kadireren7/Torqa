@@ -1,0 +1,31 @@
+# Manual reference runs for the Torqa composite action (scan vs validate).
+# Run from the Actions tab. See docs/github-actions.md.
+
+name: Torqa action examples
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/torqa
+        with:
+          torqa-package-path: .
+          scan-path: examples/templates
+          profile: default
+          comment-on-pr: false
+
+  validate-strict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/torqa
+        with:
+          torqa-package-path: .
+          validate-file: examples/templates/login_flow.tq
+          profile: strict
+          fail-on-warning: true
+          comment-on-pr: false

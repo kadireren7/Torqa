@@ -1,0 +1,226 @@
+# Torqa — trust gate for workflow specs (.tq / bundle JSON) in CI.
+# See docs/github-actions.md for permissions, inputs, and examples.
+
+name: Torqa trust gate
+description: >
+  Install Torqa from a local path, run torqa scan or torqa validate, fail on policy violations,
+  upload a JSON report artifact, and optionally comment a summary on the PR.
+
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  torqa-package-path:
+    description: Path to Torqa root (directory with pyproject.toml), relative to repository root. Use . when Torqa lives in this repo.
+    required: false
+    default: "."
+  working-directory:
+    description: Working directory for torqa scan/validate (relative to repository root).
+    required: false
+    default: "."
+  scan-path:
+    description: Argument to torqa scan — a directory or a single .tq / .json file (relative to working-directory).
+    required: false
+    default: "."
+  validate-file:
+    description: If set, runs torqa validate on this path instead of torqa scan (relative to working-directory).
+    required: false
+    default: ""
+  profile:
+    description: Trust profile — default, strict, review-heavy, or enterprise.
+    required: false
+    default: "default"
+  fail-on-warning:
+    description: If true, passes --fail-on-warning to Torqa.
+    required: false
+    default: "false"
+  python-version:
+    description: Python version for setup-python.
+    required: false
+    default: "3.11"
+  upload-artifact:
+    description: Upload the JSON report as a workflow artifact.
+    required: false
+    default: "true"
+  artifact-name:
+    description: Name for the uploaded artifact.
+    required: false
+    default: "torqa-report"
+  json-report-filename:
+    description: JSON report filename written to the repository root (for artifact + PR comment).
+    required: false
+    default: "torqa-ci-report.json"
+  comment-on-pr:
+    description: Post a markdown summary on the PR (requires pull_request trigger and github-token).
+    required: false
+    default: "false"
+  github-token:
+    description: secrets.GITHUB_TOKEN (or PAT) with pull-requests write when comment-on-pr is true.
+    required: false
+    default: ""
+
+outputs:
+  exit-code:
+    description: Torqa exit code (0 means trust gate passed).
+    value: ${{ steps.run-torqa.outputs.exit-code }}
+  report-path:
+    description: Absolute path to the JSON report file.
+    value: ${{ steps.run-torqa.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Torqa
+      shell: bash
+      run: |
+        set -euo pipefail
+        WS="${GITHUB_WORKSPACE}"
+        REL="${{ inputs.torqa-package-path }}"
+        REL="${REL#./}"
+        if [ -z "$REL" ] || [ "$REL" = "." ]; then
+          ABS="$WS"
+        else
+          ABS="$WS/$REL"
+        fi
+        if [ ! -f "${ABS}/pyproject.toml" ]; then
+          echo "::error::Expected pyproject.toml at ${ABS}"
+          exit 1
+        fi
+        pip install --upgrade pip
+        pip install -e "${ABS}"
+
+    - name: Run Torqa
+      id: run-torqa
+      shell: bash
+      env:
+        REPORT_FILE: ${{ github.workspace }}/${{ inputs.json-report-filename }}
+      run: |
+        set -euo pipefail
+        WS="${GITHUB_WORKSPACE}"
+        WD="${{ inputs.working-directory }}"
+        WD="${WD#./}"
+        if [ -z "$WD" ] || [ "$WD" = "." ]; then
+          cd "$WS"
+        else
+          cd "$WS/$WD"
+        fi
+        FLAGS=(--profile "${{ inputs.profile }}" --json)
+        if [ "${{ inputs.fail-on-warning }}" = "true" ]; then
+          FLAGS+=(--fail-on-warning)
+        fi
+        VF="${{ inputs.validate-file }}"
+        if [ -n "$VF" ]; then
+          echo "Running: torqa validate ${FLAGS[*]} $VF"
+          set +e
+          torqa validate "${FLAGS[@]}" "$VF" | tee "$REPORT_FILE"
+          RC=${PIPESTATUS[0]}
+          set -e
+        else
+          SP="${{ inputs.scan-path }}"
+          echo "Running: torqa scan ${FLAGS[*]} $SP"
+          set +e
+          torqa scan "${FLAGS[@]}" "$SP" | tee "$REPORT_FILE"
+          RC=${PIPESTATUS[0]}
+          set -e
+        fi
+        echo "exit-code=$RC" >> "$GITHUB_OUTPUT"
+        echo "report-path=$REPORT_FILE" >> "$GITHUB_OUTPUT"
+        exit "$RC"
+
+    - name: Upload Torqa JSON report
+      if: ${{ inputs.upload-artifact == 'true' && always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ github.workspace }}/${{ inputs.json-report-filename }}
+        if-no-files-found: warn
+
+    - name: Comment PR summary
+      if: ${{ inputs.comment-on-pr == 'true' && github.event_name == 'pull_request' && inputs.github-token != '' }}
+      uses: actions/github-script@v7
+      env:
+        REPORT_FILE: ${{ github.workspace }}/${{ inputs.json-report-filename }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('fs');
+          const file = process.env.REPORT_FILE;
+          const artifact = process.env.ARTIFACT_NAME;
+          let body = '## Torqa trust gate\n\n_Report file not found._';
+          try {
+            const raw = fs.readFileSync(file, 'utf8');
+            const data = JSON.parse(raw);
+            const schema = data.schema || '';
+            const ok = data.ok === true;
+            const prof = data.profile || '';
+            if (schema === 'torqa.cli.validate.v1') {
+              const bundles = data.bundles || [];
+              const failed = bundles.filter((b) => b.result !== 'pass');
+              if (data.error && bundles.length === 0) {
+                body = `## Torqa validate\n\n**Result:** FAIL\n\n**Error:** ${String(data.error)}\n\n`;
+                if (data.path) body += `**Path:** \`${data.path}\`\n\n`;
+              } else {
+              body = `## Torqa validate\n\n` +
+                `**Profile:** \`${prof}\` · **Result:** ${ok ? 'PASS' : 'FAIL'}\n\n` +
+                `**Input:** \`${String(data.path || '')}\`\n\n` +
+                `| Bundles | Failed |\n| --- | ---: |\n` +
+                `| ${bundles.length} | ${failed.length} |\n\n`;
+              if (data.error) {
+                body += `**Error:** ${String(data.error)}\n\n`;
+              }
+              for (const b of failed.slice(0, 8)) {
+                const sfx = b.suffix ? `\`${b.suffix}\`` : '(default)';
+                const pol = b.policy || {};
+                const pe = (pol.errors || []).slice(0, 3).join('; ');
+                const se = (b.semantic_errors || []).slice(0, 2).join('; ');
+                const err = b.error || b.message || pe || se || JSON.stringify(b).slice(0, 200);
+                body += `- ${sfx}: ${String(err).slice(0, 280)}\n`;
+              }
+              if (failed.length > 8) body += `\n_…and ${failed.length - 8} more failing bundle(s)._\n`;
+              }
+            } else {
+              const rows = data.rows || [];
+              const blocked = rows.filter((r) => r.decision === 'BLOCKED');
+              const summary = data.summary || {};
+              const total = summary.total_files ?? summary.total ?? rows.length;
+              const safe = summary.safe ?? 0;
+              const needs = summary.needs_review ?? 0;
+              const blk = summary.blocked ?? blocked.length;
+              body = `## Torqa scan\n\n` +
+                `**Profile:** \`${prof}\` · **Result:** ${ok ? 'PASS' : 'FAIL'}\n\n` +
+                `| Metric | Count |\n| --- | ---: |\n` +
+                `| Total | ${total} |\n` +
+                `| Safe | ${safe} |\n` +
+                `| Needs review | ${needs} |\n` +
+                `| Blocked | ${blk} |\n\n`;
+              if (blocked.length) {
+                body += '**Blocked (first 10)**\n\n';
+                for (const r of blocked.slice(0, 10)) {
+                  body += `- \`${r.file}\`: ${String(r.reason || '').slice(0, 220)}\n`;
+                }
+                if (blocked.length > 10) body += `\n_…and ${blocked.length - 10} more._\n`;
+              }
+            }
+            body += `\n_Full JSON: workflow artifact **${artifact}**._`;
+          } catch (e) {
+            body += `\n\n_(Read error: ${e})_`;
+          }
+          const pr = context.payload.pull_request;
+          const issue_number = pr && pr.number;
+          if (!issue_number) {
+            core.warning('comment-on-pr requires a pull_request event with pull_request payload');
+            return;
+          }
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number,
+            body,
+          });

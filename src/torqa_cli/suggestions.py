@@ -108,3 +108,30 @@ def suggested_next_step_blocked(stage: str, detail: str = "") -> str:
     if stage == "policy":
         return "Fix policy errors or change `--profile`, then re-run `torqa check`."
     return "Resolve blocking issues above, then re-run `torqa check`."
+
+
+def suggestion_for_advanced_line(line: str) -> str:
+    """Hints for ``TORQA_*`` advanced static-analysis codes (deterministic)."""
+    if "TORQA_ORDER_001" in line:
+        return "Reorder transitions so each read is satisfied by an earlier write (see registry read/write sets)."
+    if "TORQA_CYCLE_" in line:
+        return "Break include or dataflow cycles (split transitions, dedupe includes, adjust registry annotations)."
+    if "TORQA_IMPOSS_001" in line:
+        return "Remove the conflicting forbid or relax the matching precondition."
+    if "TORQA_DUP_001" in line:
+        return "Delete or differentiate duplicate equivalent IR entries."
+    if "TORQA_UNDEF_001" in line:
+        return "Bind identifiers in inputs or establish them via transition writes before postconditions."
+    if "TORQA_EXT_001" in line:
+        return "Document external access controls in preconditions or set `guarded_external` in meta."
+    if "TORQA_APPR_001" in line:
+        return "Add an explicit approval/verification step or lower severity if appropriate."
+    if "TORQA_RETRY_001" in line:
+        return "Declare retry/backoff in `meta:` (surface_meta) or document idempotency in source_map."
+    if "TORQA_COST_" in line:
+        return "Reduce transition fan-out or consolidate external checks."
+    if "TORQA_OBS_001" in line:
+        return "Add logging/audit effects or document external telemetry in metadata."
+    if line.startswith("TORQA_"):
+        return "See docs/trust-policies.md and the TORQA_* code in the message; adjust IR or metadata."
+    return "Review the advanced analysis line above against your executor contract."

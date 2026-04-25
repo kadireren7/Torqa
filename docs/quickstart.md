@@ -6,14 +6,18 @@ You will create a tiny **`demo.tq`** file, run a short **`demo.py`** script that
 
 ## Install
 
-- **Python 3.10+** (3.12 is used in CI).
-- Clone this repository and open a terminal at the **repository root** (the folder that contains `pyproject.toml`).
+For **PyPI / pipx / Git installs**, see the README **[Install](../README.md#install)** section.
+
+From a **clone** (contributors), at the **repository root** (folder that contains `pyproject.toml`):
 
 ```bash
 pip install -e ".[dev]"
+# or tests only: pip install -e ".[test]"
 ```
 
-This installs the `torqa` package in editable mode and pulls **pytest** + **jsonschema** for tests and optional schema checks. It also installs the **`torqa`** command-line tool (see below).
+- **Python 3.10+** (3.12 is used in CI).
+- **`[dev]`** includes **`torqa[test]`** (`pytest`, `jsonschema`).
+- This installs the **`torqa`** command-line tool (see below).
 
 ### If `torqa` is not found (often on Windows)
 

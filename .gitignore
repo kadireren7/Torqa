@@ -21,6 +21,17 @@ Thumbs.db
 .env
 .env.local
 
+# Supabase CLI
+supabase/.branches
+supabase/.temp
+
 # CI / local demo output
 .ci_out/
 demo_out/
+
+# Dashboard / frontend (generated; never commit)
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.turbo/
+dashboard/out/
+dashboard/dist/

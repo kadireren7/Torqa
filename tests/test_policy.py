@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
+import copy
 
 from src.ir.canonical_ir import ir_goal_from_json
 from src.policy import build_policy_report
@@ -18,6 +18,61 @@ flow:
   create session
   emit login_success
 """
+
+
+def _bundle_six_transitions_for_policy_warning() -> dict:
+    """Valid IR bundle with six transitions (policy warns on count > 5)."""
+    b = copy.deepcopy(parse_tq_source(TQ_WITH_META))
+    ig = b["ir_goal"]
+
+    def idn(n: str) -> dict:
+        return {"type": "identifier", "name": n}
+
+    ig["transitions"] = [
+        {
+            "transition_id": "t_0001",
+            "effect_name": "verify_username",
+            "arguments": [idn("username")],
+            "from_state": "before",
+            "to_state": "before",
+        },
+        {
+            "transition_id": "t_0002",
+            "effect_name": "verify_password",
+            "arguments": [idn("username"), idn("password")],
+            "from_state": "before",
+            "to_state": "before",
+        },
+        {
+            "transition_id": "t_0003",
+            "effect_name": "reset_failed_attempts",
+            "arguments": [idn("username")],
+            "from_state": "before",
+            "to_state": "before",
+        },
+        {
+            "transition_id": "t_0004",
+            "effect_name": "ip_blacklisted",
+            "arguments": [idn("ip_address")],
+            "from_state": "before",
+            "to_state": "before",
+        },
+        {
+            "transition_id": "t_0005",
+            "effect_name": "start_session",
+            "arguments": [idn("username")],
+            "from_state": "before",
+            "to_state": "after",
+        },
+        {
+            "transition_id": "t_0006",
+            "effect_name": "log_successful_login",
+            "arguments": [idn("username"), idn("ip_address")],
+            "from_state": "after",
+            "to_state": "after",
+        },
+    ]
+    return b
 
 
 def test_policy_passes_with_owner_and_severity():
@@ -65,11 +120,8 @@ def test_policy_high_severity_sets_review_required():
 
 
 def test_policy_warns_when_transition_count_exceeds_five():
-    stub = SimpleNamespace(
-        metadata={"surface_meta": {"owner": "o", "severity": "low"}},
-        transitions=[0, 1, 2, 3, 4, 5],
-    )
-    r = build_policy_report(stub)  # type: ignore[arg-type]
+    goal = ir_goal_from_json(_bundle_six_transitions_for_policy_warning())
+    r = build_policy_report(goal)
     assert r["policy_ok"] is True
     assert r["risk_level"] == "medium"
     assert len(r["warnings"]) == 1

@@ -4,15 +4,19 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+
+from rich.console import Console
 
 from src.ir.canonical_ir import IRGoal, validate_ir
 from src.policy import build_policy_report
 from src.semantics.ir_semantics import build_ir_semantic_report, default_ir_function_registry
 from src.surface.parse_tq import TQParseError
 from src.torqa_cli.check_cmd import DECISION_REVIEW, DECISION_SAFE, _decision_from_policy_rep
+from src.torqa_cli.cli_printers import cli_json, cli_no_color, cli_quiet, print_banner
 from src.torqa_cli.io import goal_from_bundle, load_input
 from src.torqa_cli.suggestions import (
     suggestion_for_ir_payload,
@@ -23,7 +27,6 @@ from src.torqa_cli.suggestions import (
     suggestion_for_structural_line,
     suggested_fix_when_policy_passes,
     suggested_next_step_blocked,
-    top_reason_from_policy_reasons,
 )
 
 
@@ -166,118 +169,108 @@ def _next_paragraph(
     return "No further trust-gate changes are required for this profile; integrate with your executor separately."
 
 
-def cmd_explain(args: Any) -> int:
-    path: Path = args.file
-    profile = getattr(args, "profile", None) or "default"
+def _explain_run(path: Path, profile: str, fail_on_warning: bool) -> Tuple[int, Dict[str, Any], List[Tuple[str, str]]]:
+    """
+    Returns (exit_code, json_payload, human_sections) where human_sections is
+    (heading_without_colon_newline, body) for each block — we print with _heading.
+    """
+    base: Dict[str, Any] = {
+        "schema": "torqa.cli.explain.v1",
+        "path": str(path.resolve()),
+        "profile": profile,
+    }
+    human: List[Tuple[str, str]] = []
 
     if not path.is_file():
-        print(f"torqa explain: not a file: {path}", file=sys.stderr)
-        return 1
-
-    print(f"Torqa explanation for {path.resolve()}\n")
+        base.update({"ok": False, "error": "not a file"})
+        return 1, base, human
 
     bundle, err, input_type = load_input(path)
     if input_type == "unknown":
-        print(_heading("What this spec does"))
-        print(
-            "The path is not a supported Torqa input type (.tq or .json bundle / ir_goal), "
-            "so no workflow definition could be read."
+        human.append(
+            (
+                "What this spec does",
+                "The path is not a supported Torqa input type (.tq or .json bundle / ir_goal), "
+                "so no workflow definition could be read.",
+            )
         )
-        print()
-        print(_heading("Why risk is not assigned yet"))
-        print(_why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile))
-        print()
-        print(_heading("Blocked or approved for handoff"))
-        print(_verdict_paragraph(stage="unknown_type", decision=None, policy_ok=None, review_required=None, blocked_detail=str(err)))
-        print()
-        print(_heading("What to improve next"))
-        print(_next_paragraph(stage="unknown_type", err=err, struct_line=None, sem_line=None, policy_line=None, policy_rep=None))
-        return 1
+        human.append(("Why risk is not assigned yet", _why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile)))
+        human.append(
+            (
+                "Blocked or approved for handoff",
+                _verdict_paragraph(stage="unknown_type", decision=None, policy_ok=None, review_required=None, blocked_detail=str(err)),
+            )
+        )
+        human.append(("What to improve next", _next_paragraph(stage="unknown_type", err=err, struct_line=None, sem_line=None, policy_line=None, policy_rep=None)))
+        base.update({"ok": False, "stage": "unknown_type", "sections": {k: v for k, v in human}})
+        return 1, base, human
 
     if err is not None:
-        print(_heading("What this spec does"))
         if isinstance(err, TQParseError):
-            print(
-                f"The file could not be parsed as strict tq_v1 text ({err.code!r}). "
-                "No canonical ir_goal was produced."
+            human.append(
+                (
+                    "What this spec does",
+                    f"The file could not be parsed as strict tq_v1 text ({err.code!r}). No canonical ir_goal was produced.",
+                )
             )
             stg = "parse"
             detail = f"Parse error: {err.code}."
         else:
-            print(
-                "The file could not be loaded as UTF-8 JSON matching a bundle or bare ir_goal shape. "
-                "No canonical ir_goal was produced."
+            human.append(
+                (
+                    "What this spec does",
+                    "The file could not be loaded as UTF-8 JSON matching a bundle or bare ir_goal shape. "
+                    "No canonical ir_goal was produced.",
+                )
             )
             stg = "load"
             detail = f"Load error: {err}."
-        print()
-        print(_heading("Why risk is not assigned yet"))
-        print(_why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile))
-        print()
-        print(_heading("Blocked or approved for handoff"))
-        print(_verdict_paragraph(stage=stg, decision=None, policy_ok=None, review_required=None, blocked_detail=detail))
-        print()
-        print(_heading("What to improve next"))
-        print(_next_paragraph(stage=stg, err=err, struct_line=None, sem_line=None, policy_line=None, policy_rep=None))
-        return 1
+        human.append(("Why risk is not assigned yet", _why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile)))
+        human.append(
+            ("Blocked or approved for handoff", _verdict_paragraph(stage=stg, decision=None, policy_ok=None, review_required=None, blocked_detail=detail))
+        )
+        human.append(("What to improve next", _next_paragraph(stage=stg, err=err, struct_line=None, sem_line=None, policy_line=None, policy_rep=None)))
+        base.update({"ok": False, "stage": stg, "sections": {k: v for k, v in human}})
+        return 1, base, human
 
     if input_type == "json_batch":
-        print(
-            "torqa explain: JSON root array (batch) is not supported; run `torqa validate FILE.json` for batch checks "
-            "or split into one bundle per file.",
-            file=sys.stderr,
+        base.update(
+            {
+                "ok": False,
+                "error": "json_batch_not_supported",
+                "message": "JSON root array (batch) is not supported for explain; split or use validate.",
+            }
         )
-        return 1
+        return 1, base, []
 
     assert bundle is not None
     goal, gerr = goal_from_bundle(bundle)
     if gerr is not None:
-        print(_heading("What this spec does"))
-        print("A bundle was loaded, but the ir_goal payload could not be normalized into the canonical IR shape.")
-        print()
-        print(_heading("Why risk is not assigned yet"))
-        print(_why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile))
-        print()
-        print(_heading("Blocked or approved for handoff"))
-        print(
-            _verdict_paragraph(
-                stage="goal",
-                decision=None,
-                policy_ok=None,
-                review_required=None,
-                blocked_detail=str(gerr),
+        human.append(("What this spec does", "A bundle was loaded, but the ir_goal payload could not be normalized into the canonical IR shape."))
+        human.append(("Why risk is not assigned yet", _why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile)))
+        human.append(
+            (
+                "Blocked or approved for handoff",
+                _verdict_paragraph(stage="goal", decision=None, policy_ok=None, review_required=None, blocked_detail=str(gerr)),
             )
         )
-        print()
-        print(_heading("What to improve next"))
-        print(_next_paragraph(stage="goal", err=gerr, struct_line=None, sem_line=None, policy_line=None, policy_rep=None))
-        return 1
+        human.append(("What to improve next", _next_paragraph(stage="goal", err=gerr, struct_line=None, sem_line=None, policy_line=None, policy_rep=None)))
+        base.update({"ok": False, "stage": "goal", "sections": {k: v for k, v in human}})
+        return 1, base, human
 
     assert isinstance(goal, IRGoal)
-    print(_heading("What this spec does"))
-    print(_describe_goal_ir(goal))
-    print()
+    human.append(("What this spec does", _describe_goal_ir(goal)))
 
     struct = validate_ir(goal)
     if struct:
         top = struct[0] if struct else "Structural validation failed"
-        print(_heading("Why risk is not assigned yet"))
-        print(_why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile))
-        print()
-        print(_heading("Blocked or approved for handoff"))
-        print(
-            _verdict_paragraph(
-                stage="struct",
-                decision=None,
-                policy_ok=None,
-                review_required=None,
-                blocked_detail=top,
-            )
+        human.append(("Why risk is not assigned yet", _why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile)))
+        human.append(
+            ("Blocked or approved for handoff", _verdict_paragraph(stage="struct", decision=None, policy_ok=None, review_required=None, blocked_detail=top))
         )
-        print()
-        print(_heading("What to improve next"))
-        print(_next_paragraph(stage="struct", err=None, struct_line=top, sem_line=None, policy_line=None, policy_rep=None))
-        return 1
+        human.append(("What to improve next", _next_paragraph(stage="struct", err=None, struct_line=top, sem_line=None, policy_line=None, policy_rep=None)))
+        base.update({"ok": False, "stage": "struct", "goal": goal.goal, "sections": {k: v for k, v in human}})
+        return 1, base, human
 
     reg = default_ir_function_registry()
     report = build_ir_semantic_report(goal, reg)
@@ -287,74 +280,139 @@ def cmd_explain(args: Any) -> int:
 
     if not sem_ok or not logic_ok:
         top = errs[0] if errs else "Semantic or logic validation failed"
-        print(_heading("Why risk is not assigned yet"))
-        print(_why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile))
-        print()
-        print(_heading("Blocked or approved for handoff"))
-        print(
-            _verdict_paragraph(
-                stage="sem",
-                decision=None,
-                policy_ok=None,
-                review_required=None,
-                blocked_detail=top,
-            )
+        human.append(("Why risk is not assigned yet", _why_risk_paragraph(reached_policy=False, policy_ok=False, risk_level="n/a", reasons=[], profile=profile)))
+        human.append(("Blocked or approved for handoff", _verdict_paragraph(stage="sem", decision=None, policy_ok=None, review_required=None, blocked_detail=top)))
+        human.append(("What to improve next", _next_paragraph(stage="sem", err=None, struct_line=None, sem_line=top, policy_line=None, policy_rep=None)))
+        base.update(
+            {
+                "ok": False,
+                "stage": "semantics",
+                "goal": goal.goal,
+                "semantic_errors": errs,
+                "sections": {k: v for k, v in human},
+            }
         )
-        print()
-        print(_heading("What to improve next"))
-        print(_next_paragraph(stage="sem", err=None, struct_line=None, sem_line=top, policy_line=None, policy_rep=None))
-        return 1
+        return 1, base, human
 
     policy_rep = build_policy_report(goal, profile=profile)
     pok = bool(policy_rep["policy_ok"])
     risk = str(policy_rep.get("risk_level", "low"))
     reasons: List[str] = list(policy_rep.get("reasons") or [])
     rev = bool(policy_rep.get("review_required"))
+    prof = str(policy_rep.get("trust_profile", profile))
 
-    print(_heading(f"Why risk is {risk}"))
-    print(_why_risk_paragraph(reached_policy=True, policy_ok=pok, risk_level=risk, reasons=reasons, profile=str(policy_rep.get("trust_profile", profile))))
-    print()
+    human.append((f"Why risk is {risk}", _why_risk_paragraph(reached_policy=True, policy_ok=pok, risk_level=risk, reasons=reasons, profile=prof)))
 
     if not pok:
         perrs = list(policy_rep.get("errors") or [])
         top = perrs[0] if perrs else "Policy validation failed"
-        print(_heading("Blocked or approved for handoff"))
-        print(
-            _verdict_paragraph(
-                stage="policy",
-                decision=None,
-                policy_ok=False,
-                review_required=rev,
-                blocked_detail=top,
-            )
+        human.append(
+            ("Blocked or approved for handoff", _verdict_paragraph(stage="policy", decision=None, policy_ok=False, review_required=rev, blocked_detail=top))
         )
-        print()
-        print(_heading("What to improve next"))
-        print(_next_paragraph(stage="policy", err=None, struct_line=None, sem_line=None, policy_line=top, policy_rep=None))
-        return 1
+        human.append(("What to improve next", _next_paragraph(stage="policy", err=None, struct_line=None, sem_line=None, policy_line=top, policy_rep=None)))
+        base.update(
+            {
+                "ok": False,
+                "stage": "policy",
+                "goal": goal.goal,
+                "risk_level": risk,
+                "policy": {k: policy_rep[k] for k in ("policy_ok", "review_required", "errors", "warnings", "reasons") if k in policy_rep},
+                "sections": {k: v for k, v in human},
+            }
+        )
+        return 1, base, human
 
     decision, _top_r, _ns = _decision_from_policy_rep(policy_rep)
-    print(_heading("Blocked or approved for handoff"))
-    print(
-        _verdict_paragraph(
-            stage="ok",
-            decision=decision,
-            policy_ok=True,
-            review_required=rev,
-            blocked_detail="",
-        )
+    human.append(
+        ("Blocked or approved for handoff", _verdict_paragraph(stage="ok", decision=decision, policy_ok=True, review_required=rev, blocked_detail=""))
     )
-    print()
-    print(_heading("What to improve next"))
-    print(_next_paragraph(stage="ok", err=None, struct_line=None, sem_line=None, policy_line=None, policy_rep=policy_rep))
-    if getattr(args, "fail_on_warning", False):
+    human.append(("What to improve next", _next_paragraph(stage="ok", err=None, struct_line=None, sem_line=None, policy_line=None, policy_rep=policy_rep)))
+
+    warn_exit = False
+    if fail_on_warning:
         sem_warns = list(report.get("warnings") or [])
         pol_warns = list(policy_rep.get("warnings") or [])
         if sem_warns or pol_warns:
+            warn_exit = True
+
+    base.update(
+        {
+            "ok": not warn_exit,
+            "warn_exit": warn_exit,
+            "goal": goal.goal,
+            "decision": decision,
+            "risk_level": risk,
+            "review_required": rev,
+            "trust_profile": prof,
+            "semantic_warnings": list(report.get("warnings") or []),
+            "policy_warnings": list(policy_rep.get("warnings") or []),
+            "policy": {
+                "policy_ok": pok,
+                "review_required": rev,
+                "risk_level": risk,
+                "reasons": reasons,
+            },
+            "sections": {k: v for k, v in human},
+        }
+    )
+    code = 1 if warn_exit else 0
+    return code, base, human
+
+
+def cmd_explain(args: Any) -> int:
+    path: Path = args.file
+    profile = getattr(args, "profile", None) or "default"
+    fail_on_warning = bool(getattr(args, "fail_on_warning", False))
+    json_mode = cli_json(args)
+
+    code, payload, human = _explain_run(path, profile, fail_on_warning)
+
+    if json_mode:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        if payload.get("error") == "json_batch_not_supported":
+            print(
+                "torqa explain: JSON root array (batch) is not supported; run `torqa validate FILE.json` for batch checks "
+                "or split into one bundle per file.",
+                file=sys.stderr,
+            )
+        if fail_on_warning and payload.get("warn_exit"):
             print(
                 "torqa explain: semantic or policy warnings present (fail-on-warning); exiting with status 1.",
                 file=sys.stderr,
             )
-            return 1
-    return 0
+        return code
 
+    if payload.get("error") == "not a file":
+        print(f"torqa explain: not a file: {path}", file=sys.stderr)
+        return 1
+
+    if payload.get("error") == "json_batch_not_supported":
+        print(
+            "torqa explain: JSON root array (batch) is not supported; run `torqa validate FILE.json` for batch checks "
+            "or split into one bundle per file.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if not cli_quiet(args):
+        print_banner("torqa explain", str(path.resolve()), args=args)
+
+    print(f"Torqa explanation for {path.resolve()}\n")
+
+    c = Console(
+        file=sys.stdout,
+        highlight=False,
+        soft_wrap=True,
+        no_color=cli_no_color(args),
+        force_terminal=sys.stdout.isatty() and not cli_no_color(args),
+    )
+
+    for title, body in human:
+        c.print(f"[bold]{title}:[/]\n{body}\n")
+
+    if code == 1 and fail_on_warning:
+        print(
+            "torqa explain: semantic or policy warnings present (fail-on-warning); exiting with status 1.",
+            file=sys.stderr,
+        )
+    return code

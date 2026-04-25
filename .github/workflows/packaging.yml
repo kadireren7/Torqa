@@ -1,0 +1,48 @@
+# Verify sdist/wheel build, metadata (twine), tests, and CLI from a wheel.
+
+name: Packaging
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "MANIFEST.in"
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/packaging.yml"
+  push:
+    branches: [main]
+
+jobs:
+  build-verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install for tests
+        run: pip install --upgrade pip build twine ruff && pip install -e ".[test]"
+
+      - name: Ruff
+        run: ruff check src tests
+
+      - name: Test suite
+        run: python -m pytest
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check metadata
+        run: python -m twine check dist/*
+
+      - name: Verify wheel CLI
+        run: |
+          pip uninstall -y torqa
+          pip install dist/torqa-*.whl
+          torqa version

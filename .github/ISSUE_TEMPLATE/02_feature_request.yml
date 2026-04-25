@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a capability that fits Torqa’s scope (IR, validation, trust, CLI).
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Torqa is a **spec core** (no workflow runtime in-repo). See [Roadmap — non-goals](https://github.com/kadireren7/Torqa/blob/main/docs/roadmap.md#explicit-non-goals) before proposing.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: Who is blocked today, and how?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: CLI flags, IR shape, policy signal, docs — be specific.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds, external tools, or “do nothing”.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: I have read the roadmap non-goals and this still fits “spec core”.
+          required: true

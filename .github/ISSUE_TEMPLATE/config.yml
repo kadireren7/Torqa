@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: README & quickstart
+    url: https://github.com/kadireren7/Torqa#readme
+    about: Install, try-in-2-minutes, and links into docs/.
+  - name: Examples folder
+    url: https://github.com/kadireren7/Torqa/tree/main/examples
+    about: Copy-paste `.tq` / JSON samples wired to the CLI.

@@ -7,20 +7,18 @@ postconditions, non-terminating success paths, and contradictory equality precon
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 from src.ir.canonical_ir import (
     IRBinary,
     IRBooleanLiteral,
     IRCall,
-    IRCondition,
     IRGoal,
     IRIdentifier,
     IRLogical,
     IRNumberLiteral,
     IRStringLiteral,
     IRExpr,
-    IRTransition,
 )
 
 # Postcondition calls that only make sense if listed effects ran (minimal built-in map).

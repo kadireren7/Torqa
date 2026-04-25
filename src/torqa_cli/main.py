@@ -8,7 +8,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from src.ir.canonical_ir import CANONICAL_IR_VERSION, ir_goal_to_json, validate_ir
 from src.policy import build_policy_report
@@ -20,13 +20,26 @@ from src.torqa_cli.compare_cmd import cmd_compare
 from src.torqa_cli.scan_cmd import cmd_scan
 from src.torqa_cli.report_cmd import cmd_report
 from src.torqa_cli.init_cmd import cmd_init
+from src.torqa_cli.import_cmd import cmd_import_n8n
 from src.torqa_cli.project_config import (
     TorqaConfigError,
     TorqaProjectConfig,
     load_torqa_project_config,
 )
 from src.torqa_cli.readiness import format_readiness_line, readiness_score_100
-from src.torqa_cli.io import bundle_jobs, goal_from_bundle, load_input
+from src.torqa_cli.io import goal_from_bundle, load_input
+from src.torqa_cli.validate_cmd import cmd_validate
+from src.torqa_cli.cli_printers import (
+    TORQA_EPILOG,
+    compare_command_epilog,
+    explain_command_epilog,
+    init_command_epilog,
+    report_command_epilog,
+    scan_command_epilog,
+    validate_command_epilog,
+    add_output_flags,
+    print_trust_scoring_block,
+)
 from src.torqa_cli.suggestions import (
     suggestion_for_ir_payload,
     suggestion_for_load_error,
@@ -37,14 +50,17 @@ from src.torqa_cli.suggestions import (
     suggestion_for_policy_warning,
 )
 
-try:
-    from importlib.metadata import version as pkg_version
-except ImportError:  # pragma: no cover
-    from importlib_metadata import version as pkg_version  # type: ignore
+from importlib.metadata import version as pkg_version
 
-# Human-oriented CLI lines (deterministic; stdout for inspect remains JSON-only).
-_MSG_VALIDATE_HANDOFF_OK = "Handoff: validated artifact ready for external handoff."
-_MSG_VALIDATE_BLOCKED = "Guardrail: spec blocked before execution."
+
+def _add_integration_source(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--source",
+        dest="source",
+        choices=["n8n"],
+        default=None,
+        help="For .json: treat file as exported n8n workflow and map to Torqa IR (adapter). Ignored for .tq.",
+    )
 
 
 def _add_fail_on_warning_group(p: argparse.ArgumentParser) -> None:
@@ -91,166 +107,14 @@ def _apply_torqa_project_config(args: argparse.Namespace, cfg: TorqaProjectConfi
         args.report_format = cfg.report_format
 
 
-def _print_validate_header(input_type: str, path: Path) -> None:
-    print(f"Input type: {input_type}")
-    print(f"File: {path}")
-
-
-def cmd_validate(args: argparse.Namespace) -> int:
-    path: Path = args.file
-    if not path.is_file():
-        print(f"torqa validate: not a file: {path}", file=sys.stderr)
-        return 1
-
-    bundle, err, input_type = load_input(path)
-    if input_type == "unknown":
-        print(f"torqa validate: {err}", file=sys.stderr)
-        return 1
-
-    if err is not None:
-        _print_validate_header(input_type, path)
-        print()
-        if isinstance(err, TQParseError):
-            print("Parse: FAIL")
-            print(f"Error: {err.code}")
-            if err.line is not None:
-                print(f"Line: {err.line}")
-            print(f"Message: {err}")
-        elif input_type == "json":
-            print("Load: FAIL")
-            print(f"Error: {err}")
-        else:
-            print("Load: FAIL")
-            print(f"Error: {err}")
-        print()
-        print("Result: FAIL")
-        print(_MSG_VALIDATE_BLOCKED)
-        return 1
-
-    assert bundle is not None
-    jobs = bundle_jobs(path, bundle, input_type)
-    if input_type == "json_batch":
-        type_lbl = f"json (batch: {len(jobs)} bundles in file)"
-    else:
-        type_lbl = input_type
-
-    load_word = "Parse" if input_type == "tq" else "Load"
-    any_fail = False
-    batch_warn_exit = False
-    profile = getattr(args, "profile", None) or "default"
-
-    for idx, (suffix, one_bundle) in enumerate(jobs):
-        if idx == 0:
-            print(f"Input type: {type_lbl}")
-            print(f"File: {path}")
-            print()
-        elif len(jobs) > 1:
-            print(f"\n--- Bundle {idx + 1}/{len(jobs)} ({path.name}{suffix}) ---\n")
-
-        gh = f"{path.resolve()}{suffix}"
-        goal, gerr = goal_from_bundle(one_bundle, path_hint=gh)
-        if gerr is not None:
-            print("IR payload: FAIL")
-            print(f"Error: {gerr}")
-            print()
-            print("Result: FAIL")
-            print(_MSG_VALIDATE_BLOCKED)
-            any_fail = True
-            continue
-
-        print(f"{load_word}: OK")
-
-        struct = validate_ir(goal)
-        if struct:
-            print("Structural validation: FAIL")
-            for line in struct:
-                print(f"  - {line}")
-            print()
-            print("Result: FAIL")
-            print(_MSG_VALIDATE_BLOCKED)
-            any_fail = True
-            continue
-
-        print("Structural validation: PASS")
-
-        reg = default_ir_function_registry()
-        report = build_ir_semantic_report(goal, reg)
-        sem_ok = bool(report.get("semantic_ok"))
-        logic_ok = bool(report.get("logic_ok"))
-
-        errs = list(report.get("errors") or [])
-        warns = list(report.get("warnings") or [])
-
-        print(f"Semantic validation: {'PASS' if sem_ok else 'FAIL'}")
-        print(f"Logic validation: {'PASS' if logic_ok else 'FAIL'}")
-        if errs:
-            print("Semantic errors:")
-            for e in errs:
-                print(f"  - {e}")
-        if warns:
-            print("Warnings:")
-            for w in warns:
-                print(f"  - {w}")
-
-        print()
-        if not sem_ok or not logic_ok:
-            print("Result: FAIL")
-            print(_MSG_VALIDATE_BLOCKED)
-            any_fail = True
-            continue
-
-        policy_rep = build_policy_report(goal, profile=profile)
-        pok = bool(policy_rep["policy_ok"])
-        print(f"Trust profile: {policy_rep['trust_profile']}")
-        print(f"Policy validation: {'PASS' if pok else 'FAIL'}")
-        print(f"Review required: {'yes' if policy_rep['review_required'] else 'no'}")
-        if policy_rep["errors"]:
-            print("Policy errors:")
-            for e in policy_rep["errors"]:
-                print(f"  - {e}")
-        if policy_rep["warnings"]:
-            print("Policy warnings:")
-            for w in policy_rep["warnings"]:
-                print(f"  - {w}")
-        rl = str(policy_rep.get("risk_level", "low"))
-        print(f"Risk level: {rl}")
-        pr_reasons = list(policy_rep.get("reasons") or [])
-        if pr_reasons:
-            print("Why:")
-            for line in pr_reasons:
-                print(f"  - {line}")
-        print()
-        if pok:
-            print("Result: PASS")
-            print(_MSG_VALIDATE_HANDOFF_OK)
-            if getattr(args, "fail_on_warning", False):
-                sem_w = list(report.get("warnings") or [])
-                pol_w = list(policy_rep.get("warnings") or [])
-                if sem_w or pol_w:
-                    print(
-                        "torqa validate: semantic or policy warnings present (fail-on-warning); exiting with status 1.",
-                        file=sys.stderr,
-                    )
-                    batch_warn_exit = True
-                    any_fail = True
-            continue
-
-        print("Result: FAIL")
-        print(_MSG_VALIDATE_BLOCKED)
-        any_fail = True
-
-    if batch_warn_exit:
-        return 1
-    return 1 if any_fail else 0
-
-
 def cmd_inspect(args: argparse.Namespace) -> int:
     path: Path = args.file
     if not path.is_file():
         print(f"torqa inspect: not a file: {path}", file=sys.stderr)
         return 1
 
-    bundle, err, input_type = load_input(path)
+    integration_source = getattr(args, "source", None) or None
+    bundle, err, input_type = load_input(path, integration_source=integration_source)
     if input_type == "unknown":
         print(f"torqa inspect: {err}", file=sys.stderr)
         return 1
@@ -303,10 +167,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print("Torqa doctor")
     print()
 
-    bundle, err, input_type = load_input(path)
+    integration_source = getattr(args, "source", None) or None
+    bundle, err, input_type = load_input(path, integration_source=integration_source)
     if input_type == "unknown":
         print("Input")
-        print(f"  Type: unknown")
+        print("  Type: unknown")
         print(f"  Path: {path.resolve()}")
         print(f"  Error: {err}")
         print()
@@ -463,6 +328,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print("  Why:")
         for line in pr_reasons:
             print(f"    - {line}")
+    print_trust_scoring_block(policy_rep)
     print()
 
     print("Summary")
@@ -513,33 +379,39 @@ def cmd_version(_args: argparse.Namespace) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="torqa",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
             "Torqa: load .tq or bundle JSON, validate IR, print diagnostics. "
             "This is not a runtime; it does not execute workflows."
         ),
+        epilog=TORQA_EPILOG,
     )
-    sub = p.add_subparsers(dest="command", required=True)
+    sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     file_help = "Path to a .tq file or .json (bundle, bare ir_goal, or JSON array of bundles for batch)"
 
     pv = sub.add_parser(
         "validate",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         help="Validate a .tq or JSON file (structural + semantic + policy + risk)",
         description=(
             "Exit 0 only if load succeeds, validate_ir passes, semantic_ok is true, and built-in policy checks pass. "
             "Prints deterministic risk level and reasons (heuristics, not ML). "
             "On success, reports that the artifact is ready for external handoff (nothing is executed here)."
         ),
+        epilog=validate_command_epilog(),
     )
     pv.add_argument("file", type=Path, metavar="FILE", help=file_help)
     pv.add_argument(
         "--profile",
         default=argparse.SUPPRESS,
-        choices=["default", "strict", "review-heavy"],
+        choices=["default", "strict", "review-heavy", "enterprise"],
         metavar="PROFILE",
         help="Built-in trust profile for policy and risk evaluation (default: from torqa.toml or default).",
     )
     _add_fail_on_warning_group(pv)
+    _add_integration_source(pv)
+    add_output_flags(pv)
     pv.set_defaults(func=cmd_validate)
 
     pi = sub.add_parser(
@@ -551,6 +423,7 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     pi.add_argument("file", type=Path, metavar="FILE", help=file_help)
+    _add_integration_source(pi)
     pi.set_defaults(func=cmd_inspect)
 
     pd = sub.add_parser(
@@ -565,11 +438,12 @@ def _build_parser() -> argparse.ArgumentParser:
     pd.add_argument(
         "--profile",
         default=argparse.SUPPRESS,
-        choices=["default", "strict", "review-heavy"],
+        choices=["default", "strict", "review-heavy", "enterprise"],
         metavar="PROFILE",
         help="Built-in trust profile for policy and risk evaluation (default: from torqa.toml or default).",
     )
     _add_fail_on_warning_group(pd)
+    _add_integration_source(pd)
     pd.set_defaults(func=cmd_doctor)
 
     pc = sub.add_parser(
@@ -586,7 +460,7 @@ def _build_parser() -> argparse.ArgumentParser:
     pc.add_argument(
         "--profile",
         default=argparse.SUPPRESS,
-        choices=["default", "strict", "review-heavy"],
+        choices=["default", "strict", "review-heavy", "enterprise"],
         metavar="PROFILE",
         help="Built-in trust profile for policy and risk evaluation (default: from torqa.toml or default).",
     )
@@ -595,6 +469,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     pex = sub.add_parser(
         "explain",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         help="Plain-English explanation from deterministic trust signals (no AI)",
         description=(
             "After the same load → structural → semantic → policy path as validate, print four sections: "
@@ -602,39 +477,46 @@ def _build_parser() -> argparse.ArgumentParser:
             "approved or blocked, and what to improve next. Wording is template-based from existing "
             "errors, reasons, and policy fields only."
         ),
+        epilog=explain_command_epilog(),
     )
     pex.add_argument("file", type=Path, metavar="FILE", help=file_help)
     pex.add_argument(
         "--profile",
         default=argparse.SUPPRESS,
-        choices=["default", "strict", "review-heavy"],
+        choices=["default", "strict", "review-heavy", "enterprise"],
         metavar="PROFILE",
         help="Built-in trust profile for policy and risk evaluation (default: from torqa.toml or default).",
     )
     _add_fail_on_warning_group(pex)
+    add_output_flags(pex)
     pex.set_defaults(func=cmd_explain)
 
     pcmp = sub.add_parser(
         "compare",
-        help="Compare trust outcomes across default, strict, and review-heavy profiles",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="Compare trust outcomes across default, strict, review-heavy, and enterprise profiles",
         description=(
             "Load the file once, run structural and semantic validation once, then evaluate "
             "build_policy_report for each built-in profile. Prints a fixed-width table: Profile, "
             "Decision, Risk, Review, Notes. Exit 1 if the file is missing or the spec cannot reach "
-            "policy (parse/load/goal/struct/semantic failure); exit 0 when all three policy rows are printed."
+            "policy (parse/load/goal/struct/semantic failure); exit 0 when all profile rows are printed."
         ),
+        epilog=compare_command_epilog(),
     )
     pcmp.add_argument("file", type=Path, metavar="FILE", help=file_help)
+    add_output_flags(pcmp)
     pcmp.set_defaults(func=cmd_compare)
 
     pscan = sub.add_parser(
         "scan",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         help="Scan a directory for .tq and .json specs and summarize trust outcomes",
         description=(
             "Recursively find files ending in .tq or .json under PATH (or evaluate a single .tq/.json file). "
             "For each file, run the same trust gate as torqa check (default profile unless --profile). "
             "Prints a table (Decision, Risk, Profile result) and a summary count. Exit 1 if any file is BLOCKED."
         ),
+        epilog=scan_command_epilog(),
     )
     pscan.add_argument(
         "path",
@@ -645,21 +527,49 @@ def _build_parser() -> argparse.ArgumentParser:
     pscan.add_argument(
         "--profile",
         default=argparse.SUPPRESS,
-        choices=["default", "strict", "review-heavy"],
+        choices=["default", "strict", "review-heavy", "enterprise"],
         metavar="PROFILE",
         help="Built-in trust profile for policy and risk evaluation (default: from torqa.toml or default).",
     )
     _add_fail_on_warning_group(pscan)
+    _add_integration_source(pscan)
+    add_output_flags(pscan)
     pscan.set_defaults(func=cmd_scan)
+
+    pimp = sub.add_parser(
+        "import",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="Convert external workflow exports to Torqa bundle JSON",
+        description=(
+            "Source adapters (e.g. n8n) map vendor workflow JSON to the canonical Torqa bundle shape. "
+            "The core IR validator is unchanged — output is suitable for `torqa validate` without --source."
+        ),
+    )
+    imp_sub = pimp.add_subparsers(dest="import_command", required=True)
+    p_n8n = imp_sub.add_parser(
+        "n8n",
+        help="Convert an exported n8n workflow JSON file to Torqa bundle JSON (ir_goal envelope)",
+    )
+    p_n8n.add_argument("file", type=Path, metavar="FILE", help="Exported n8n workflow (.json)")
+    p_n8n.add_argument(
+        "--out",
+        type=Path,
+        metavar="FILE",
+        required=True,
+        help="Output path for bundle JSON (e.g. workflow.bundle.json)",
+    )
+    p_n8n.set_defaults(func=cmd_import_n8n)
 
     prpt = sub.add_parser(
         "report",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         help="Write an HTML or Markdown trust report for a file or directory",
         description=(
             "Evaluate each .tq / .json spec (same gate as torqa check) and write a report file: "
             "html (standalone page with embedded CSS) or md (GitHub-friendly: summary, blocked files, "
             "recommendations, full table). Exit 1 if any file is BLOCKED."
         ),
+        epilog=report_command_epilog(),
     )
     prpt.add_argument(
         "path",
@@ -686,21 +596,24 @@ def _build_parser() -> argparse.ArgumentParser:
     prpt.add_argument(
         "--profile",
         default=argparse.SUPPRESS,
-        choices=["default", "strict", "review-heavy"],
+        choices=["default", "strict", "review-heavy", "enterprise"],
         metavar="PROFILE",
         help="Built-in trust profile for policy and risk evaluation (default: from torqa.toml or default).",
     )
     _add_fail_on_warning_group(prpt)
+    add_output_flags(prpt)
     prpt.set_defaults(func=cmd_report)
 
     pinit = sub.add_parser(
         "init",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         help="Create a starter .tq file (interactive wizard or template + --output)",
         description=(
             "Interactive: run `torqa init` (TTY required) and follow prompts for template, flow name, owner, "
             "severity, and output path. Non-interactive: `torqa init TEMPLATE --output FILE` where TEMPLATE is "
             "login, approval, onboarding, or blank; optional `--flow`, `--owner`, `--severity`; `--force` overwrites."
         ),
+        epilog=init_command_epilog(),
     )
     pinit.add_argument(
         "template",
@@ -741,6 +654,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Overwrite the output file if it already exists.",
     )
+    add_output_flags(pinit)
     pinit.set_defaults(func=cmd_init)
 
     pver = sub.add_parser("version", help="Show torqa package and IR versions")

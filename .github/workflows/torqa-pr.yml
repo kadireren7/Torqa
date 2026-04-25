@@ -1,0 +1,32 @@
+# Dogfood: Torqa composite action on pull requests.
+# See docs/github-actions.md for inputs, permissions, and copy-paste examples.
+
+name: Torqa PR
+
+on:
+  pull_request:
+    paths:
+      - 'examples/**'
+      - '.github/actions/torqa/**'
+      - '.github/workflows/torqa-pr.yml'
+      - 'src/**'
+      - 'pyproject.toml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  trust-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/torqa
+        id: torqa
+        with:
+          torqa-package-path: .
+          scan-path: examples/templates
+          profile: default
+          comment-on-pr: ${{ !github.event.pull_request.head.repo.fork }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

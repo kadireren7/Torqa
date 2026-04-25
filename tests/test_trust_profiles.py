@@ -28,6 +28,7 @@ def test_normalize_trust_profile_accepts_builtin_names():
     assert normalize_trust_profile("default") == "default"
     assert normalize_trust_profile("Strict") == "strict"
     assert normalize_trust_profile(" review-heavy ") == "review-heavy"
+    assert normalize_trust_profile("Enterprise") == "enterprise"
 
 
 def test_normalize_trust_profile_rejects_unknown():
@@ -36,7 +37,7 @@ def test_normalize_trust_profile_rejects_unknown():
 
 
 def test_builtin_profiles_frozen_set():
-    assert BUILTIN_PROFILES == frozenset({"default", "strict", "review-heavy"})
+    assert BUILTIN_PROFILES == frozenset({"default", "strict", "review-heavy", "enterprise"})
 
 
 def test_strict_fails_policy_when_severity_high_default_passes():

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from src.ir.canonical_ir import IRGoal, ir_condition_to_json, ir_expr_to_json, ir_transition_to_json
+from src.ir.canonical_ir import IRGoal, ir_condition_to_json, ir_expr_to_json
 
 
 def _explain_weak_spots(ir_goal: IRGoal) -> List[str]:

@@ -1,5 +1,7 @@
 # Torqa reports in CI
 
+For the **composite GitHub Action** that runs **`torqa scan`** / **`torqa validate`**, uploads **JSON**, and optionally comments on PRs, see **[GitHub Actions](github-actions.md)**.
+
 Use **`torqa report`** to emit a **standalone HTML** file or a **Markdown** document suitable for **GitHub PR comments**, **job summaries**, or **uploaded artifacts**. Both formats use the same trust gate as **`torqa validate`** / **`torqa check`** (no workflow execution).
 
 ## Markdown (`--format md`)

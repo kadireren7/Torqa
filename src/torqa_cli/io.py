@@ -17,7 +17,9 @@ LoadErr = Union[str, TQParseError, None]
 BundlePayload = Union[Dict[str, Any], List[Dict[str, Any]]]
 
 
-def load_input(path: Path) -> Tuple[Optional[BundlePayload], LoadErr, str]:
+def load_input(
+    path: Path, *, integration_source: Optional[str] = None
+) -> Tuple[Optional[BundlePayload], LoadErr, str]:
     """
     Returns ``(payload, error, input_type)`` where ``input_type`` is
     ``tq``, ``json``, ``json_batch``, or ``unknown``.
@@ -27,6 +29,8 @@ def load_input(path: Path) -> Tuple[Optional[BundlePayload], LoadErr, str]:
     """
     suf = path.suffix.lower()
     if suf == ".tq":
+        if integration_source == "n8n":
+            return None, "n8n: --source n8n applies only to exported .json workflow files", "unknown"
         try:
             text = path.read_text(encoding="utf-8")
         except OSError as ex:
@@ -37,6 +41,14 @@ def load_input(path: Path) -> Tuple[Optional[BundlePayload], LoadErr, str]:
         except TQParseError as e:
             return None, e, "tq"
     if suf == ".json":
+        if integration_source == "n8n":
+            from src.integrations.n8n.convert import n8n_file_to_bundle
+
+            bundle, err = n8n_file_to_bundle(path)
+            if err is not None:
+                return None, err, "n8n"
+            assert bundle is not None
+            return bundle, None, "n8n"
         payload, err = load_bundle_from_json_path(path)
         if err is not None:
             return None, err, "json"
@@ -63,6 +75,9 @@ def bundle_jobs(
     if input_type == "json_batch":
         assert isinstance(payload, list)
         return [(f"[{i}]", b) for i, b in enumerate(payload)]
+    if input_type == "n8n":
+        assert isinstance(payload, dict)
+        return [("", payload)]
     assert isinstance(payload, dict)
     return [("", payload)]
 

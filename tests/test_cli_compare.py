@@ -30,6 +30,7 @@ def test_compare_prints_table_three_profiles(tmp_path: Path, capsys):
     assert out.count("default") >= 1
     assert out.count("strict") >= 1
     assert out.count("review-heavy") >= 1
+    assert out.count("enterprise") >= 1
     assert "SAFE_TO_HANDOFF" in out or "NEEDS_REVIEW" in out
 
 

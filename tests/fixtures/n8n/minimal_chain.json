@@ -1,0 +1,32 @@
+{
+  "name": "Minimal chain",
+  "id": "wf_minimal",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "n1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": { "url": "https://api.example.com/ping" },
+      "id": "n2",
+      "name": "Ping",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{ "node": "Ping", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": [],
+  "pinData": {}
+}

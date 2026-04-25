@@ -6,7 +6,7 @@ import copy
 
 import pytest
 
-from src.ir.canonical_ir import CANONICAL_IR_VERSION, ir_goal_from_json, validate_ir
+from src.ir.canonical_ir import ir_goal_from_json, validate_ir
 from src.surface.parse_tq import TQParseError, parse_tq_source
 
 MINIMAL_TQ = """

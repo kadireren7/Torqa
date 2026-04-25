@@ -36,7 +36,10 @@ def _bundle_six_transitions_policy_warning() -> dict:
     """
     b = copy.deepcopy(parse_tq_source(VALID_TQ))
     ig = b["ir_goal"]
-    idn = lambda n: {"type": "identifier", "name": n}
+
+    def idn(n: str) -> dict:
+        return {"type": "identifier", "name": n}
+
     ig["transitions"] = [
         {
             "transition_id": "t_0001",
