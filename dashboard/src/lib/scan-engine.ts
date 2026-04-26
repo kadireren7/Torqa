@@ -24,13 +24,16 @@ export type ScanTotals = {
   all: number;
 };
 
+/** Discriminator for which backend produced a successful POST /api/scan response */
+export type ScanApiEngineId = "server-preview" | "hosted-python";
+
 /** Successful POST /api/scan JSON body */
 export type ScanApiSuccess = {
   status: ScanDecision;
   riskScore: number;
   findings: ScanFinding[];
   totals: ScanTotals;
-  engine: "server-preview";
+  engine: ScanApiEngineId;
   source: ScanSource;
 };
 
@@ -95,7 +98,7 @@ function httpMissingErrorHandling(params: unknown): boolean {
   return !hasOnError && !hasCof;
 }
 
-function riskScoreFromFindings(findings: ScanFinding[]): number {
+export function riskScoreFromFindings(findings: ScanFinding[]): number {
   let score = 100;
   for (const f of findings) {
     if (f.severity === "high") score -= 18;
@@ -105,7 +108,7 @@ function riskScoreFromFindings(findings: ScanFinding[]): number {
   return Math.max(0, Math.min(100, score));
 }
 
-function decisionFrom(findings: ScanFinding[]): ScanDecision {
+export function decisionFrom(findings: ScanFinding[]): ScanDecision {
   if (findings.some((f) => f.severity === "high")) return "FAIL";
   if (findings.some((f) => f.severity === "review")) return "NEEDS REVIEW";
   return "PASS";

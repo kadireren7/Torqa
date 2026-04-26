@@ -23,6 +23,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { NotificationBell } from "@/components/notification-bell";
+import { hasPublicSupabaseUrl } from "@/lib/env";
 
 export type AppHeaderUser = {
   email: string;
@@ -44,10 +46,13 @@ function initialsFrom(email: string, displayName: string | null): string {
   return local.slice(0, 2).toUpperCase();
 }
 
+const hasSupabaseEnv = hasPublicSupabaseUrl();
+
 export function AppHeader({ orgName, user }: AppHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const title = titleForPath(pathname);
+  const notificationsEnabled = !hasSupabaseEnv || Boolean(user);
   const runMatch = pathname.match(/^\/validation\/([^/]+)$/);
   const runId = runMatch?.[1];
 
@@ -71,12 +76,12 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
         <BreadcrumbList className="flex-wrap">
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/" className="text-muted-foreground hover:text-foreground">
+              <Link href="/overview" className="text-muted-foreground hover:text-foreground">
                 Dashboard
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          {pathname !== "/" && (
+          {pathname !== "/overview" && (
             <>
               <BreadcrumbSeparator />
               {runId ? (
@@ -132,6 +137,7 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
         </h1>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <NotificationBell enabled={notificationsEnabled} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 gap-2 rounded-full pl-2 pr-1">

@@ -9,17 +9,39 @@ import {
 } from "@/components/ui/chart";
 import type { RiskTrendPoint } from "@/data/types";
 
-const chartConfig = {
+const defaultChartConfig = {
   safe: { label: "Safe", color: "hsl(var(--chart-4))" },
   needsReview: { label: "Needs review", color: "hsl(var(--chart-3))" },
   blocked: { label: "Blocked", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
-type RiskTrendChartProps = {
-  data: RiskTrendPoint[];
+export type RiskTrendSeriesLabels = {
+  safe?: string;
+  needsReview?: string;
+  blocked?: string;
 };
 
-export function RiskTrendChart({ data }: RiskTrendChartProps) {
+type RiskTrendChartProps = {
+  data: RiskTrendPoint[];
+  /** Override legend / tooltip labels (e.g. Pass / Needs review / Fail for workflow scans). */
+  seriesLabels?: RiskTrendSeriesLabels;
+};
+
+export function RiskTrendChart({ data, seriesLabels }: RiskTrendChartProps) {
+  const chartConfig = {
+    safe: {
+      label: seriesLabels?.safe ?? defaultChartConfig.safe.label,
+      color: defaultChartConfig.safe.color,
+    },
+    needsReview: {
+      label: seriesLabels?.needsReview ?? defaultChartConfig.needsReview.label,
+      color: defaultChartConfig.needsReview.color,
+    },
+    blocked: {
+      label: seriesLabels?.blocked ?? defaultChartConfig.blocked.label,
+      color: defaultChartConfig.blocked.color,
+    },
+  } satisfies ChartConfig;
   return (
     <ChartContainer config={chartConfig} className="aspect-[21/9] min-h-[220px] w-full sm:aspect-[2/1]">
       <AreaChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>

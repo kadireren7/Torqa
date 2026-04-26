@@ -57,7 +57,11 @@ export default async function ScanDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <ScanReportView result={result} showPoweredBanner />
+      <ScanReportView
+        result={result}
+        showPoweredBanner
+        share={{ scanId, configured: isSupabaseConfigured() }}
+      />
     </div>
   );
 }

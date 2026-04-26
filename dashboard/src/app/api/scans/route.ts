@@ -2,12 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isScanApiSuccess } from "@/lib/scan-api-guards";
 import type { ScanSource } from "@/lib/scan-engine";
+import { getActiveOrganizationId } from "@/lib/workspace-scope";
+import { isPlainObject } from "@/lib/json-guards";
 
 export const runtime = "nodejs";
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -54,6 +52,18 @@ export async function POST(request: Request) {
       ? workflowName.trim().slice(0, 512)
       : null;
 
+  let organizationId: string | null = null;
+  const activeOrg = await getActiveOrganizationId();
+  if (activeOrg) {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("organization_id", activeOrg)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (membership) organizationId = activeOrg;
+  }
+
   const { data, error } = await supabase
     .from("scan_history")
     .insert({
@@ -61,6 +71,7 @@ export async function POST(request: Request) {
       source: source as ScanSource,
       workflow_name: name,
       result,
+      organization_id: organizationId,
     })
     .select("id")
     .single();

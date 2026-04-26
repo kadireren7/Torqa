@@ -1,6 +1,6 @@
 # Torqa Supabase backend
 
-SQL migrations define the **first Torqa cloud** data model: profiles, organizations, projects, policies, validation runs, reports, and **per-user dashboard scan history** (`scan_history`), with **row level security** aligned to org membership (and self-only access for `scan_history`).
+SQL migrations define the **first Torqa cloud** data model: profiles, organizations, projects, policies, validation runs, reports, **per-user dashboard scan history** (`scan_history`), and **saved workflow templates** (`workflow_templates` for the dashboard workflow library), with **row level security** aligned to org membership (and self-only access for `scan_history` and `workflow_templates`).
 
 ## Prerequisites
 
@@ -29,5 +29,8 @@ select public.create_organization('My team', 'my-team');
 ```
 
 4. Create a **project** and **policies** with the authenticated client (PostgREST) or dashboard.
+5. **Team workspaces:** apply `20260426210000_workspace_shared_scans_invites.sql` so dashboard scans and workflow templates can attach to `organizations.id` (`organization_id` columns + invites). Use **`/workspace`** in the app to create an org and set the active-workspace cookie.
+6. **Scan notifications:** apply `20260426220000_scan_notifications.sql` for `notification_preferences` + `in_app_notifications` (alerts after **`POST /api/scan`** when signed in).
+7. **Public API keys:** apply `20260426223000_api_keys.sql` for hashed key storage (`api_keys`) and audit logs (`api_key_usage_logs`) used by **`POST /api/public/scan`**.
 
 Design details, RLS model, and API layout: **[Cloud backend](../docs/cloud-backend.md)**.

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Torqa · Dashboard",
-  description: "Trust gates, validation history, and team policies for workflow specs.",
+  title: "Torqa",
+  description: "Trust gates, scan intelligence, and alerting for AI workflow operations.",
 };
 
 export default function RootLayout({

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { buildScanApiResult, type ScanSource } from "@/lib/scan-engine";
+import { getScanProvider, ScanProviderExecutionError } from "@/lib/scan/providers";
+import { isScanApiSuccess } from "@/lib/scan-api-guards";
+import type { ScanSource } from "@/lib/scan-engine";
+import { createClient } from "@/lib/supabase/server";
+import { dispatchScanNotificationsForUser } from "@/lib/scan-notification-dispatch";
+import { isPlainObject } from "@/lib/json-guards";
 
 export const runtime = "nodejs";
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -37,6 +38,36 @@ export async function POST(request: Request) {
   }
 
   const source = sourceRaw as ScanSource;
-  const payload = buildScanApiResult(content, source);
-  return NextResponse.json(payload);
+  const input = { source, content };
+
+  let provider;
+  try {
+    provider = getScanProvider();
+  } catch (e) {
+    if (e instanceof ScanProviderExecutionError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: e.httpStatus });
+    }
+    throw e;
+  }
+
+  try {
+    const payload = await provider.scan(input);
+    if (isScanApiSuccess(payload)) {
+      const supabase = await createClient();
+      if (supabase) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          void dispatchScanNotificationsForUser(user.id, payload, source).catch(() => {});
+        }
+      }
+    }
+    return NextResponse.json(payload);
+  } catch (e) {
+    if (e instanceof ScanProviderExecutionError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: e.httpStatus });
+    }
+    throw e;
+  }
 }
