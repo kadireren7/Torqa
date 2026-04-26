@@ -9,6 +9,16 @@
 
 Torqa can **scan** and **import** workflows exported from [n8n](https://n8n.io/) as JSON using the commands below.
 
+## Quick demo
+
+Use committed examples:
+
+```bash
+torqa validate examples/integrations/minimal_n8n.json --source n8n
+torqa scan examples/integrations/customer_support_n8n.json --source n8n
+torqa import n8n examples/integrations/customer_support_n8n.json --out customer_support.bundle.json
+```
+
 ## Exporting from n8n
 
 1. Open your workflow in the n8n editor.
@@ -59,14 +69,22 @@ Static analysis runs on the exported graph (no execution). Typical **findings** 
 | **Governance** | Heuristics such as side-effect nodes without a prior manual gate (e.g. approval / human-in-the-loop style nodes) |
 | **Graph** | Disconnected nodes, missing retry/error paths where detectable, invalid or cyclic connections (where the export allows inference) |
 
-Each finding includes **n8n node identifiers and display names** where applicable so you can jump back into the n8n UI.
+Each finding includes:
+
+- **node name**
+- **node type**
+- **severity** (`info`, `review`, `high`)
+- **fix_suggestion** (deterministic remediation hint)
+- **n8n node id** for source mapping
+
+In human `torqa scan` output (non-JSON), Torqa prints a compact n8n findings table with severity, node, type, rule, and suggested fix.
 
 ## JSON scan output (`integration`)
 
 When you use `torqa scan … --source n8n --json`, each row may include an `integration` object:
 
 - `adapter`: `"n8n"`
-- `findings`: array of rule hits (rule id, severity, message, node refs)
+- `findings`: array of rule hits (rule id, severity, message, fix suggestion, node refs)
 - `transition_to_node`: maps synthetic IR transition id `t_0001` to `n8n_nodes_ordered` (ordered node list with ids, names, types) for traceability
 
 ## Limitations

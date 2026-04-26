@@ -27,4 +27,5 @@ def cmd_import_n8n(args: Any) -> int:
     except OSError as ex:
         print(f"torqa import n8n: cannot write {out}: {ex}", file=sys.stderr)
         return 1
+    print(f"[OK] Imported n8n workflow -> {out.resolve()}")
     return 0

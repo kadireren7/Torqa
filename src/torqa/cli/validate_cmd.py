@@ -97,6 +97,7 @@ def cmd_validate(args: Any) -> int:
                 print("Load: FAIL")
                 print(f"Error: {err}")
             print()
+            print("[FAIL] Validation result")
             print("Result: FAIL")
             print(_MSG_VALIDATE_BLOCKED)
         return 1
@@ -162,6 +163,7 @@ def cmd_validate(args: Any) -> int:
             print("IR payload: FAIL")
             print(f"Error: {gerr}")
             print()
+            print("[FAIL] Validation result")
             print("Result: FAIL")
             print(_MSG_VALIDATE_BLOCKED)
             any_fail = True
@@ -175,6 +177,7 @@ def cmd_validate(args: Any) -> int:
             for line in struct:
                 print(f"  - {line}")
             print()
+            print("[FAIL] Validation result")
             print("Result: FAIL")
             print(_MSG_VALIDATE_BLOCKED)
             any_fail = True
@@ -231,6 +234,7 @@ def cmd_validate(args: Any) -> int:
         print_trust_scoring_block(policy_rep)
         print()
         if pok:
+            print("[PASS] Validation result")
             print("Result: PASS")
             print(_MSG_VALIDATE_HANDOFF_OK)
             if getattr(args, "fail_on_warning", False):
@@ -245,6 +249,7 @@ def cmd_validate(args: Any) -> int:
                     any_fail = True
             continue
 
+        print("[FAIL] Validation result")
         print("Result: FAIL")
         print(_MSG_VALIDATE_BLOCKED)
         any_fail = True

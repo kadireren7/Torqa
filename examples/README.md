@@ -14,6 +14,7 @@ torqa scan examples/templates --profile default
 | Path | What it is |
 | --- | --- |
 | **[templates/](templates/)** | Starter **`.tq`** flows (login, approval, onboarding) + safe/risky JSON pairs |
+| **[integrations/](integrations/)** | n8n export examples for adapter-based `--source n8n` flows |
 | **[`approval_flow.tq`](approval_flow.tq)** | Single-file approval example at repo examples root |
 | **[`ai_generated.json`](ai_generated.json)** | AI-style bundle JSON for guardrail demos |
 | **[`ai_guardrail.md`](ai_guardrail.md)** | Command-oriented walkthrough |
