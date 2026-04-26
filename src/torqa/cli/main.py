@@ -59,7 +59,10 @@ def _add_integration_source(p: argparse.ArgumentParser) -> None:
         dest="source",
         choices=["n8n"],
         default=None,
-        help="For .json: treat file as exported n8n workflow and map to Torqa IR (adapter). Ignored for .tq.",
+        help=(
+            "For .json only: treat input as exported n8n workflow JSON and map it via the Torqa n8n adapter "
+            "(scan findings include n8n node ids/names/types and fix suggestions). Ignored for .tq."
+        ),
     )
 
 
@@ -542,7 +545,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Convert external workflow exports to Torqa bundle JSON",
         description=(
             "Source adapters (e.g. n8n) map vendor workflow JSON to the canonical Torqa bundle shape. "
-            "The core IR validator is unchanged — output is suitable for `torqa validate` without --source."
+            "The core IR validator is unchanged — output is suitable for `torqa validate` without --source.\n\n"
+            "Example:\n"
+            "  torqa import n8n workflow.json --out workflow.bundle.json"
         ),
     )
     imp_sub = pimp.add_subparsers(dest="import_command", required=True)

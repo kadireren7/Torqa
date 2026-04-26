@@ -52,3 +52,17 @@ def test_template_risky_fails_under_strict_profile():
     p = EXAMPLES / "templates/ai_generated_risky.json"
     code = main(["validate", "--profile", "strict", str(p)])
     assert code == 1
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "integrations/minimal_n8n.json",
+        "integrations/customer_support_n8n.json",
+    ],
+)
+def test_n8n_examples_validate_with_source_flag(name: str):
+    p = EXAMPLES / name
+    assert p.is_file(), f"missing {p}"
+    code = main(["validate", str(p), "--source", "n8n"])
+    assert code == 0

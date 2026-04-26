@@ -14,6 +14,7 @@ from torqa.cli.io import load_input
 
 REPO = Path(__file__).resolve().parents[1]
 FIX = REPO / "tests" / "fixtures" / "n8n"
+EXAMPLES = REPO / "examples" / "integrations"
 
 
 def test_parse_minimal_fixture():
@@ -85,6 +86,7 @@ def test_cli_scan_json_n8n_source_includes_integration(tmp_path: Path, monkeypat
     row = data["rows"][0]
     assert row.get("integration", {}).get("adapter") == "n8n"
     assert "findings" in row["integration"]
+    assert all("fix_suggestion" in f for f in row["integration"]["findings"])
 
 
 def test_cli_import_n8n(tmp_path: Path):
@@ -111,3 +113,49 @@ def test_cli_import_n8n(tmp_path: Path):
     assert r.returncode == 0, r.stderr
     bundle = json.loads(out.read_text(encoding="utf-8"))
     assert "ir_goal" in bundle
+
+
+def test_examples_n8n_files_load_and_validate():
+    for name in ("minimal_n8n.json", "customer_support_n8n.json"):
+        src = EXAMPLES / name
+        assert src.is_file(), f"missing {src}"
+        bundle, err, it = load_input(src, integration_source="n8n")
+        assert err is None and it == "n8n"
+        assert isinstance(bundle, dict) and "ir_goal" in bundle
+
+
+def test_cli_validate_n8n_example_passes():
+    import subprocess
+    import sys
+
+    sample = EXAMPLES / "minimal_n8n.json"
+    r = subprocess.run(
+        [sys.executable, "-m", "torqa", "validate", str(sample), "--source", "n8n"],
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "Result: PASS" in r.stdout
+    assert "Handoff:" in r.stdout
+
+
+def test_cli_scan_risky_n8n_example_contains_fix_suggestions_json():
+    import subprocess
+    import sys
+
+    sample = EXAMPLES / "customer_support_n8n.json"
+    r = subprocess.run(
+        [sys.executable, "-m", "torqa", "scan", str(sample), "--source", "n8n", "--json"],
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    data = json.loads(r.stdout)
+    row = data["rows"][0]
+    findings = row.get("integration", {}).get("findings") or []
+    assert findings
+    assert any(f.get("fix_suggestion") for f in findings)

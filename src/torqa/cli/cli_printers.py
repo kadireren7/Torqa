@@ -19,6 +19,8 @@ Global tips:
   torqa COMMAND --help     Detailed help with examples for each command
   torqa validate FILE.tq   Full gate before CI or handoff
   torqa scan .             Repo-wide trust table
+  torqa validate workflow.json --source n8n
+  torqa import n8n workflow.json --out workflow.bundle.json
 
 Output modes (where supported):
   --json                   Machine-readable summary on stdout (no colors)
@@ -38,6 +40,7 @@ def validate_command_epilog() -> str:
 Examples:
   torqa validate flow.tq
   torqa validate ir.json --profile strict
+  torqa validate workflow.json --source n8n
   torqa validate batch.json --fail-on-warning
   torqa validate spec.tq --json | jq .ok
 
@@ -52,6 +55,7 @@ def scan_command_epilog() -> str:
 Examples:
   torqa scan .
   torqa scan ./policies --profile strict
+  torqa scan workflow.json --source n8n
   torqa scan one.tq --json
 
 Exit 1 if any spec is BLOCKED (or warnings with --fail-on-warning).

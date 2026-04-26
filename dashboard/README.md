@@ -16,6 +16,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Path | Page |
 | --- | --- |
+| `/login` | Login (mock auth) |
 | `/` | Dashboard overview (stats, risk chart, recent runs) |
 | `/projects` | Projects grid |
 | `/validation` | Validation history table |

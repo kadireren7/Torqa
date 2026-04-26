@@ -27,6 +27,50 @@ from torqa.cli.fs_discovery import discover_spec_files, display_path_relative
 from torqa.cli.io import bundle_jobs, load_input
 
 
+def _print_n8n_findings_block(c: Console, json_rows: List[Dict[str, Any]]) -> None:
+    findings_rows: List[Dict[str, Any]] = []
+    for row in json_rows:
+        integ = row.get("integration")
+        if not isinstance(integ, dict):
+            continue
+        f_list = integ.get("findings")
+        if not isinstance(f_list, list):
+            continue
+        for f in f_list:
+            if isinstance(f, dict):
+                findings_rows.append({"file": row.get("file"), **f})
+
+    if not findings_rows:
+        return
+
+    c.print()
+    c.print("[bold cyan]n8n findings[/]")
+    table = Table(box=box.SIMPLE_HEAVY, show_lines=False, header_style="bold")
+    table.add_column("Severity", width=8)
+    table.add_column("Node", max_width=26, overflow="ellipsis")
+    table.add_column("Type", max_width=24, overflow="ellipsis")
+    table.add_column("Rule", max_width=26, overflow="ellipsis")
+    table.add_column("Suggested fix", max_width=54, overflow="fold")
+
+    for f in findings_rows[:25]:
+        sev = str(f.get("severity", "review")).lower()
+        if sev == "high":
+            sev_disp = "[red]HIGH[/]"
+        elif sev == "info":
+            sev_disp = "[blue]INFO[/]"
+        else:
+            sev_disp = "[yellow]REVIEW[/]"
+        node = str(f.get("n8n_node_name") or "workflow")
+        n_type = str(f.get("n8n_node_type") or "-")
+        rule = str(f.get("rule_id") or "-")
+        fix = str(f.get("fix_suggestion") or "Review this node and add explicit handling/guardrails.")
+        table.add_row(sev_disp, node, n_type, rule, fix)
+
+    c.print(table)
+    if len(findings_rows) > 25:
+        c.print(f"[dim]Showing 25/{len(findings_rows)} findings. Use --json for full details.[/]")
+
+
 def _collect_rows(
     files: List[Path],
     scan_root: Path,
@@ -253,15 +297,20 @@ def cmd_scan(args: Any) -> int:
 
         if blocked > 0:
             c.print("[bold red]Summary — action required[/]")
+            c.print("[red][FAIL][/] Blocked specs detected.")
         elif needs > 0:
             c.print("[bold yellow]Summary — review suggested[/]")
+            c.print("[yellow][WARN][/] Manual review recommended.")
         else:
             c.print("[bold green]Summary — all clear[/]")
+            c.print("[green][PASS][/] All scanned specs are handoff-ready for this profile.")
         # Plain lines for scripts / tests (substring match)
         print(f"Total files: {n}")
         print(f"Safe: {safe}")
         print(f"Needs review: {needs}")
         print(f"Blocked: {blocked}")
+        if integration_source == "n8n":
+            _print_n8n_findings_block(c, json_rows)
 
     if blocked > 0:
         return 1

@@ -76,7 +76,8 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
     """
     Return a list of finding dicts:
 
-    ``rule_id``, ``severity`` (info|review|high), ``message``, ``n8n_node_id``, ``n8n_node_name``, ``n8n_node_type``.
+    ``rule_id``, ``severity`` (info|review|high), ``message``, ``fix_suggestion``,
+    ``n8n_node_id``, ``n8n_node_name``, ``n8n_node_type``.
     """
     findings: List[Dict[str, Any]] = []
     name_to = {n.name: n for n in wf.nodes}
@@ -88,6 +89,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                 "rule_id": "n8n.graph.disconnected",
                 "severity": "review",
                 "message": w,
+                "fix_suggestion": "Connect this node to the primary trigger path or disable/remove it.",
                 "n8n_node_id": None,
                 "n8n_node_name": None,
                 "n8n_node_type": None,
@@ -113,6 +115,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                 "rule_id": "n8n.graph.reachability",
                 "severity": "review",
                 "message": "n8n: not all nodes are reachable from entry roots (possible cycles or orphan subgraphs)",
+                "fix_suggestion": "Review node connections for cycles/orphans and ensure every production path starts from an intended trigger.",
                 "n8n_node_id": None,
                 "n8n_node_name": None,
                 "n8n_node_type": None,
@@ -135,6 +138,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                     "rule_id": "n8n.credentials.attached",
                     "severity": "review",
                     "message": "Node references credentials — review scope and rotation policy.",
+                    "fix_suggestion": "Use least-privilege credentials, rotate secrets, and avoid broad shared credential objects.",
                     **base,
                 }
             )
@@ -144,6 +148,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                     "rule_id": "n8n.code_node",
                     "severity": "review",
                     "message": "Code / Function node executes arbitrary logic — review inputs and sandboxing.",
+                    "fix_suggestion": "Prefer built-in nodes when possible; if code is required, add code review and explicit input/output validation.",
                     **base,
                 }
             )
@@ -158,6 +163,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                         "rule_id": "n8n.http.no_explicit_error_handler",
                         "severity": "review",
                         "message": "HTTP Request node has no explicit onError / continueOnFail — failures may stop the workflow abruptly.",
+                        "fix_suggestion": "Set onError/continueOnFail intentionally and route failures to a dedicated remediation path.",
                         **base,
                     }
                 )
@@ -167,6 +173,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                         "rule_id": "n8n.http.ssl_relaxed",
                         "severity": "high",
                         "message": "HTTP node relaxes TLS verification — high risk for production.",
+                        "fix_suggestion": "Enable strict TLS verification and remove ignoreSSLIssues/allowUnauthorizedCerts in production.",
                         **base,
                     }
                 )
@@ -176,6 +183,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                     "rule_id": "n8n.webhook.active_workflow",
                     "severity": "review",
                     "message": "Workflow is active and contains a Webhook — confirm production exposure and auth.",
+                    "fix_suggestion": "Require auth/signature checks on webhook ingress and verify endpoint exposure for active workflows.",
                     **base,
                 }
             )
@@ -191,6 +199,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                         "rule_id": "n8n.governance.no_manual_before_side_effect",
                         "severity": "review",
                         "message": "External side-effect node with no Manual / Form gate earlier in the inferred order — consider human approval for production.",
+                        "fix_suggestion": "Insert a manual approval or policy gate before external side-effect nodes in production paths.",
                         **base,
                     }
                 )
@@ -212,6 +221,7 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                         "rule_id": "n8n.http.no_error_output_branch",
                         "severity": "info",
                         "message": "HTTP node has no dedicated error output branch in connections — consider wiring error handling.",
+                        "fix_suggestion": "Wire HTTP error output to retry/alert/rollback logic for better operational resilience.",
                         "n8n_node_id": n.node_id,
                         "n8n_node_name": n.name,
                         "n8n_node_type": n.type,
