@@ -6,20 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-### Changed
-
-- **Packaging:** library and CLI code now live under the **`torqa`** Python package (`src/torqa/`). Imports use **`torqa.*`** (replacing **`src.*`**). Console script and **`python -m torqa`** entrypoint: **`torqa.cli.main:main`**.
-- **Docs:** moved early release and self-test reports to **`docs/reports/`** (`RELEASE_NOTES_v0.md`, `SELF_TEST_REPORT.md`).
-
-### Removed
-
-- **Chore:** removed unused root **`templates/`** placeholder directories (`.gitkeep` only).
+_No user-facing changes yet._
 
 ## [0.1.1] — 2026-04-26
 
 ### Added
 
-- **n8n adapter** (`src/integrations/n8n/`): parse exported workflow JSON, static findings, CLI **`--source n8n`** on validate / scan / inspect / doctor, and **`torqa import n8n … --out`**.
+- **n8n adapter** (`src/torqa/integrations/n8n/`): parse exported workflow JSON, static findings, CLI **`--source n8n`** on validate / scan / inspect / doctor, and **`torqa import n8n … --out`**.
 - **Ruff** configuration in `pyproject.toml` and a **`ruff check src tests`** step in the **Packaging** GitHub Actions workflow.
 
 ### Fixed
@@ -29,14 +22,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **Packaging:** internal package layout now uses the standard **`torqa.*`** import namespace.
+- **Compatibility note:** for early source users, **`src.*`** imports were replaced by **`torqa.*`**.
 - **Project identity:** `pyproject.toml` **Repository / Issues / Changelog** URLs and README badges and clone instructions point to **`https://github.com/kadireren7/Torqa`** (default directory **`Torqa`** after `git clone`).
 - **Documentation:** README and **`docs/integrations/n8n.md`** clarify that Torqa **does not execute** n8n, that n8n is an **adapter layer**, how the **IR** and **scan JSON** relate to **findings** and **n8n node ids**.
+- **Docs:** moved early release and self-test reports to **`docs/reports/`** (`RELEASE_NOTES_v0.md`, `SELF_TEST_REPORT.md`).
 
 ### Maintenance
 
 - **`.gitignore`:** ignore **`dashboard/node_modules`**, **`.next`**, **`.turbo`**, and related generated frontend paths.
 - **`CONTRIBUTING.md`**, **`.github/ISSUE_TEMPLATE/`**, **`SECURITY.md`**, **`docs/roadmap.md`:** links updated to the **Torqa** repository.
 - **`pyproject.toml`:** **`torqa[dev]`** now includes **Ruff** for local linting.
+- **Chore:** removed unused root **`templates/`** placeholder directories (`.gitkeep` only).
 
 ### Testing
 
