@@ -4,6 +4,7 @@ import {
   Users,
   FolderKanban,
   History,
+  Radar,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ export type NavItem = {
 export const mainNav: NavItem[] = [
   { title: "Overview", href: "/", icon: LayoutDashboard },
   { title: "Projects", href: "/projects", icon: FolderKanban },
+  { title: "Scan", href: "/scan", icon: Radar },
   { title: "Validation", href: "/validation", icon: History },
   { title: "Policies", href: "/policy", icon: Shield },
   { title: "Team", href: "/team", icon: Users },
@@ -24,6 +26,7 @@ export const mainNav: NavItem[] = [
 export function titleForPath(pathname: string): string {
   if (pathname === "/") return "Overview";
   if (pathname.startsWith("/projects")) return "Projects";
+  if (pathname.startsWith("/scan")) return "Scan";
   if (pathname.startsWith("/validation")) return "Validation";
   if (pathname.startsWith("/policy")) return "Policies";
   if (pathname.startsWith("/team")) return "Team";

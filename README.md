@@ -65,6 +65,18 @@ python -m torqa validate examples/templates/login_flow.tq
 
 ---
 
+## Environment Setup
+
+Copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` for your machine. Values are optional until you use features that read them (for example the dashboard or future Supabase/API integrations). The committed `.env.example` documents planned variables; **do not** commit `.env`.
+
+---
+
 ## n8n quick demo
 
 Torqa does **not** execute n8n workflows. It statically reviews exported workflow JSON.
