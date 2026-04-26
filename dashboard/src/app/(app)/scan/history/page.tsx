@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveOrganizationId } from "@/lib/workspace-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -40,11 +41,30 @@ export default async function ScanHistoryPage() {
     return null;
   }
 
-  const { data: rows, error } = await supabase
-    .from("scan_history")
-    .select("id, source, workflow_name, created_at, result")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return null;
+  }
+
+  const activeOrg = await getActiveOrganizationId();
+  let historyQuery = supabase.from("scan_history").select("id, source, workflow_name, created_at, result");
+  if (activeOrg) {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("organization_id", activeOrg)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    historyQuery = membership
+      ? historyQuery.eq("organization_id", activeOrg)
+      : historyQuery.is("organization_id", null);
+  } else {
+    historyQuery = historyQuery.is("organization_id", null);
+  }
+
+  const { data: rows, error } = await historyQuery.order("created_at", { ascending: false }).limit(100);
 
   if (error) {
     return (
@@ -83,7 +103,13 @@ export default async function ScanHistoryPage() {
       <Card className="border-border/80 shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg">Saved scans</CardTitle>
-          <CardDescription>Most recent first. Rows are scoped to your account (RLS).</CardDescription>
+          <CardDescription>
+            Most recent first. Uses your{" "}
+            <Link href="/workspace" className="text-primary underline-offset-2 hover:underline">
+              active workspace
+            </Link>{" "}
+            cookie: personal scans only, or shared team history when a workspace is selected.
+          </CardDescription>
         </CardHeader>
         <CardContent className="px-0 pb-2">
           <div className="overflow-x-auto">

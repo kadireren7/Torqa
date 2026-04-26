@@ -29,10 +29,7 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
       <ScrollArea className="flex-1 py-3">
         <nav className="flex flex-col gap-0.5 px-2">
           {mainNav.map((item) => {
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link

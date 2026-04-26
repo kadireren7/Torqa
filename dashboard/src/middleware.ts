@@ -2,9 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { supabasePublicEnv } from "@/lib/env";
 
+/** HTML/marketing + auth callback + public share pages. `/api/*` is never session-gated here (use per-route auth). */
 function isPublicPath(pathname: string): boolean {
+  if (pathname === "/") return true;
   if (pathname === "/login") return true;
   if (pathname.startsWith("/auth/callback")) return true;
+  if (pathname.startsWith("/share")) return true;
   return false;
 }
 
@@ -54,8 +57,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/login" && user) {
-    const next = request.nextUrl.searchParams.get("next") || "/";
-    const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    const next = request.nextUrl.searchParams.get("next") || "/overview";
+    const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/overview";
     return NextResponse.redirect(new URL(safe, request.url));
   }
 

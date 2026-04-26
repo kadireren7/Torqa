@@ -87,3 +87,29 @@ export interface RiskTrendPoint {
   needsReview: number;
   blocked: number;
 }
+
+/** Homepage workflow-scan metrics (Supabase `scan_history` or demo mock). */
+export type HomeDashboardMode = "supabase" | "mock";
+
+export type HomeRecentScan = {
+  id: string;
+  workflowName: string | null;
+  source: "n8n" | "generic";
+  status: string;
+  riskScore: number;
+  createdAt: string;
+};
+
+export type HomeDashboardData = {
+  mode: HomeDashboardMode;
+  totalScans30d: number;
+  savedReportsAllTime: number;
+  /** Average `riskScore` from saved results (null when no scans). */
+  avgTrustScore: number | null;
+  passCount: number;
+  failCount: number;
+  reviewCount: number;
+  recentScans: HomeRecentScan[];
+  /** Stacked daily counts: PASS → safe, NEEDS REVIEW → needsReview, FAIL → blocked (chart keys unchanged). */
+  outcomeTrend: RiskTrendPoint[];
+};

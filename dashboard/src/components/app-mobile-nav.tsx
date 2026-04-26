@@ -46,10 +46,7 @@ export function AppMobileNav({ orgName }: AppMobileNavProps) {
         </SheetHeader>
         <nav className="flex flex-col gap-0.5 p-2">
           {mainNav.map((item) => {
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
