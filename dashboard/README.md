@@ -19,6 +19,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `/login` | Login (mock auth) |
 | `/` | Dashboard overview (stats, risk chart, recent runs) |
 | `/projects` | Projects grid |
+| `/scan` | **Workflow scan (demo)** — upload/paste JSON, pick generic vs n8n, run **client-side preview** rules (see below) |
 | `/validation` | Validation history table |
 | `/validation/[runId]` | Run detail + mock JSON |
 | `/policy` | Policy settings |
@@ -30,6 +31,11 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run build
 npm start
 ```
+
+### `/scan` — preview vs real
+
+- **Today:** `/scan` runs **Dashboard preview analysis** in the browser (`src/lib/scan-preview.ts`). It parses JSON and applies deterministic heuristics (for example n8n-shaped exports: HTTP Request, Code, credentials, error-handling hints, webhook/slack/email side effects). This is **not** the Torqa Python package or CLI.
+- **Future:** wire this page to a **Torqa backend** (e.g. server action or API that shells `torqa scan` / shared library) so results match production tooling. Static sample workflows ship under `public/scan-samples/` for Vercel deploys.
 
 ## Next steps (integration)
 
