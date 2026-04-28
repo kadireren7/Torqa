@@ -104,6 +104,7 @@ export type HomeRecentScan = {
 export type HomeOnboardingCounts = {
   integrations: number;
   workflowTemplates: number;
+  scanSchedules: number;
   workspacePolicies: number;
   alertDestinations: number;
   /** Org workspace member rows; 0 when not in a shared workspace. */
@@ -119,6 +120,11 @@ export type HomeDashboardData = {
   passCount: number;
   failCount: number;
   reviewCount: number;
+  scansThisWeek: number;
+  policyFailures30d: number;
+  highRiskScans30d: number;
+  scheduleSuccessRate30d: number | null;
+  topFindingRules: Array<{ ruleId: string; count: number }>;
   recentScans: HomeRecentScan[];
   /** Stacked daily counts: PASS → safe, NEEDS REVIEW → needsReview, FAIL → blocked (chart keys unchanged). */
   outcomeTrend: RiskTrendPoint[];

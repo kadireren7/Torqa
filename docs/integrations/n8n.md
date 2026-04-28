@@ -65,9 +65,11 @@ Static analysis runs on the exported graph (no execution). Typical **findings** 
 | **Credentials** | Nodes with credential references attached |
 | **Code** | Code / Function nodes (custom logic) |
 | **HTTP** | `n8n-nodes-base.httpRequest` without obvious error handling / continue-on-fail patterns (heuristic) |
+| **HTTP transport** | plaintext `http://` targets and relaxed TLS flags (`ignoreSSLIssues`, `allowUnauthorizedCerts`) |
 | **Webhooks** | Active workflow + webhook-style triggers (production exposure) |
 | **Governance** | Heuristics such as side-effect nodes without a prior manual gate (e.g. approval / human-in-the-loop style nodes) |
-| **Graph** | Disconnected nodes, missing retry/error paths where detectable, invalid or cyclic connections (where the export allows inference) |
+| **Graph** | Disconnected nodes, disabled nodes, and missing retry/error/failure paths where detectable |
+| **Secrets** | Hardcoded credential-like values in node parameters |
 
 Each finding includes:
 
@@ -76,6 +78,7 @@ Each finding includes:
 - **severity** (`info`, `review`, `high`)
 - **fix_suggestion** (deterministic remediation hint)
 - **n8n node id** for source mapping
+- **rule id / message** for deterministic alerting and CI parsing
 
 In human `torqa scan` output (non-JSON), Torqa prints a compact n8n findings table with severity, node, type, rule, and suggested fix.
 

@@ -8,6 +8,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 _No user-facing changes yet._
 
+## [0.1.5] — 2026-04-28
+
+### Added
+
+- **`torqa quickstart`** one-command first-run flow for fast local evaluation of bundled n8n sample.
+- **Report JSON artifact mode** (`torqa report --format json`) with executive summary, key findings, and next-step guidance (`torqa.report.v1`).
+- **Public API envelope helpers** for consistent external response shape (`ok`, `data/error`, `meta`) in `/api/public/scan` with `?legacy=1` compatibility mode.
+- **Overview product-signal metrics**: scans this week, policy failures, high-risk scans, schedule success rate, and top finding rules.
+
+### Changed
+
+- **CLI help docs** now include quickstart and report JSON usage paths.
+- **HTML reports** now surface executive summary and key blocked/review findings first for stakeholder sharing.
+- **Overview onboarding flow** now includes explicit schedule creation step and clearer first-run trust guidance.
+
+## [0.1.4] — 2026-04-28
+
+### Added
+
+- **Engine trust metadata** in dashboard scan responses: `engine_mode`, `analysis_kind`, and `fallback` (`fallback_used`, `fallback_from`, `fallback_to`, `fallback_reason`) so users can distinguish real engine analysis from preview/fallback output.
+- **Fallback control** with `TORQA_ALLOW_PREVIEW_FALLBACK` to prevent silent trust downgrade in production.
+- **Cron schedule execution MVP** in `POST /api/scan-schedules/cron/tick` with debug counters (`schedules_checked`, `schedules_run`, `succeeded`, `failed`, `errors`).
+- **n8n findings hardening** for hardcoded secret-like values, plaintext HTTP transport, missing workflow failure path signal, and disabled-node drift hints.
+- **Focused tests** for hosted provider fallback policy and expanded n8n finding coverage.
+
+### Changed
+
+- **Manual schedule run API** now returns explicit run diagnostics and refuses disabled schedules.
+- **Scheduled scan execution path** now dispatches scan-context alert rules for risky/policy-failing outcomes, not only schedule-failed alerts.
+- **Dashboard scan report UX** now shows explicit engine/trust labels (real/preview/fallback), fallback warning banners, policy status, and risk level labels.
+- **Docs alignment** across README, dashboard README, architecture/status/roadmap/launch checklist, and n8n integration docs for v0.1.4 reliability scope.
+
 ## [0.1.1] — 2026-04-26
 
 ### Added
@@ -72,6 +104,8 @@ First early public release of the Torqa core: canonical IR, validation, referenc
 
 Earlier development history is folded into **0.1.0** for clarity; subsequent versions list incremental changes here.
 
-[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/kadireren7/Torqa/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/kadireren7/Torqa/compare/v0.1.1...v0.1.4
 [0.1.1]: https://github.com/kadireren7/Torqa/releases/tag/v0.1.1
 [0.1.0]: https://github.com/kadireren7/Torqa/releases/tag/v0.1.0

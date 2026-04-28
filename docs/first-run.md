@@ -14,6 +14,12 @@ Put **`demo.tq`** and **`demo.py`** there, side by side.
 pip install -e ".[dev]"
 ```
 
+Fastest first success path:
+
+```bash
+python -m torqa quickstart
+```
+
 Run that from the repository root.
 
 ## 3. Create the two files

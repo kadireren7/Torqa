@@ -51,6 +51,83 @@ def test_analyze_flags_http_and_webhook_active():
     assert "n8n.webhook.active_workflow" in rules
 
 
+def _workflow_export(nodes, connections=None, *, active=True):
+    return {
+        "name": "Test workflow",
+        "active": active,
+        "nodes": nodes,
+        "connections": connections or {},
+    }
+
+
+def test_n8n_findings_include_hardcoded_secret():
+    raw = _workflow_export(
+        [
+            {
+                "id": "1",
+                "name": "HTTP Request",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {"url": "https://example.com", "apiKey": "sk_live_abcdef123456"},
+            }
+        ]
+    )
+    wf, err = parse_n8n_export(raw)
+    assert err is None and wf is not None
+    rules = {f["rule_id"] for f in analyze_n8n_workflow(wf)}
+    assert "n8n.secret.hardcoded" in rules
+
+
+def test_n8n_findings_include_plaintext_http_and_observability_gap():
+    raw = _workflow_export(
+        [
+            {
+                "id": "1",
+                "name": "Webhook",
+                "type": "n8n-nodes-base.webhook",
+                "parameters": {"path": "public"},
+            },
+            {
+                "id": "2",
+                "name": "HTTP Request",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {"url": "http://insecure.example.com", "method": "POST"},
+            },
+        ],
+        connections={
+            "Webhook": {"main": [[{"node": "HTTP Request", "type": "main", "index": 0}]]},
+        },
+    )
+    wf, err = parse_n8n_export(raw)
+    assert err is None and wf is not None
+    rules = {f["rule_id"] for f in analyze_n8n_workflow(wf)}
+    assert "n8n.http.plaintext_transport" in rules
+    assert "n8n.observability.failure_path_missing" in rules
+
+
+def test_n8n_findings_include_disabled_node_signal():
+    raw = _workflow_export(
+        [
+            {
+                "id": "1",
+                "name": "Webhook",
+                "type": "n8n-nodes-base.webhook",
+                "parameters": {},
+            },
+            {
+                "id": "2",
+                "name": "Old branch",
+                "type": "n8n-nodes-base.set",
+                "disabled": True,
+                "parameters": {},
+            },
+        ]
+    )
+    wf, err = parse_n8n_export(raw)
+    assert err is None and wf is not None
+    rules = {f["rule_id"] for f in analyze_n8n_workflow(wf)}
+    assert "n8n.node.disabled" in rules
+
+
 def test_load_input_n8n_source(tmp_path: Path):
     src = FIX / "minimal_chain.json"
     dst = tmp_path / "w.json"

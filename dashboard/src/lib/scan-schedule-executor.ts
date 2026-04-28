@@ -6,6 +6,7 @@ import { dispatchScanNotificationsForUser } from "@/lib/scan-notification-dispat
 import { resolveScanPolicy } from "@/lib/resolve-scan-policy";
 import { evaluateScanAgainstPolicy } from "@/lib/policy-evaluator";
 import { dispatchAlertRulesForScheduleFailure } from "@/lib/alert-dispatch";
+import { dispatchAlertRulesForScanContext } from "@/lib/alert-dispatch";
 import { isPlainObject } from "@/lib/json-guards";
 import { logWorkspaceActivity, notifyWorkspaceMembers } from "@/lib/workspace-activity";
 import { computeNextRunAfter, type ScanScheduleFrequency, type ScanScheduleScopeType } from "@/lib/scan-schedules";
@@ -108,6 +109,9 @@ export async function executeManualScheduleRun(
   userId: string,
   schedule: ScheduleRunContext
 ): Promise<ManualRunOutcome> {
+  if (!schedule.enabled) {
+    return { kind: "failed", runId: null, error: "Schedule is disabled." };
+  }
   if (schedule.scope_type === "integration") {
     return { kind: "integration_not_implemented" };
   }
@@ -280,6 +284,13 @@ export async function executeManualScheduleRun(
     { scanId, status: scanResult.status, scheduleId: schedule.id }
   );
   void dispatchScanNotificationsForUser(userId, scanResult, source, orgId, "scan_schedule").catch(() => {});
+  void dispatchAlertRulesForScanContext(supabase, {
+    actorUserId: userId,
+    organizationId: orgId,
+    result: scanResult,
+    source,
+    via: "scan_schedule",
+  }).catch(() => {});
 
   const completedAt = new Date().toISOString();
   await supabase

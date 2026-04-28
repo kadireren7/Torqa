@@ -87,6 +87,20 @@ function riskMeterFill(score: number): string {
   return "from-rose-500 via-red-500 to-rose-600";
 }
 
+function engineModeLabel(result: ScanApiSuccess): string {
+  const fallback = result.fallback;
+  if (fallback?.fallback_used || result.engine_mode === "fallback_preview") return "Fallback preview";
+  if (result.analysis_kind === "real_engine") return "Real engine";
+  if (result.analysis_kind === "preview_heuristic" || result.engine_mode === "server_preview") return "Preview analysis";
+  return "Unknown engine";
+}
+
+function riskLevelLabel(score: number): "low" | "medium" | "high" {
+  if (score >= 80) return "low";
+  if (score >= 60) return "medium";
+  return "high";
+}
+
 /** Trust index = same numeric model as riskScore (higher = safer gate posture). */
 function TrustIndexVisual({ score }: { score: number }) {
   const pct = Math.max(0, Math.min(100, score));
@@ -386,6 +400,12 @@ export function ScanReportView({
   share,
 }: ScanReportViewProps) {
   const isShared = variant === "shared";
+  const fallbackMeta = result.fallback ?? {
+    fallback_used: false,
+    fallback_from: null,
+    fallback_to: null,
+    fallback_reason: null,
+  };
 
   return (
     <div className="space-y-10 sm:space-y-12">
@@ -399,6 +419,21 @@ export function ScanReportView({
             <Badge variant="outline" className={cn("font-semibold", decisionBadgeClass(result.status))}>
               {result.status}
             </Badge>
+            <Badge variant="secondary" className="font-medium">
+              {engineModeLabel(result)}
+            </Badge>
+            <Badge variant="secondary" className="font-medium capitalize">
+              Risk: {riskLevelLabel(result.riskScore)}
+            </Badge>
+            {result.policyEvaluation ? (
+              <Badge variant="secondary" className="font-medium">
+                Policy: {result.policyEvaluation.policyStatus === "WARN" ? "warning" : result.policyEvaluation.policyStatus === "FAIL" ? "fail" : "pass"}
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="font-medium">
+                Policy: review required
+              </Badge>
+            )}
           </div>
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {isShared
@@ -427,10 +462,28 @@ export function ScanReportView({
           </p>
         </div>
       )}
+      {fallbackMeta.fallback_used ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-100">
+          Fallback preview was used ({fallbackMeta.fallback_from ?? "unknown"} →{" "}
+          {fallbackMeta.fallback_to ?? "fallback_preview"}). Reason:{" "}
+          {fallbackMeta.fallback_reason ?? "provider unavailable"}.
+        </div>
+      ) : null}
 
       {notice ? (
         <p className="text-center text-sm font-medium text-emerald-400 sm:text-left">{notice}</p>
       ) : null}
+
+      <section className="rounded-xl border border-border/70 bg-muted/20 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Executive summary</p>
+        <p className="mt-2 text-sm text-foreground">
+          Outcome <strong>{result.status}</strong> with trust index <strong>{result.riskScore}</strong>. Engine mode:{" "}
+          <strong>{engineModeLabel(result)}</strong>.
+          {result.policyEvaluation
+            ? ` Policy status: ${result.policyEvaluation.policyStatus}.`
+            : " Policy status: review required (no policy attached)."}
+        </p>
+      </section>
 
       {/* KPI strip */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">

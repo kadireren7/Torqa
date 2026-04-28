@@ -19,6 +19,7 @@ Global tips:
   torqa COMMAND --help     Detailed help with examples for each command
   torqa validate FILE.tq   Full gate before CI or handoff
   torqa scan .             Repo-wide trust table
+  torqa quickstart         60-second guided demo
   torqa validate workflow.json --source n8n
   torqa import n8n workflow.json --out workflow.bundle.json
 
@@ -32,6 +33,7 @@ Examples:
   torqa validate bundle.json --profile strict --json
   torqa scan ./workflows --profile review-heavy
   torqa report . --format md -o trust.md
+  torqa report . --format json -o trust.json
 """.strip()
 
 

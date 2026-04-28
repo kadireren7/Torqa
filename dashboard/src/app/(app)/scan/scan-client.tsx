@@ -218,7 +218,7 @@ export function ScanPageClient() {
           errObj && typeof errObj.requestId === "string" && errObj.requestId.trim()
             ? ` Reference: ${errObj.requestId.trim()}`
             : "";
-        setError(`${msg}${ref}`);
+        setError(`${msg}${ref} Tip: verify source type, JSON shape, and engine mode settings before retrying.`);
         return;
       }
       if (!isScanApiSuccess(data)) {
@@ -288,7 +288,7 @@ export function ScanPageClient() {
             <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
               Upload or paste workflow JSON and run a deterministic scan via{" "}
               <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">POST /api/scan</code>
-              . Results are saved to your account when Supabase is configured. For full Torqa validation, use the CLI.
+              . Results include explicit engine mode (real vs preview/fallback). For full Torqa validation, use the CLI.
             </p>
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
               <Link href="/workflow-library" className="font-medium text-primary hover:underline">
@@ -307,9 +307,7 @@ export function ScanPageClient() {
               <Radar className="h-3.5 w-3.5 shrink-0 text-primary" />
               Server-side
             </span>
-            <span className="leading-snug">
-              Powered by server-side scan engine — JSON analyzed on the host. Sign in to persist reports.
-            </span>
+            <span className="leading-snug">Server analysis can be real engine or preview heuristic depending on provider mode.</span>
           </div>
         </div>
       </div>
@@ -500,7 +498,7 @@ export function ScanPageClient() {
       <footer className="mt-4 border-t border-border/70 pt-8 sm:mt-6 sm:pt-10">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-center text-xs text-muted-foreground sm:text-left">
-            Torqa dashboard · server-side scan (preview engine)
+            Torqa dashboard · engine mode shown on each scan result
           </p>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium">
             <Link

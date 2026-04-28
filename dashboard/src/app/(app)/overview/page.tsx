@@ -127,6 +127,12 @@ export default async function DashboardOverviewPage() {
           value={home.totalScans30d}
         />
         <MetricCard
+          icon={<Activity className="h-4 w-4" />}
+          label="Scans this week"
+          hint="Last 7 days"
+          value={home.scansThisWeek}
+        />
+        <MetricCard
           icon={<FileStack className="h-4 w-4" />}
           label="Saved reports"
           hint="All time in your library"
@@ -138,6 +144,26 @@ export default async function DashboardOverviewPage() {
           hint="Mean risk score (0–100)"
           value={home.avgTrustScore === null ? "—" : home.avgTrustScore}
           valueClassName="text-primary"
+        />
+        <MetricCard
+          icon={<Shield className="h-4 w-4" />}
+          label="Policy failures"
+          hint="Last 30 days"
+          value={home.policyFailures30d}
+          valueClassName={home.policyFailures30d > 0 ? "text-rose-500" : undefined}
+        />
+        <MetricCard
+          icon={<Gauge className="h-4 w-4" />}
+          label="High-risk scans"
+          hint="Fail or trust<60 (30d)"
+          value={home.highRiskScans30d}
+          valueClassName={home.highRiskScans30d > 0 ? "text-amber-500" : undefined}
+        />
+        <MetricCard
+          icon={<BarChart3 className="h-4 w-4" />}
+          label="Schedule success"
+          hint="Completed run rate (30d)"
+          value={home.scheduleSuccessRate30d === null ? "—" : `${home.scheduleSuccessRate30d}%`}
         />
         <Card className="relative overflow-hidden border-border/80 bg-card/60 shadow-sm ring-1 ring-white/[0.04]">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -183,6 +209,27 @@ export default async function DashboardOverviewPage() {
             data={home.outcomeTrend}
             seriesLabels={{ safe: "Pass", needsReview: "Needs review", blocked: "Fail" }}
           />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/80 bg-card/40 shadow-md ring-1 ring-white/[0.05]">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Top finding types</CardTitle>
+          <CardDescription>Most common deterministic rule hits in recent scans.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {home.topFindingRules.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No findings yet. Run a scan to populate this section.</p>
+          ) : (
+            home.topFindingRules.map((rule) => (
+              <div key={rule.ruleId} className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-sm">
+                <code className="font-mono text-xs text-muted-foreground">{rule.ruleId}</code>
+                <Badge variant="secondary" className="tabular-nums">
+                  {rule.count}
+                </Badge>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { decisionFrom, riskScoreFromFindings, runScanAnalysis, type ScanFinding } from "@/lib/scan-engine";
+import {
+  buildScanApiResult,
+  decisionFrom,
+  riskScoreFromFindings,
+  runScanAnalysis,
+  type ScanFinding,
+} from "@/lib/scan-engine";
 
 function baseN8nWorkflow() {
   return {
@@ -250,5 +256,15 @@ describe("scan-engine v1 scoring thresholds", () => {
     ];
     expect(riskScoreFromFindings(findings)).toBe(44);
     expect(decisionFrom(findings)).toBe("FAIL");
+  });
+});
+
+describe("scan-engine response metadata", () => {
+  it("includes explicit engine mode and fallback metadata", () => {
+    const payload = buildScanApiResult({ nodes: [], connections: {} }, "n8n");
+    expect(payload.engine_mode).toBe("server_preview");
+    expect(payload.analysis_kind).toBe("preview_heuristic");
+    expect(payload.fallback.fallback_used).toBe(false);
+    expect(payload.fallback.fallback_from).toBeNull();
   });
 });

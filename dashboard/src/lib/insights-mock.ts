@@ -16,6 +16,14 @@ function mkScan(partial: Partial<ScanApiSuccess> & Pick<ScanApiSuccess, "status"
   }
   return {
     engine: partial.engine ?? "server-preview",
+    engine_mode: partial.engine_mode ?? "server_preview",
+    analysis_kind: partial.analysis_kind ?? "preview_heuristic",
+    fallback: partial.fallback ?? {
+      fallback_used: false,
+      fallback_from: null,
+      fallback_to: null,
+      fallback_reason: null,
+    },
     source: partial.source ?? "n8n",
     status: partial.status,
     riskScore: partial.riskScore,

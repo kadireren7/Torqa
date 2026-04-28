@@ -53,7 +53,8 @@ Minimum for “real” cloud dashboard:
 Optional:
 
 - `TORQA_SCAN_PROVIDER` / `TORQA_ENGINE_URL` (hosted Python engine)
-- `TORQA_CRON_SECRET` (future cron tick; schedule **Run now** works without it)
+- `TORQA_ALLOW_PREVIEW_FALLBACK` (`true`/`false`; disable silent downgrade in production)
+- `TORQA_CRON_SECRET` (required if you call cron tick for automatic schedule execution)
 - `TORQA_API_KEY_PEPPER` (hash pepper for user API keys — set in production)
 
 ## 5. Smoke tests (first user)
@@ -73,7 +74,7 @@ Run in order on a **staging** project before outreach.
 ## 6. Production limitations (communicate honestly)
 
 - **Scan engine in dashboard:** Default **`server-preview`** is Node heuristics, not the Python CLI binary. For parity with CLI, configure **`hosted-python`** + `TORQA_ENGINE_URL`.
-- **Scheduled cron:** `POST /api/scan-schedules/cron/tick` may be a stub or limited — **Run now** is the supported manual path for MVP.
+- **Scheduled cron:** `POST /api/scan-schedules/cron/tick` executes due enabled schedules, but this remains a simple MVP (single endpoint worker style, not distributed orchestration).
 - **Email / some webhooks:** placeholders or “safe ping” behavior may apply; verify in staging before promising email delivery.
 - **n8n integration:** config-first; no live pull from n8n until ingestion is built.
 - **Without Supabase:** app runs in a degraded/demo-friendly mode (no persisted history, no team features).

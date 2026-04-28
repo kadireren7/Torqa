@@ -21,6 +21,8 @@ Planning for an **early core**: small API surface, reference Python implementati
 - **Default semantic registry** kept small and explicit: unknown effects stay **errors**.
 - **Tests + schema** (`spec/IR_BUNDLE.schema.json`) as the baseline contract checks.
 - **Documentation** aligned with what the code actually does — README, examples, and issue templates should stay honest.
+- **v0.1.4 release track:** reliability hardening for n8n/automation governance (engine transparency, schedule execution MVP, stronger deterministic findings), not broad adapter/platform expansion.
+- **v0.1.5 release track:** adoption + DX + public trust (one-command quickstart, shareable reports, onboarding polish, consistent public API envelopes).
 
 ---
 

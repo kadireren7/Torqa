@@ -44,7 +44,7 @@ def test_report_html_writes_file_and_contains_sections(tmp_path: Path, capsys):
     assert "SAFE_TO_HANDOFF" in text
     assert "Reasons" in text
     assert "Checked at" in text
-    assert "Summary" in text and "Total files:" in text
+    assert "Executive summary" in text and "Total:" in text
     assert "Wrote" in capsys.readouterr().out
 
 
@@ -67,7 +67,7 @@ def test_report_directory_multiple_files(tmp_path: Path):
     text = out_html.read_text(encoding="utf-8")
     assert "a.tq" in text
     assert "b.json" in text
-    assert "Total files: 2" in text
+    assert "Total: 2" in text
 
 
 def test_report_blocked_exit_one(tmp_path: Path):
@@ -172,3 +172,15 @@ def test_evaluate_trust_gate_includes_reason(tmp_path: Path):
     ev = evaluate_trust_gate(p, "default")
     assert ev.reason_summary
     assert "heuristic" in ev.reason_summary.lower() or "owner" in ev.reason_summary.lower()
+
+
+def test_report_json_format_writes_shareable_artifact(tmp_path: Path):
+    p = tmp_path / "ok.tq"
+    p.write_text(VALID_TQ, encoding="utf-8")
+    out_json = tmp_path / "report.json"
+    code = main(["report", str(p), "--format", "json", "-o", str(out_json)])
+    assert code == 0
+    data = json.loads(out_json.read_text(encoding="utf-8"))
+    assert data["schema"] == "torqa.report.v1"
+    assert data["summary"]["total"] == 1
+    assert "next_steps" in data

@@ -29,6 +29,7 @@ from torqa.cli.project_config import (
 from torqa.cli.readiness import format_readiness_line, readiness_score_100
 from torqa.cli.io import goal_from_bundle, load_input
 from torqa.cli.validate_cmd import cmd_validate
+from torqa.cli.check_cmd import evaluate_trust_from_bundle, DECISION_SAFE
 from torqa.cli.cli_printers import (
     TORQA_EPILOG,
     compare_command_epilog,
@@ -60,8 +61,8 @@ def _add_integration_source(p: argparse.ArgumentParser) -> None:
         choices=["n8n"],
         default=None,
         help=(
-            "For .json only: treat input as exported n8n workflow JSON and map it via the Torqa n8n adapter "
-            "(scan findings include n8n node ids/names/types and fix suggestions). Ignored for .tq."
+            "For .json only: treat input as exported n8n workflow JSON and map it via the Torqa n8n adapter. "
+            "Findings are deterministic and include n8n node ids/names/types plus suggested fixes. Ignored for .tq."
         ),
     )
 
@@ -379,6 +380,85 @@ def cmd_version(_args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_quickstart(args: argparse.Namespace) -> int:
+    """One-command first experience using bundled examples."""
+    repo_root = Path(__file__).resolve().parents[3]
+    sample = repo_root / "examples" / "integrations" / "customer_support_n8n.json"
+    if not sample.is_file():
+        print(f"torqa quickstart: sample not found: {sample}", file=sys.stderr)
+        return 1
+
+    bundle, err, input_type = load_input(sample, integration_source="n8n")
+    if input_type == "unknown" or err is not None or bundle is None:
+        print(f"torqa quickstart: could not load sample: {err}", file=sys.stderr)
+        return 1
+
+    from torqa.cli.io import bundle_jobs
+
+    jobs = bundle_jobs(sample, bundle, input_type)
+    if not jobs:
+        print("torqa quickstart: sample did not produce any bundle jobs.", file=sys.stderr)
+        return 1
+
+    ev = evaluate_trust_from_bundle(jobs[0][1], profile=getattr(args, "profile", None) or "default")
+    findings_count = 0
+    risk_level = ev.risk
+    try:
+        goal, _ = goal_from_bundle(jobs[0][1], path_hint=str(sample))
+        if goal is not None:
+            policy = build_policy_report(goal, profile=getattr(args, "profile", None) or "default")
+            findings_count = len(policy.get("reasons") or [])
+            risk_level = str(policy.get("risk_level", ev.risk))
+    except Exception:
+        findings_count = 0
+
+    decision = "PASS" if ev.decision == DECISION_SAFE else "REVIEW / BLOCK"
+    print("Torqa quickstart")
+    print(f"Sample: {sample}")
+    print(f"Decision: {decision}")
+    print(f"Risk level: {risk_level}")
+    print(f"Findings/signals: {findings_count}")
+    print()
+    print("Next steps:")
+    print(f"- torqa validate \"{sample}\" --source n8n")
+    print(f"- torqa scan \"{sample}\" --source n8n --json")
+    print("- torqa report examples/integrations --format md -o torqa-report.md")
+
+    if bool(getattr(args, "report", False)):
+        from types import SimpleNamespace
+
+        report_out = getattr(args, "report_output", None)
+        report_fmt = getattr(args, "report_format", None) or "html"
+        report_args = SimpleNamespace(
+            path=sample,
+            report_format=report_fmt,
+            output=report_out,
+            profile=getattr(args, "profile", None) or "default",
+            fail_on_warning=False,
+            json=False,
+            quiet=True,
+            no_color=True,
+        )
+        rc = cmd_report(report_args)
+        if rc in (0, 1):
+            if report_out is not None:
+                out = report_out
+            elif report_fmt == "html":
+                out = Path("torqa-report.html")
+            elif report_fmt == "md":
+                out = Path("torqa-report.md")
+            else:
+                out = Path("torqa-report.json")
+            print(f"Report: {Path(out).resolve()}")
+            if rc == 1:
+                print("Report note: sample includes findings; artifact generated for review.")
+        else:
+            print("Report: failed to generate", file=sys.stderr)
+            return rc
+
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="torqa",
@@ -586,9 +666,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--format",
         dest="report_format",
         default=argparse.SUPPRESS,
-        choices=["html", "md"],
+        choices=["html", "md", "json"],
         metavar="FMT",
-        help="html = standalone .html; md = Markdown for PR comments / CI artifacts (default: from torqa.toml or html).",
+        help="html = standalone .html; md = Markdown for PR comments; json = machine-shareable artifact (default: from torqa.toml or html).",
     )
     prpt.add_argument(
         "-o",
@@ -664,6 +744,37 @@ def _build_parser() -> argparse.ArgumentParser:
 
     pver = sub.add_parser("version", help="Show torqa package and IR versions")
     pver.set_defaults(func=cmd_version)
+
+    pqs = sub.add_parser(
+        "quickstart",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="Run a 60-second guided Torqa demo using bundled n8n sample",
+        description=(
+            "Loads a built-in n8n example, evaluates trust deterministically, and prints a beginner-friendly summary "
+            "with next commands. Optional: generate a shareable report artifact."
+        ),
+    )
+    pqs.add_argument(
+        "--profile",
+        default=argparse.SUPPRESS,
+        choices=["default", "strict", "review-heavy", "enterprise"],
+        metavar="PROFILE",
+        help="Trust profile used for quickstart evaluation (default: from torqa.toml or default).",
+    )
+    pqs.add_argument("--report", action="store_true", help="Also generate a report artifact from the quickstart sample.")
+    pqs.add_argument(
+        "--report-format",
+        choices=["html", "md", "json"],
+        default="html",
+        help="Report format when --report is set (default: html).",
+    )
+    pqs.add_argument(
+        "--report-output",
+        type=Path,
+        default=None,
+        help="Optional output path for --report (defaults to torqa-report.<format>).",
+    )
+    pqs.set_defaults(func=cmd_quickstart)
 
     return p
 

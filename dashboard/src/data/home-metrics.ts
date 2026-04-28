@@ -86,6 +86,9 @@ function aggregateRows(rows: ScanHistoryRow[], since14: string) {
   let review = 0;
   let sumRisk = 0;
   let nRisk = 0;
+  let policyFailures30d = 0;
+  let highRiskScans30d = 0;
+  const topRules = new Map<string, number>();
 
   for (const row of rows) {
     if (!isScanApiSuccess(row.result)) continue;
@@ -95,6 +98,11 @@ function aggregateRows(rows: ScanHistoryRow[], since14: string) {
     else review += 1;
     sumRisk += r.riskScore;
     nRisk += 1;
+    if (r.policyEvaluation?.policyStatus === "FAIL") policyFailures30d += 1;
+    if (r.status === "FAIL" || r.riskScore < 60) highRiskScans30d += 1;
+    for (const finding of r.findings) {
+      topRules.set(finding.rule_id, (topRules.get(finding.rule_id) ?? 0) + 1);
+    }
   }
 
   const outcomeTrend = buildOutcomeTrend(rows, since14);
@@ -105,12 +113,18 @@ function aggregateRows(rows: ScanHistoryRow[], since14: string) {
     reviewCount: review,
     avgTrustScore: nRisk > 0 ? Math.round(sumRisk / nRisk) : null,
     outcomeTrend,
+    policyFailures30d,
+    highRiskScans30d,
+    topFindingRules: [...topRules.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([ruleId, count]) => ({ ruleId, count })),
   };
 }
 
 function scopedCountQuery(
   supabase: SupabaseClient,
-  table: "integrations" | "workflow_templates" | "workspace_policies" | "alert_destinations",
+  table: "integrations" | "workflow_templates" | "scan_schedules" | "workspace_policies" | "alert_destinations",
   userId: string,
   orgId: string | null
 ) {
@@ -129,9 +143,10 @@ async function fetchOnboardingCounts(
   orgId: string | null
 ): Promise<HomeOnboardingCounts> {
   try {
-    const [intRes, tplRes, polRes, destRes] = await Promise.all([
+    const [intRes, tplRes, schRes, polRes, destRes] = await Promise.all([
       scopedCountQuery(supabase, "integrations", userId, orgId),
       scopedCountQuery(supabase, "workflow_templates", userId, orgId),
+      scopedCountQuery(supabase, "scan_schedules", userId, orgId),
       scopedCountQuery(supabase, "workspace_policies", userId, orgId),
       scopedCountQuery(supabase, "alert_destinations", userId, orgId),
     ]);
@@ -146,6 +161,7 @@ async function fetchOnboardingCounts(
     return {
       integrations: intRes.count ?? 0,
       workflowTemplates: tplRes.count ?? 0,
+      scanSchedules: schRes.count ?? 0,
       workspacePolicies: polRes.count ?? 0,
       alertDestinations: destRes.count ?? 0,
       organizationMembers,
@@ -154,6 +170,7 @@ async function fetchOnboardingCounts(
     return {
       integrations: 0,
       workflowTemplates: 0,
+      scanSchedules: 0,
       workspacePolicies: 0,
       alertDestinations: 0,
       organizationMembers: 0,
@@ -254,16 +271,54 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       passCount: 0,
       failCount: 0,
       reviewCount: 0,
+      scansThisWeek: 0,
+      policyFailures30d: 0,
+      highRiskScans30d: 0,
+      scheduleSuccessRate30d: null,
+      topFindingRules: [],
       recentScans: [],
       outcomeTrend: emptyTrend14(),
       onboarding,
     };
   }
 
-  const { passCount, failCount, reviewCount, avgTrustScore, outcomeTrend } = aggregateRows(
+  const {
+    passCount,
+    failCount,
+    reviewCount,
+    avgTrustScore,
+    outcomeTrend,
+    policyFailures30d,
+    highRiskScans30d,
+    topFindingRules,
+  } = aggregateRows(
     rows,
     fourteenDaysAgo
   );
+  const scansThisWeek = rows.filter((r) => r.created_at >= new Date(Date.now() - 7 * 86_400_000).toISOString()).length;
+
+  let scheduleSuccessRate30d: number | null = null;
+  try {
+    let runsQuery = supabase
+      .from("scan_schedule_runs")
+      .select("status,schedule_id,scan_schedules!inner(organization_id,user_id),created_at")
+      .gte("created_at", thirtyDaysAgo);
+    if (scope.value === null) {
+      runsQuery = runsQuery.eq("scan_schedules.organization_id", null).eq("scan_schedules.user_id", user.id);
+    } else {
+      runsQuery = runsQuery.eq("scan_schedules.organization_id", scope.value);
+    }
+    const { data: runs } = await runsQuery.limit(500);
+    if (runs && runs.length > 0) {
+      let success = 0;
+      for (const run of runs as Array<{ status?: unknown }>) {
+        if (run.status === "completed") success += 1;
+      }
+      scheduleSuccessRate30d = Math.round((success / runs.length) * 100);
+    }
+  } catch {
+    scheduleSuccessRate30d = null;
+  }
 
   const recentScans: HomeRecentScan[] = [];
   for (const row of rows) {
@@ -280,6 +335,11 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
     passCount,
     failCount,
     reviewCount,
+    scansThisWeek,
+    policyFailures30d,
+    highRiskScans30d,
+    scheduleSuccessRate30d,
+    topFindingRules,
     recentScans,
     outcomeTrend,
     onboarding,

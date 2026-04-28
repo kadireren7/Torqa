@@ -178,7 +178,7 @@ function SchedulesContent() {
       }
       setName("");
       setCreatePolicyId("");
-      setMessage("Schedule created. Use Run now until background cron is connected.");
+      setMessage("Schedule created.");
       await load();
     } catch {
       setError("Network error");
@@ -508,7 +508,7 @@ function SchedulesContent() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Future: <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">POST /api/scan-schedules/cron/tick</code>{" "}
+        Cron entrypoint: <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">POST /api/scan-schedules/cron/tick</code>{" "}
         with <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">Authorization: Bearer $TORQA_CRON_SECRET</code>.
       </p>
     </div>

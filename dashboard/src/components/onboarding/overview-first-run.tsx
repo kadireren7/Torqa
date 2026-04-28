@@ -40,6 +40,12 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
       done: scanDone,
     },
     {
+      id: "schedule",
+      label: "Create a scan schedule",
+      href: "/schedules",
+      done: cloud ? (o!.scanSchedules > 0) : false,
+    },
+    {
       id: "policy",
       label: "Apply a policy",
       href: "/policies",
@@ -61,7 +67,7 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
   ];
 
   const doneCount = steps.filter((s) => s.done).length;
-  const allCoreDone = steps.slice(0, 5).every((s) => s.done);
+  const allCoreDone = steps.slice(0, 6).every((s) => s.done);
 
   return (
     <div className="space-y-6">
@@ -75,7 +81,7 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
               <CardDescription className="mt-1 max-w-xl">
                 {cloud
                   ? `${doneCount}/${steps.length} complete · finish the loop to operationalize Torqa.`
-                  : "Connect Supabase to unlock saved data, then work through these steps."}
+                  : "Connect Supabase to unlock saved data, then upload an n8n export and run first scan."}
               </CardDescription>
             </div>
             {!cloud ? (

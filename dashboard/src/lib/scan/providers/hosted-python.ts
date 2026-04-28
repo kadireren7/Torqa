@@ -3,13 +3,16 @@ import {
   computeTotals,
   decisionFrom,
   riskScoreFromFindings,
+  type ScanAnalysisKind,
   type ScanApiSuccess,
   type ScanDecision,
+  type ScanEngineMode,
   type ScanFinding,
   type ScanSeverity,
   type ScanSource,
 } from "@/lib/scan-engine";
 import type { ScanProvider, ScanProviderInput } from "./types";
+import { ScanProviderExecutionError } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 25_000;
 
@@ -100,14 +103,38 @@ function mapRemoteScanToScanApiSuccess(
   }
   if (!totals) totals = computeTotals(findings);
 
+  const engineMode = typeof o.engine_mode === "string" ? o.engine_mode : "hosted_python";
+  const analysisKind = typeof o.analysis_kind === "string" ? o.analysis_kind : "real_engine";
   return {
     status,
     riskScore,
     findings,
     totals,
     engine: "hosted-python",
+    engine_mode: isEngineMode(engineMode) ? engineMode : "hosted_python",
+    analysis_kind: isAnalysisKind(analysisKind) ? analysisKind : "real_engine",
+    fallback: {
+      fallback_used: false,
+      fallback_from: null,
+      fallback_to: null,
+      fallback_reason: null,
+    },
     source,
   };
+}
+
+function isEngineMode(v: unknown): v is ScanEngineMode {
+  return (
+    v === "hosted_python" ||
+    v === "server_preview" ||
+    v === "local_python" ||
+    v === "fallback_preview" ||
+    v === "unknown"
+  );
+}
+
+function isAnalysisKind(v: unknown): v is ScanAnalysisKind {
+  return v === "real_engine" || v === "preview_heuristic" || v === "unknown";
 }
 
 async function fetchHostedScan(
@@ -147,18 +174,65 @@ async function fetchHostedScan(
  * On missing URL, network errors, timeouts, non-2xx, or invalid payload: falls back to {@link buildScanApiResult}
  * (same behavior as `server-preview`) so `/scan` stays usable.
  */
+function allowPreviewFallback(): boolean {
+  const raw = process.env.TORQA_ALLOW_PREVIEW_FALLBACK?.trim().toLowerCase();
+  if (raw === "true" || raw === "1" || raw === "yes") return true;
+  if (raw === "false" || raw === "0" || raw === "no") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+function withFallbackMeta(
+  base: ScanApiSuccess,
+  from: ScanEngineMode,
+  reason: string
+): ScanApiSuccess {
+  return {
+    ...base,
+    engine_mode: "fallback_preview",
+    analysis_kind: "preview_heuristic",
+    fallback: {
+      fallback_used: true,
+      fallback_from: from,
+      fallback_to: "fallback_preview",
+      fallback_reason: reason,
+    },
+  };
+}
+
 export const hostedPythonProvider: ScanProvider = {
   id: "hosted-python",
   label: "Hosted Torqa Python engine (HTTP)",
   async scan(input: ScanProviderInput): Promise<ScanApiSuccess> {
     const base = process.env.TORQA_ENGINE_URL?.trim();
     if (!base) {
-      return buildScanApiResult(input.content, input.source);
+      if (!allowPreviewFallback()) {
+        throw new ScanProviderExecutionError(
+          "Hosted Python engine URL is not configured and preview fallback is disabled (TORQA_ALLOW_PREVIEW_FALLBACK=false).",
+          503,
+          "hosted_engine_url_missing"
+        );
+      }
+      return withFallbackMeta(
+        buildScanApiResult(input.content, input.source),
+        "hosted_python",
+        "TORQA_ENGINE_URL is not configured."
+      );
     }
 
     const remote = await fetchHostedScan(base, input, DEFAULT_TIMEOUT_MS);
     if (remote) return remote;
 
-    return buildScanApiResult(input.content, input.source);
+    if (!allowPreviewFallback()) {
+      throw new ScanProviderExecutionError(
+        "Hosted Python engine request failed and preview fallback is disabled (TORQA_ALLOW_PREVIEW_FALLBACK=false).",
+        502,
+        "hosted_engine_unavailable"
+      );
+    }
+    return withFallbackMeta(
+      buildScanApiResult(input.content, input.source),
+      "hosted_python",
+      "Hosted engine request failed or returned an invalid payload."
+    );
   },
 };

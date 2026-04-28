@@ -4,6 +4,18 @@
 
 You will create a tiny **`demo.tq`** file, run a short **`demo.py`** script that **parses** it into a JSON **bundle**, **validates** the structured IR, and prints a **semantic report** so you can see `semantic_ok` and any errors. No runtime or network required—only Python and this repo.
 
+If you want the fastest first run in under a minute, use:
+
+```bash
+torqa quickstart
+```
+
+Optional shareable artifact from the same one-command flow:
+
+```bash
+torqa quickstart --report --report-format md --report-output torqa-quickstart.md
+```
+
 ## Install
 
 For **PyPI / pipx / Git installs**, see the README **[Install](../README.md#install)** section.
@@ -55,10 +67,11 @@ Optional **`torqa.toml`** in the project tree sets defaults for **`profile`**, *
 | `torqa explain FILE` | Same pipeline as **`validate`**, then **plain-English sections** (no AI): **what this spec does** (goal, inputs, transitions, effects), **why the risk tier is what it is** (from policy reasons and profile), **blocked or approved for handoff**, **what to improve next** (template text from existing errors and `suggested_*` helpers). Optional **`--profile`**. **Exit 0** when policy passes; **exit 1** when blocked earlier or policy fails. |
 | `torqa compare FILE` | Load and validate **once**, then run **`build_policy_report`** for **`default`**, **`strict`**, and **`review-heavy`**. Prints a table: **Profile \| Decision \| Risk \| Review \| Notes**. **Exit 1** if the file is missing or the spec stops before policy (same rows repeated); **exit 0** when all three profile evaluations complete. |
 | `torqa scan PATH` | Recursively find **`.tq`** and **`.json`** files under **`PATH`** (or evaluate a single **`.tq` / `.json`** file). For each, same trust gate as **`torqa check`** (optional **`--profile`**). Prints **File \| Decision \| Risk \| Profile result** and summary **Total / Safe / Needs review / Blocked**. **Exit 1** if any file is **BLOCKED**; **exit 0** otherwise. |
-| `torqa report PATH_OR_FILE --format html` or `--format md` | Same evaluations as **`scan`**. **html:** one standalone page (embedded CSS; no CDN). **md:** Markdown for PRs/CI — **summary**, **blocked files**, **recommendations**, plus full table (reasons + timestamps). **`--output` / `-o`** (defaults: **`torqa-report.html`** or **`torqa-report.md`**). Optional **`--profile`**. **Exit 1** if any file is **BLOCKED**. See [CI reports](ci-report.md). |
+| `torqa report PATH_OR_FILE --format html` or `--format md` or `--format json` | Same evaluations as **`scan`**. **html:** standalone shareable report with executive summary. **md:** Markdown for PRs/CI — summary, blocked files, recommendations, full table. **json:** machine-shareable artifact (`torqa.report.v1`). **`--output` / `-o`** defaults to `torqa-report.<format>`. Optional **`--profile`**. **Exit 1** if any file is **BLOCKED**. See [CI reports](ci-report.md). |
 | `torqa inspect FILE` | **Stdout:** full canonical **`ir_goal` JSON** only (pipelines, diffs). **Stderr:** `Input type`, `File:`, and notes that stdout is the machine-readable artifact for tooling, review, and pipelines — **no execution**. |
 | `torqa doctor FILE` | Human-readable sections: Input, Parse/Load, Structure, Semantics, **Policy**, Summary — **Readiness score: N/100** in **Summary** (same formula as **`torqa check`**); plus **readiness / trust** lines when checks pass; **`Suggested fix:`** lines after failures (same deterministic hints as **`torqa check`**: e.g. **Add metadata owner**, **Use strict tq_v1 header order**, **Use supported flow steps**, **Lower severity or use review path** under **`--profile strict`**). Optional **`--profile`**. |
 | `torqa init` | **Interactive wizard** (TTY): prompts for flow name, owner, severity, template, and output path. **Non-interactive:** `torqa init TEMPLATE --output FILE` with **`TEMPLATE`** = `login` \| `approval` \| `onboarding` \| `blank`; optional **`--flow`**, **`--owner`**, **`--severity`**; **`--force`** overwrites an existing file. Writes a **policy-valid** `.tq` starter. |
+| `torqa quickstart` | One-command adoption path: runs bundled n8n sample, prints decision/risk/findings summary, and shows next commands. Optional `--report` writes html/md/json artifact. |
 | `torqa version` | One line: package version and canonical IR version (e.g. `torqa 0.1.0 · canonical IR 1.4`). |
 
 **File types:** extension **`.tq`** uses the reference text parser; **`.json`** accepts a **full bundle** `{"ir_goal": {...}}` (optional `library_refs`), a **bare `ir_goal`** object with the required top-level keys (see `spec/IR_BUNDLE.schema.json`), or a **JSON array of bundles** `[{...}, {...}]` for batch validation (`validate`, `check`, `scan`, `report`). Load and IR errors include **path hints** (e.g. `file.json[1].ir_goal`). **`inspect`**, **`doctor`**, **`explain`**, and **`compare`** expect a **single** bundle per file (not a root array). Malformed JSON or envelope errors fail with a clear message.

@@ -27,6 +27,19 @@ export type ScanTotals = {
 
 /** Discriminator for which backend produced a successful POST /api/scan response */
 export type ScanApiEngineId = "server-preview" | "server-v1" | "hosted-python";
+export type ScanEngineMode =
+  | "hosted_python"
+  | "server_preview"
+  | "local_python"
+  | "fallback_preview"
+  | "unknown";
+export type ScanAnalysisKind = "real_engine" | "preview_heuristic" | "unknown";
+export type ScanFallbackMeta = {
+  fallback_used: boolean;
+  fallback_from: ScanEngineMode | null;
+  fallback_to: ScanEngineMode | null;
+  fallback_reason: string | null;
+};
 
 /** Successful POST /api/scan JSON body */
 export type ScanApiSuccess = {
@@ -35,6 +48,9 @@ export type ScanApiSuccess = {
   findings: ScanFinding[];
   totals: ScanTotals;
   engine: ScanApiEngineId;
+  engine_mode: ScanEngineMode;
+  analysis_kind: ScanAnalysisKind;
+  fallback: ScanFallbackMeta;
   source: ScanSource;
   /** Present when a governance policy was applied to this scan response. */
   policyEvaluation?: PolicyEvaluationResult;
@@ -661,6 +677,14 @@ export function buildScanApiResult(content: unknown, source: ScanSource): ScanAp
     findings: analysis.findings,
     totals: computeTotals(analysis.findings),
     engine: "server-v1",
+    engine_mode: "server_preview",
+    analysis_kind: "preview_heuristic",
+    fallback: {
+      fallback_used: false,
+      fallback_from: null,
+      fallback_to: null,
+      fallback_reason: null,
+    },
     source: analysis.source,
   };
 }

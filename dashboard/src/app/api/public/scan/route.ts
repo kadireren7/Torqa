@@ -17,8 +17,15 @@ import {
 import { getOrCreateRequestId } from "@/lib/api-request-id";
 import { isLikelyUuid, isReasonablePolicyTemplateSlug } from "@/lib/policy-input-limits";
 import { logStructured } from "@/lib/structured-log";
+import { wrapPublicError, wrapPublicSuccess } from "@/lib/public-api-envelope";
 
 export const runtime = "nodejs";
+
+function wantsLegacyResponse(request: Request): boolean {
+  const url = new URL(request.url);
+  const legacy = url.searchParams.get("legacy");
+  return legacy === "1" || legacy === "true";
+}
 
 function getRequestIp(request: Request): string | null {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -35,19 +42,22 @@ async function checkRateLimitPlaceholder(): Promise<RateLimitResult> {
 
 export async function POST(request: Request) {
   const requestId = getOrCreateRequestId(request);
+  const legacy = wantsLegacyResponse(request);
+  const respondError = (status: number, message: string, code: string) => {
+    if (legacy) return jsonErrorResponse(status, message, requestId, code);
+    return attachRequestIdHeader(
+      NextResponse.json(wrapPublicError(code, message, requestId), { status }),
+      requestId
+    );
+  };
   const admin = createAdminClient();
   if (!admin) {
-    return jsonErrorResponse(503, "Scan API is temporarily unavailable", requestId, "service_unavailable");
+    return respondError(503, "Scan API is temporarily unavailable", "service_unavailable");
   }
 
   const apiKeyRaw = extractApiKeyFromRequest(request);
   if (!apiKeyRaw) {
-    return jsonErrorResponse(
-      401,
-      "Missing API key. Send x-api-key or Authorization: Bearer <key>",
-      requestId,
-      "unauthorized"
-    );
+    return respondError(401, "Missing API key. Send x-api-key or Authorization: Bearer <key>", "unauthorized");
   }
 
   const keyHash = hashApiKey(apiKeyRaw);
@@ -59,10 +69,11 @@ export async function POST(request: Request) {
 
   if (keyError) {
     logStructured("warn", "public_scan_api_key_lookup_failed", { requestId });
-    return jsonDatabaseErrorResponse(requestId);
+    if (legacy) return jsonDatabaseErrorResponse(requestId);
+    return respondError(500, "A database error occurred", "database_error");
   }
   if (!keyRow || keyRow.revoked_at) {
-    return jsonErrorResponse(401, "Invalid or revoked API key", requestId, "unauthorized");
+    return respondError(401, "Invalid or revoked API key", "unauthorized");
   }
 
   const rateLimit = await checkRateLimitPlaceholder();
@@ -78,7 +89,12 @@ export async function POST(request: Request) {
       request_ip: getRequestIp(request),
       metadata: { placeholder: true, requestId },
     });
-    const res = jsonErrorResponse(429, "Rate limit exceeded", requestId, "rate_limited");
+    const res = legacy
+      ? jsonErrorResponse(429, "Rate limit exceeded", requestId, "rate_limited")
+      : attachRequestIdHeader(
+          NextResponse.json(wrapPublicError("rate_limited", "Rate limit exceeded", requestId), { status: 429 }),
+          requestId
+        );
     res.headers.set("x-ratelimit-limit", String(rateLimit.limit));
     res.headers.set("x-ratelimit-remaining", String(rateLimit.remaining));
     res.headers.set("x-ratelimit-reset", String(rateLimit.resetSeconds));
@@ -93,10 +109,9 @@ export async function POST(request: Request) {
     if (!parsed.ok) {
       statusCode = parsed.status;
       errorCode = parsed.status === 413 ? "payload_too_large" : "invalid_json";
-      return jsonErrorResponse(
+      return respondError(
         parsed.status,
         parsed.message,
-        requestId,
         parsed.status === 413 ? "payload_too_large" : "bad_request"
       );
     }
@@ -105,7 +120,7 @@ export async function POST(request: Request) {
     if (!isPlainObject(body)) {
       statusCode = 400;
       errorCode = "invalid_shape";
-      return jsonErrorResponse(400, "Request body must be a JSON object", requestId, "bad_request");
+      return respondError(400, "Request body must be a JSON object", "bad_request");
     }
 
     const sourceRaw = body.source;
@@ -114,17 +129,12 @@ export async function POST(request: Request) {
     if (sourceRaw !== "n8n" && sourceRaw !== "generic") {
       statusCode = 400;
       errorCode = "invalid_source";
-      return jsonErrorResponse(400, 'Field "source" must be either "n8n" or "generic"', requestId, "bad_request");
+      return respondError(400, 'Field "source" must be either "n8n" or "generic"', "bad_request");
     }
     if (!isPlainObject(content)) {
       statusCode = 400;
       errorCode = "invalid_content";
-      return jsonErrorResponse(
-        400,
-        'Field "content" must be a JSON object (not null or an array)',
-        requestId,
-        "bad_request"
-      );
+      return respondError(400, 'Field "content" must be a JSON object (not null or an array)', "bad_request");
     }
 
     const policyTemplateSlug =
@@ -139,12 +149,12 @@ export async function POST(request: Request) {
     if (workspacePolicyId && !isLikelyUuid(workspacePolicyId)) {
       statusCode = 400;
       errorCode = "invalid_workspace_policy_id";
-      return jsonErrorResponse(400, "workspacePolicyId must be a valid UUID", requestId, "bad_request");
+      return respondError(400, "workspacePolicyId must be a valid UUID", "bad_request");
     }
     if (policyTemplateSlug && !isReasonablePolicyTemplateSlug(policyTemplateSlug)) {
       statusCode = 400;
       errorCode = "invalid_policy_template_slug";
-      return jsonErrorResponse(400, "policyTemplateSlug format is invalid", requestId, "bad_request");
+      return respondError(400, "policyTemplateSlug format is invalid", "bad_request");
     }
 
     const source = sourceRaw as ScanSource;
@@ -157,7 +167,7 @@ export async function POST(request: Request) {
       if (e instanceof ScanProviderExecutionError) {
         statusCode = e.httpStatus;
         errorCode = e.code ?? null;
-        return jsonErrorResponse(e.httpStatus, e.message, requestId, e.code ?? "scan_provider_error");
+        return respondError(e.httpStatus, e.message, e.code ?? "scan_provider_error");
       }
       throw e;
     }
@@ -185,8 +195,9 @@ export async function POST(request: Request) {
           via: "api_public_scan",
         }).catch(() => {});
       }
+      const body = legacy ? responsePayload : wrapPublicSuccess(responsePayload, requestId);
       return attachRequestIdHeader(
-        NextResponse.json(responsePayload, {
+        NextResponse.json(body, {
           headers: {
             "x-ratelimit-limit": String(rateLimit.limit),
             "x-ratelimit-remaining": String(rateLimit.remaining),
@@ -199,7 +210,7 @@ export async function POST(request: Request) {
       if (e instanceof ScanProviderExecutionError) {
         statusCode = e.httpStatus;
         errorCode = e.code ?? null;
-        return jsonErrorResponse(e.httpStatus, e.message, requestId, e.code ?? "scan_provider_error");
+        return respondError(e.httpStatus, e.message, e.code ?? "scan_provider_error");
       }
       throw e;
     }

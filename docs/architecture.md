@@ -2,6 +2,11 @@
 
 Torqa is organized as **five layers** from author input to downstream code. This repo implements layers **1–4**; layer **5** is always yours.
 
+For the dashboard scan API, engine trust mode is explicit per response:
+- `engine_mode`: `hosted_python`, `server_preview`, `local_python`, `fallback_preview`, or `unknown`
+- `analysis_kind`: `real_engine` vs `preview_heuristic`
+- `fallback`: includes `fallback_used`, `fallback_from`, `fallback_to`, `fallback_reason`
+
 ## 1. Authoring input
 
 Humans or tools produce **`.tq`** text (strict line format). Legacy **`.pxir`** is still parseable but not recommended for new work. Nothing at this layer executes—it's text.

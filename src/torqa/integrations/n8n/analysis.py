@@ -7,6 +7,7 @@ Each finding maps to an n8n node where applicable for scan/validate JSON reporti
 from __future__ import annotations
 
 from typing import Any, Dict, List, Set
+import re
 
 from torqa.integrations.n8n.parser import (
     N8nWorkflow,
@@ -72,6 +73,31 @@ def _is_manual_gate(n_type: str) -> bool:
     return "manualtrigger" in t or "form" in t and "trigger" in t or "wait" in t
 
 
+_SECRET_KEY_RE = re.compile(r"(api[-_]?key|token|secret|password|authorization|bearer)", re.IGNORECASE)
+_MASK_RE = re.compile(r"(\*{3,}|<redacted>|<hidden>|xxxxx|changeme)", re.IGNORECASE)
+
+
+def _iter_pairs(obj: Any, prefix: str = "", depth: int = 0) -> List[tuple[str, str]]:
+    if depth > 8:
+        return []
+    out: List[tuple[str, str]] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            p = f"{prefix}.{k}" if prefix else str(k)
+            if isinstance(v, (str, int, float, bool)):
+                out.append((p, str(v)))
+            elif isinstance(v, (dict, list)):
+                out.extend(_iter_pairs(v, p, depth + 1))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            p = f"{prefix}[{i}]"
+            if isinstance(v, (str, int, float, bool)):
+                out.append((p, str(v)))
+            elif isinstance(v, (dict, list)):
+                out.extend(_iter_pairs(v, p, depth + 1))
+    return out
+
+
 def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
     """
     Return a list of finding dicts:
@@ -124,6 +150,17 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
 
     for n in wf.nodes:
         if n.disabled:
+            findings.append(
+                {
+                    "rule_id": "n8n.node.disabled",
+                    "severity": "info",
+                    "message": "Node is disabled and may indicate drift between intended and active workflow behavior.",
+                    "fix_suggestion": "Remove stale disabled nodes or document why they are intentionally disabled.",
+                    "n8n_node_id": n.node_id,
+                    "n8n_node_name": n.name,
+                    "n8n_node_type": n.type,
+                }
+            )
             continue
         t = n.type
         tl = _type_lower(t)
@@ -142,6 +179,24 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                     **base,
                 }
             )
+        if isinstance(n.parameters, dict):
+            for key_path, val in _iter_pairs(n.parameters):
+                leaf = key_path.split(".")[-1]
+                if not _SECRET_KEY_RE.search(leaf):
+                    continue
+                v = val.strip()
+                if len(v) < 6 or _MASK_RE.search(v) or "{{" in v or "${" in v:
+                    continue
+                findings.append(
+                    {
+                        "rule_id": "n8n.secret.hardcoded",
+                        "severity": "high",
+                        "message": f'Potential hardcoded credential-like value detected in "{leaf}".',
+                        "fix_suggestion": "Move secrets into n8n credentials/env vars and reference them dynamically.",
+                        **base,
+                    }
+                )
+                break
         if _is_code_node(t):
             findings.append(
                 {
@@ -177,6 +232,18 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                         **base,
                     }
                 )
+            if isinstance(n.parameters, dict):
+                url = str(n.parameters.get("url") or n.parameters.get("uri") or "").strip()
+                if url.lower().startswith("http://"):
+                    findings.append(
+                        {
+                            "rule_id": "n8n.http.plaintext_transport",
+                            "severity": "high",
+                            "message": "HTTP node targets a plaintext http:// endpoint.",
+                            "fix_suggestion": "Use HTTPS endpoints only and enforce TLS verification.",
+                            **base,
+                        }
+                    )
         if "webhook" in tl and wf.active is True:
             findings.append(
                 {
@@ -227,5 +294,20 @@ def analyze_n8n_workflow(wf: N8nWorkflow) -> List[Dict[str, Any]]:
                         "n8n_node_type": n.type,
                     }
                 )
+
+    if any(_is_trigger_type(n.type) for n in wf.nodes):
+        has_failure_path = any("error" in _type_lower(n.type) or "catch" in _type_lower(n.type) for n in wf.nodes)
+        if not has_failure_path:
+            findings.append(
+                {
+                    "rule_id": "n8n.observability.failure_path_missing",
+                    "severity": "review",
+                    "message": "No explicit error/catch node detected for triggered workflow paths.",
+                    "fix_suggestion": "Add a failure path (error trigger/catch + alerting) for operational visibility.",
+                    "n8n_node_id": None,
+                    "n8n_node_name": "workflow",
+                    "n8n_node_type": None,
+                }
+            )
 
     return findings

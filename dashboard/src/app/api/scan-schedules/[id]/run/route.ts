@@ -57,12 +57,30 @@ export async function POST(_request: Request, context: Ctx) {
     enabled: r.enabled,
     workspace_policy_id: typeof r.workspace_policy_id === "string" ? r.workspace_policy_id : null,
   };
+  if (!schedule.enabled) {
+    return NextResponse.json(
+      {
+        ok: false,
+        schedules_checked: 1,
+        schedules_run: 0,
+        succeeded: 0,
+        failed: 1,
+        errors: [{ scheduleId: schedule.id, error: "Schedule is disabled." }],
+      },
+      { status: 409 }
+    );
+  }
 
   const outcome = await executeManualScheduleRun(supabase, user.id, schedule);
 
   if (outcome.kind === "integration_not_implemented") {
     return NextResponse.json({
       ok: false,
+      schedules_checked: 1,
+      schedules_run: 1,
+      succeeded: 0,
+      failed: 1,
+      errors: [{ scheduleId: schedule.id, error: "Integration scan execution is not implemented yet." }],
       code: "integration_scan_not_implemented",
       message: "Integration scan execution is not implemented yet.",
     });
@@ -72,6 +90,11 @@ export async function POST(_request: Request, context: Ctx) {
     return NextResponse.json(
       {
         ok: false,
+        schedules_checked: 1,
+        schedules_run: 1,
+        succeeded: 0,
+        failed: 1,
+        errors: [{ scheduleId: schedule.id, error: outcome.error }],
         runId: outcome.runId,
         error: outcome.error,
       },
@@ -81,6 +104,11 @@ export async function POST(_request: Request, context: Ctx) {
 
   return NextResponse.json({
     ok: true,
+    schedules_checked: 1,
+    schedules_run: 1,
+    succeeded: 1,
+    failed: 0,
+    errors: [],
     runId: outcome.runId,
     scanId: outcome.scanId,
     result: outcome.result,

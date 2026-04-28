@@ -23,6 +23,8 @@ Canonical workflow IR + structural/semantic validation + deterministic trust sco
 
 **Product positioning:** Torqa is the **deterministic gate** for workflow specs (validate, score, policy-check) before anything runs in production. The **Next.js dashboard** (`dashboard/`) is the team surface: scan uploads (including n8n JSON), **workspace policies**, **schedules**, **alerts**, **insights**, **API keys**, and **shareable reports** — all optional until you wire **Supabase** (see [dashboard/README.md](dashboard/README.md)).
 
+**v0.1.4 focus:** hardening + clarity + reliability for **n8n / automation workflow governance**. This release emphasizes explicit engine trust signals, scheduled scan execution, stronger n8n findings, and test/documentation alignment (not broad platform expansion).
+
 - **Live demo (hosted):** this repository does not ship a fixed production URL. After you deploy, document your canonical URL (for example `https://your-torqa.example.com`) in your runbook and in `NEXT_PUBLIC_APP_URL`.
 - **Local demo:** `cd dashboard && npm install && npm run dev` → [http://localhost:3000](http://localhost:3000) (landing at `/`; app routes under `/overview`, `/scan`, etc.).
 - **Launch QA:** [docs/launch-checklist.md](docs/launch-checklist.md) — routes, smoke tests, migrations, env vars, and production limitations.
@@ -63,6 +65,7 @@ cd Torqa
 pip install -e ".[dev]"
 torqa validate examples/templates/login_flow.tq
 torqa scan examples/templates --profile default
+torqa quickstart
 ```
 
 Expected outcome: `Result: PASS` for `login_flow.tq` and a trust summary for the scan.
@@ -71,7 +74,10 @@ If `torqa` is not on `PATH` (common on Windows), use:
 
 ```bash
 python -m torqa validate examples/templates/login_flow.tq
+python -m torqa quickstart
 ```
+
+`torqa quickstart` is the fastest adoption path in v0.1.5: it runs a bundled n8n sample, prints decision/risk summary, and can generate a shareable report artifact.
 
 ---
 
