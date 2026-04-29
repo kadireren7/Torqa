@@ -3,6 +3,7 @@ export type PublicApiSuccess<T> = {
   data: T;
   meta: {
     requestId: string;
+    apiVersion: "v1";
   };
 };
 
@@ -14,6 +15,7 @@ export type PublicApiError = {
   };
   meta: {
     requestId: string;
+    apiVersion: "v1";
   };
 };
 
@@ -21,7 +23,7 @@ export function wrapPublicSuccess<T>(data: T, requestId: string): PublicApiSucce
   return {
     ok: true,
     data,
-    meta: { requestId },
+    meta: { requestId, apiVersion: "v1" },
   };
 }
 
@@ -29,6 +31,6 @@ export function wrapPublicError(code: string, message: string, requestId: string
   return {
     ok: false,
     error: { code, message },
-    meta: { requestId },
+    meta: { requestId, apiVersion: "v1" },
   };
 }

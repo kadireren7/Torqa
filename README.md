@@ -34,6 +34,7 @@ Strongest path today: `n8n export -> scan -> risk/policy report -> share or sche
 
 - **Live demo (hosted):** this repository does not ship a fixed production URL. After you deploy, document your canonical URL (for example `https://your-torqa.example.com`) in your runbook and in `NEXT_PUBLIC_APP_URL`.
 - **Local demo:** `cd dashboard && npm install && npm run dev` → [http://localhost:3000](http://localhost:3000) (landing at `/`; app routes under `/overview`, `/scan`, etc.).
+- **Bootstrap helper:** `./scripts/bootstrap-dashboard.sh --with-supabase` (macOS/Linux) or `.\scripts\bootstrap-dashboard.ps1 -WithSupabase` (Windows PowerShell) to install dashboard deps and apply local Supabase migrations in one run.
 - **Launch QA:** [docs/launch-checklist.md](docs/launch-checklist.md) — routes, smoke tests, migrations, env vars, and production limitations.
 
 ---
@@ -254,6 +255,7 @@ Issues and PRs are welcome.
 
 ## Documentation
 
+- [Docs index](docs/README.md)
 - [Quickstart](docs/quickstart.md)
 - [First run](docs/first-run.md)
 - [Trust layer](docs/trust-layer.md)

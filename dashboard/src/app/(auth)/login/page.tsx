@@ -31,6 +31,9 @@ export default function LoginPage() {
         <ShieldCheck className="h-5 w-5" />
         <span className="text-sm font-medium">Torqa Cloud</span>
       </div>
+      <p className="max-w-md text-center text-sm text-muted-foreground">
+        Sign in to save scan history, apply workspace policies, and collaborate with your team.
+      </p>
       <Suspense fallback={<div className="h-64 w-full max-w-md animate-pulse rounded-lg bg-muted/40" />}>
         <LoginForm disabled={!configured} />
       </Suspense>

@@ -21,6 +21,15 @@ Torqa is a **governance gate**, not a workflow runtime: teams upload or paste wo
 4. **Run:** `npm run dev` (development) or `npm run build && npm start` (production).
 5. **Launch QA:** [../docs/launch-checklist.md](../docs/launch-checklist.md)
 
+### One-command bootstrap
+
+From repository root:
+
+- macOS/Linux: `./scripts/bootstrap-dashboard.sh --with-supabase`
+- Windows PowerShell: `.\scripts\bootstrap-dashboard.ps1 -WithSupabase`
+
+This installs dashboard dependencies and, when enabled, starts local Supabase and applies the full migration chain.
+
 ## Supabase requirements
 
 - **Auth:** Email (or your chosen providers) so users can sign in at `/login`.

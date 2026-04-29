@@ -7,6 +7,7 @@ import {
   BarChart3,
   FileStack,
   Gauge,
+  HelpCircle,
   Scale,
   Shield,
   Sparkles,
@@ -27,6 +28,7 @@ import {
 import { getHomeDashboardData } from "@/data/home-metrics";
 import { cn } from "@/lib/utils";
 import { OverviewFirstRun } from "@/components/onboarding/overview-first-run";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const dynamic = "force-dynamic";
 
@@ -86,12 +88,22 @@ export default async function DashboardOverviewPage() {
             </div>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Automation governance command center</h1>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Upload n8n workflows, run deterministic scans, review reports, and schedule recurring checks.{" "}
-              <Link href="/scan" className="font-medium text-primary underline-offset-4 hover:underline">
-                Run a scan now
-              </Link>{" "}
-              to populate metrics.
+              Upload n8n workflows, run deterministic scans, review reports, and schedule recurring checks.
             </p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" className="gap-2 shadow-md">
+                <Link href="/scan">
+                  Run a scan
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="secondary" asChild size="sm">
+                <Link href="/workflow-library">Upload workflow</Link>
+              </Button>
+              <Button variant="outline" asChild size="sm" className="border-border/80 bg-background/50">
+                <Link href="/scan/history">View reports</Link>
+              </Button>
+            </div>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col lg:items-end">
             <Button asChild className="gap-2 shadow-md">
@@ -118,6 +130,44 @@ export default async function DashboardOverviewPage() {
         savedReportsAllTime={home.savedReportsAllTime}
         onboarding={home.onboarding}
       />
+
+      <Card className="border-border/70 bg-card/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick glossary</CardTitle>
+          <CardDescription>Hover to see key governance terms used in Torqa.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <TooltipProvider delayDuration={120}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  Policies
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Rules that define pass/fail and review thresholds for scans.</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  Risk score
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Deterministic 0-100 score indicating workflow risk posture.</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  Trust signals
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Structured reasons behind pass, fail, or needs-review decisions.</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard

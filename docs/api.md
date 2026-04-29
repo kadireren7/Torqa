@@ -14,7 +14,7 @@ This route is designed for API-key based integrations and returns an envelope-fi
 {
   "ok": true,
   "data": {},
-  "meta": { "requestId": "req_..." }
+  "meta": { "requestId": "req_...", "apiVersion": "v1" }
 }
 ```
 
@@ -27,7 +27,7 @@ This route is designed for API-key based integrations and returns an envelope-fi
     "code": "bad_request",
     "message": "Human-readable error text"
   },
-  "meta": { "requestId": "req_..." }
+  "meta": { "requestId": "req_...", "apiVersion": "v1" }
 }
 ```
 
@@ -35,6 +35,7 @@ This route is designed for API-key based integrations and returns an envelope-fi
 
 - Add `?legacy=1` (or `?legacy=true`) to `POST /api/public/scan` to receive the legacy raw payload shape.
 - This exists for incremental adoption by existing callers.
+- Envelope responses include `meta.apiVersion = "v1"` and header `x-torqa-api-version: v1`.
 
 ## Public scan request
 

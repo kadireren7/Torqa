@@ -202,6 +202,7 @@ export async function POST(request: Request) {
             "x-ratelimit-limit": String(rateLimit.limit),
             "x-ratelimit-remaining": String(rateLimit.remaining),
             "x-ratelimit-reset": String(rateLimit.resetSeconds),
+            "x-torqa-api-version": "v1",
           },
         }),
         requestId

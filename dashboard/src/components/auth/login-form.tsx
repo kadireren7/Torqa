@@ -26,6 +26,14 @@ export function LoginForm({ disabled = false }: LoginFormProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  function toFriendlyAuthError(message: string): string {
+    const m = message.toLowerCase();
+    if (m.includes("invalid login credentials")) return "Email or password is incorrect.";
+    if (m.includes("email not confirmed")) return "Please confirm your email before signing in.";
+    if (m.includes("password")) return "Password is invalid. Use at least 8 characters.";
+    return message;
+  }
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -39,7 +47,7 @@ export function LoginForm({ disabled = false }: LoginFormProps) {
     const { error: signErr } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signErr) {
-      setError(signErr.message);
+      setError(toFriendlyAuthError(signErr.message));
       return;
     }
     router.push(next);
@@ -66,7 +74,7 @@ export function LoginForm({ disabled = false }: LoginFormProps) {
     });
     setLoading(false);
     if (signErr) {
-      setError(signErr.message);
+      setError(toFriendlyAuthError(signErr.message));
       return;
     }
     if (data.session) {

@@ -9,14 +9,14 @@ const steps = [
 
 export function GovernanceJourneyStrip() {
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/60 px-4 py-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04] sm:px-6">
+    <div className="rounded-2xl border border-border/60 bg-card/60 px-4 py-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04] sm:px-6 sm:py-6">
       <p className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         Connected governance journey
       </p>
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-y-2 sm:gap-x-1">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-y-2 sm:gap-x-1">
         {steps.map((s, i) => (
-          <div key={s.key} className="flex items-center">
-            <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/90 px-3 py-1.5 text-sm shadow-sm">
+          <div key={s.key} className="flex items-center justify-center">
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-background/90 px-3 py-2 text-sm shadow-sm sm:w-auto sm:rounded-full sm:py-1.5">
               <s.Icon className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
               <span className="font-medium text-foreground">{s.label}</span>
             </div>

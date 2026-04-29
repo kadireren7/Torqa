@@ -73,6 +73,7 @@ def cmd_validate(args: Any) -> int:
                     {
                         "suffix": "",
                         "load": "fail",
+                        "failure_stage": "parser" if isinstance(err, TQParseError) else "structural",
                         "error": str(err) if not isinstance(err, TQParseError) else err.code,
                         "message": str(err),
                     }
@@ -86,15 +87,18 @@ def cmd_validate(args: Any) -> int:
             print()
             if isinstance(err, TQParseError):
                 print("Parse: FAIL")
+                print("Failure type: parser")
                 print(f"Error: {err.code}")
                 if err.line is not None:
                     print(f"Line: {err.line}")
                 print(f"Message: {err}")
             elif input_type == "json":
                 print("Load: FAIL")
+                print("Failure type: structural")
                 print(f"Error: {err}")
             else:
                 print("Load: FAIL")
+                print("Failure type: structural")
                 print(f"Error: {err}")
             print()
             print("[FAIL] Validation result")
@@ -161,6 +165,7 @@ def cmd_validate(args: Any) -> int:
         goal, gerr = goal_from_bundle(one_bundle, path_hint=gh)
         if gerr is not None:
             print("IR payload: FAIL")
+            print("Failure type: structural")
             print(f"Error: {gerr}")
             print()
             print("[FAIL] Validation result")
@@ -174,6 +179,7 @@ def cmd_validate(args: Any) -> int:
         struct = validate_ir(goal)
         if struct:
             print("Structural validation: FAIL")
+            print("Failure type: structural")
             for line in struct:
                 print(f"  - {line}")
             print()
@@ -206,6 +212,7 @@ def cmd_validate(args: Any) -> int:
 
         print()
         if not sem_ok or not logic_ok:
+            print("Failure type: semantic")
             print("Result: FAIL")
             print(_MSG_VALIDATE_BLOCKED)
             any_fail = True
@@ -274,6 +281,7 @@ def _evaluate_one_bundle_json(
             "suffix": suffix,
             "load": "ok",
             "ir_payload": "fail",
+            "failure_stage": "structural",
             "error": gerr,
             "result": "fail",
         }
@@ -284,6 +292,7 @@ def _evaluate_one_bundle_json(
             "load": "ok",
             "ir_payload": "ok",
             "structural": "fail",
+            "failure_stage": "structural",
             "errors": struct,
             "result": "fail",
         }
@@ -303,6 +312,7 @@ def _evaluate_one_bundle_json(
         "semantic_warnings": list(report.get("warnings") or []),
     }
     if not sem_ok or not logic_ok:
+        out["failure_stage"] = "semantic"
         out["result"] = "fail"
         return out
     policy_rep = build_policy_report(goal, profile=profile)
