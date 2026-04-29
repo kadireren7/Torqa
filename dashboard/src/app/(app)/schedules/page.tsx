@@ -302,6 +302,21 @@ function SchedulesContent() {
         <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-sm">{message}</p>
       ) : null}
 
+      <Card className="border-dashed border-border/80 bg-muted/15 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Timezone &amp; cadence</CardTitle>
+          <CardDescription>
+            Today, <strong className="text-foreground">daily / weekly</strong> windows follow the server clock (UTC on
+            typical hosts). Per-user timezone and “first run at 09:00 Monday” style anchors are planned — track{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">next_run_at</code> in the DB for upcoming
+            work. Background execution uses{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">POST /api/scan-schedules/cron/tick</code> with{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">TORQA_CRON_SECRET</code> or your platform
+            scheduler; there is no hidden in-app cron yet.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
       <Card id="new-schedule" className="scroll-mt-24 border-border/80 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">

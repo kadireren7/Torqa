@@ -81,6 +81,7 @@ export function ScanPageClient() {
   const [workspacePolicies, setWorkspacePolicies] = useState<{ id: string; name: string }[]>([]);
 
   const libraryId = searchParams.get("library")?.trim() ?? "";
+  const projectSlug = searchParams.get("project")?.trim() ?? "";
 
   useEffect(() => {
     let cancelled = false;
@@ -279,6 +280,17 @@ export function ScanPageClient() {
   return (
     <div className="space-y-10 pb-8 sm:space-y-12 sm:pb-12">
       <div className="space-y-3 border-b border-border/60 pb-8 sm:pb-10">
+        {projectSlug ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm">
+            <span>
+              Scanning in context of project{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{projectSlug}</code>
+            </span>
+            <Link href={`/projects/${encodeURIComponent(projectSlug)}`} className="font-medium text-primary hover:underline">
+              Project details →
+            </Link>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Workflow</p>

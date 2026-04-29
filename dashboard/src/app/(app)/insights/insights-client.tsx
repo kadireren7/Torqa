@@ -6,8 +6,10 @@ import {
   Activity,
   ArrowRight,
   BarChart3,
+  Download,
   Gauge,
   Loader2,
+  Printer,
   Shield,
   Sparkles,
   Target,
@@ -31,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InsightsPayload, InsightsScope } from "@/lib/insights-types";
+import { buildInsightsCsvSnapshot, downloadTextFile } from "@/lib/insights-export";
 import { cn } from "@/lib/utils";
 
 function directionLabel(d: InsightsPayload["totals"]["riskTrendDirection"]): { text: string; Icon: typeof TrendingUp } {
@@ -148,13 +151,20 @@ export function InsightsPageClient() {
           </p>
         ) : null}
         {data?.workspaceRequired ? (
-          <p className="mt-3 max-w-2xl rounded-lg border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2 text-xs text-sky-950 dark:text-sky-100/95">
-            <span className="font-semibold">Workspace scope</span> requires an active workspace. Choose one under{" "}
-            <Link href="/workspace" className="font-medium underline underline-offset-2">
-              Workspace
-            </Link>{" "}
-            or switch to <strong className="font-medium">Personal</strong> filters.
-          </p>
+          <div className="mt-3 flex max-w-2xl flex-col gap-2 rounded-lg border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2 text-xs text-sky-950 dark:text-sky-100/95 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              <span className="font-semibold">Workspace scope</span> needs an active workspace, or use personal saved
+              scans instead.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="secondary" onClick={() => setScope("personal")}>
+                Use personal scope
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/workspace">Open workspace</Link>
+              </Button>
+            </div>
+          </div>
         ) : null}
       </div>
 
@@ -230,6 +240,36 @@ export function InsightsPageClient() {
           </div>
         </CardContent>
       </Card>
+
+      {data && (data.totals.totalScans > 0 || data.mode === "demo") ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              const csv = buildInsightsCsvSnapshot(data);
+              const stamp = new Date().toISOString().slice(0, 10);
+              downloadTextFile(`torqa-insights-${data.scope}-${stamp}.csv`, csv);
+            }}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download CSV
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => window.print()}
+            title="Use your browser print dialog and choose Save as PDF where supported."
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Print / Save as PDF
+          </Button>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">

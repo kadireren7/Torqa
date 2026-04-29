@@ -9,6 +9,9 @@ export type InAppNotificationRow = {
   severity: InAppNotificationSeverity;
   read_at: string | null;
   created_at: string;
+  metadata?: Record<string, unknown> | null;
+  /** Deep link to saved scan when present in notification metadata. */
+  scanId?: string | null;
 };
 
 export function normalizeNotificationSeverity(raw: string): InAppNotificationSeverity {
@@ -40,14 +43,28 @@ export async function fetchInAppNotifications(limit: number): Promise<
   const rawList = Array.isArray(j.notifications) ? j.notifications : [];
   const notifications: InAppNotificationRow[] = rawList
     .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
-    .map((row) => ({
-      id: String(row.id ?? ""),
-      title: String(row.title ?? ""),
-      body: row.body === null || typeof row.body === "string" ? (row.body as string | null) : null,
-      severity: normalizeNotificationSeverity(String(row.severity ?? "info")),
-      read_at: row.read_at === null || typeof row.read_at === "string" ? (row.read_at as string | null) : null,
-      created_at: String(row.created_at ?? ""),
-    }))
+    .map((row) => {
+      const meta =
+        row.metadata !== null && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+          ? (row.metadata as Record<string, unknown>)
+          : null;
+      const scanFromMeta =
+        meta && typeof meta.scanId === "string" && meta.scanId.trim()
+          ? meta.scanId.trim()
+          : meta && typeof meta.scan_id === "string" && meta.scan_id.trim()
+            ? meta.scan_id.trim()
+            : null;
+      return {
+        id: String(row.id ?? ""),
+        title: String(row.title ?? ""),
+        body: row.body === null || typeof row.body === "string" ? (row.body as string | null) : null,
+        severity: normalizeNotificationSeverity(String(row.severity ?? "info")),
+        read_at: row.read_at === null || typeof row.read_at === "string" ? (row.read_at as string | null) : null,
+        created_at: String(row.created_at ?? ""),
+        metadata: meta,
+        scanId: scanFromMeta,
+      };
+    })
     .filter((row) => row.id.length > 0);
 
   const unreadCount =

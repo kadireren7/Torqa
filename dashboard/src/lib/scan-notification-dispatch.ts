@@ -59,7 +59,8 @@ export async function dispatchScanNotificationsForUser(
   result: ScanApiSuccess,
   source: string,
   organizationId: string | null = null,
-  via: string = "scan"
+  via: string = "scan",
+  scanId: string | null = null
 ): Promise<void> {
   const supabase = await createClient();
   if (!supabase) return;
@@ -79,6 +80,7 @@ export async function dispatchScanNotificationsForUser(
     status: result.status,
     riskScore: result.riskScore,
     engine: result.engine,
+    ...(scanId ? { scanId } : {}),
   };
 
   for (const p of payloads) {

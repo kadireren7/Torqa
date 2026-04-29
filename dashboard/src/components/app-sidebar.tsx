@@ -30,9 +30,14 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
         <nav className="space-y-4 px-2">
           {mainNavSections.map((section) => (
             <div key={section.title}>
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-                {section.title}
-              </p>
+              <div className="px-3 pb-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                  {section.title}
+                </p>
+                {section.subtitle ? (
+                  <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground/60">{section.subtitle}</p>
+                ) : null}
+              </div>
               <div className="flex flex-col gap-0.5">
                 {section.items.map((item) => {
                   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

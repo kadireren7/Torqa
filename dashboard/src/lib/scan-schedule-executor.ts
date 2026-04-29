@@ -283,7 +283,7 @@ export async function executeManualScheduleRun(
     scanResult.status === "FAIL" ? "warning" : "info",
     { scanId, status: scanResult.status, scheduleId: schedule.id }
   );
-  void dispatchScanNotificationsForUser(userId, scanResult, source, orgId, "scan_schedule").catch(() => {});
+  void dispatchScanNotificationsForUser(userId, scanResult, source, orgId, "scan_schedule", scanId).catch(() => {});
   void dispatchAlertRulesForScanContext(supabase, {
     actorUserId: userId,
     organizationId: orgId,

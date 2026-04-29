@@ -313,6 +313,17 @@ export default function AlertsPage() {
           </p>
         </div>
         <GovernanceJourneyStrip />
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+          <li>
+            <strong className="text-foreground">Add a destination</strong> (Slack/Discord webhook or in-app fanout).
+          </li>
+          <li>
+            <strong className="text-foreground">Test it</strong> — use Test on each row to confirm delivery.
+          </li>
+          <li>
+            <strong className="text-foreground">Create rules</strong> — map FAIL, review, high-severity, or schedule failures to destinations.
+          </li>
+        </ol>
       </div>
 
       {error ? (
@@ -531,6 +542,18 @@ export default function AlertsPage() {
                     <Badge variant={r.enabled ? "default" : "secondary"}>{r.enabled ? "on" : "off"}</Badge>
                     <Button type="button" size="sm" variant="outline" onClick={() => void patchRule(r.id, { enabled: !r.enabled })}>
                       Toggle
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const next = prompt("Rule name", r.name);
+                        if (!next?.trim()) return;
+                        void patchRule(r.id, { name: next.trim() });
+                      }}
+                    >
+                      Rename
                     </Button>
                     <Button type="button" size="sm" variant="destructive" onClick={() => void deleteRule(r.id)}>
                       Delete

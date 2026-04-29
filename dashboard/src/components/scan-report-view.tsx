@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Copy,
   Download,
+  FileCode2,
   Layers,
   ListTree,
   Radar,
@@ -152,6 +153,41 @@ type ShareToolbarProps = {
   configured: boolean;
 };
 
+function buildPrTemplateMarkdown(result: ScanApiSuccess): string {
+  const lines: string[] = [];
+  lines.push("## Torqa — remediation checklist");
+  lines.push("");
+  lines.push(`- **Scan outcome:** ${result.status}`);
+  lines.push(`- **Trust index:** ${result.riskScore} (higher is safer)`);
+  lines.push(`- **Engine:** ${result.engine} (${result.analysis_kind})`);
+  lines.push(`- **Source:** ${result.source}`);
+  if (result.policyEvaluation) {
+    lines.push(`- **Policy:** ${result.policyEvaluation.policyStatus} — ${result.policyEvaluation.appliedPolicyName ?? "custom"}`);
+  }
+  lines.push("");
+  lines.push("### Findings (check off as you fix)");
+  lines.push("");
+  const top = result.findings.slice(0, 40);
+  if (top.length === 0) {
+    lines.push("_No findings in this snapshot._");
+  } else {
+    for (const f of top) {
+      const fix = f.suggested_fix.trim() ? ` — _${f.suggested_fix.trim()}_` : "";
+      lines.push(`- [ ] **${f.rule_id}** @ \`${f.target}\`${fix}`);
+      lines.push(`  - ${f.explanation}`);
+    }
+  }
+  lines.push("");
+  lines.push("### PR description (paste below)");
+  lines.push("");
+  lines.push(
+    `Addresses Torqa ${result.status} (${result.riskScore}/100) on ${result.source} workflow. See checklist above for rule-level fixes.`
+  );
+  lines.push("");
+  lines.push("<!-- Torqa: attach scan JSON or share link for reviewers -->");
+  return lines.join("\n");
+}
+
 function ExportToolbar({
   result,
   share,
@@ -160,12 +196,23 @@ function ExportToolbar({
   share?: ShareToolbarProps | null;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copiedPr, setCopiedPr] = useState(false);
 
   const copyJson = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(JSON.stringify(result, null, 2));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  }, [result]);
+
+  const copyPrTemplate = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(buildPrTemplateMarkdown(result));
+      setCopiedPr(true);
+      window.setTimeout(() => setCopiedPr(false), 2000);
     } catch {
       /* ignore */
     }
@@ -183,16 +230,27 @@ function ExportToolbar({
         </Button>
         <Button
           type="button"
+          variant="default"
+          size="sm"
+          className="h-9 gap-2 shadow-sm"
+          onClick={() => void copyPrTemplate()}
+          title="Markdown checklist + PR blurb for reviewers"
+        >
+          <FileCode2 className="h-3.5 w-3.5" aria-hidden />
+          {copiedPr ? "Copied PR template" : "Copy PR template"}
+        </Button>
+        <Button
+          type="button"
           variant="outline"
           size="sm"
           className="h-9 gap-2 border-border/80 bg-muted/30 text-muted-foreground shadow-sm"
           disabled
-          title="PDF export coming soon"
+          title="Server-side PDF export is planned; use Copy PR template or browser print."
         >
           <Download className="h-3.5 w-3.5 opacity-70" aria-hidden />
-          Download report
+          PDF export
         </Button>
-        <span className="hidden text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:inline">PDF — soon</span>
+        <span className="hidden text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:inline">Soon</span>
       </div>
 
       {showShare && (

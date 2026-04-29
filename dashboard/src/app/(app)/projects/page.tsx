@@ -22,26 +22,35 @@ export default async function ProjectsPage() {
         {projects.map((p) => (
           <Card
             key={p.id}
-            className="group border-border/80 bg-card/40 shadow-sm transition-colors hover:border-primary/25 hover:bg-card/80"
+            className="group relative overflow-hidden border-border/80 bg-card/40 shadow-sm transition-colors hover:border-primary/25 hover:bg-card/80"
           >
-            <CardHeader>
+            <Link href={`/projects/${p.slug}`} className="absolute inset-0 z-0 rounded-xl" aria-label={`Open ${p.name}`} />
+            <CardHeader className="relative z-10">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <FolderKanban className="h-5 w-5" aria-hidden />
                 </div>
-                <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100" asChild>
-                  <Link href="/validation">Runs</Link>
+                <Button variant="ghost" size="sm" className="relative z-20 opacity-0 group-hover:opacity-100" asChild>
+                  <Link href={`/projects/${p.slug}#recent-runs`}>Runs</Link>
                 </Button>
               </div>
               <CardTitle className="text-lg">{p.name}</CardTitle>
               <CardDescription className="font-mono text-xs">{p.slug}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <CardContent className="relative z-10 space-y-3 text-sm text-muted-foreground">
               <p className="line-clamp-2 min-h-[2.5rem]">{p.description ?? "—"}</p>
               <p className="text-xs">
                 Updated{" "}
                 <time dateTime={p.updatedAt}>{new Date(p.updatedAt).toLocaleDateString()}</time>
               </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button size="sm" variant="secondary" asChild className="relative z-20">
+                  <Link href={`/projects/${p.slug}`}>View project</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild className="relative z-20">
+                  <Link href={`/scan?project=${encodeURIComponent(p.slug)}`}>Run project scan</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

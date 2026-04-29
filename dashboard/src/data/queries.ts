@@ -31,6 +31,11 @@ export async function getProjects(): Promise<Project[]> {
   return [...MOCK_PROJECTS];
 }
 
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  await delay(40);
+  return MOCK_PROJECTS.find((p) => p.slug === slug) ?? null;
+}
+
 export async function getPolicies(): Promise<Policy[]> {
   await delay(45);
   return [...MOCK_POLICIES];

@@ -362,11 +362,20 @@ export default function WorkspacePage() {
         <h1 className="text-2xl font-semibold tracking-tight">Workspace</h1>
         <p className="text-sm text-muted-foreground">
           Connect Supabase (see <code className="rounded bg-muted px-1 font-mono text-xs">.env.example</code>) and
-          apply migrations to create organizations, shared scan history, and invites.
+          apply migrations to create organizations, shared scan history, invites, and the{" "}
+          <Link href="/workspace/activity" className="text-primary underline-offset-2 hover:underline">
+            workspace activity
+          </Link>{" "}
+          feed. Until then, scans and the library stay on this device only.
         </p>
-        <Button asChild variant="outline">
-          <Link href="/overview">Back to overview</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/overview">Back to overview</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href="/workspace/activity">Activity feed (cloud)</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -382,8 +391,20 @@ export default function WorkspacePage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Team</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Workspace</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Create a workspace, invite teammates (admin or member), then select it as active — scans and the
-              workflow library save into the shared pool. Owners and admins manage invites.
+              Create a workspace, invite teammates (admin or member), then set it as active — scans and the workflow
+              library save into the shared pool. Owners and admins manage invites; everyone can review{" "}
+              <Link href="/workspace/activity" className="font-medium text-primary underline-offset-2 hover:underline">
+                workspace activity
+              </Link>{" "}
+              for audit trails. Policies and templates stay under{" "}
+              <Link href="/policies" className="font-medium text-primary underline-offset-2 hover:underline">
+                Policies
+              </Link>{" "}
+              and{" "}
+              <Link href="/workflow-library" className="font-medium text-primary underline-offset-2 hover:underline">
+                Workflow library
+              </Link>
+              .
             </p>
           </div>
         </div>

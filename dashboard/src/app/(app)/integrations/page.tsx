@@ -214,6 +214,34 @@ export default function IntegrationsPage() {
         <GovernanceJourneyStrip />
       </div>
 
+      <Card className="border-border/80 bg-muted/10 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Automation roadmap</CardTitle>
+          <CardDescription>
+            Torqa is intentionally a <strong className="text-foreground">gate</strong> first — these integrations add
+            continuous signal without becoming a runtime.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="list-disc space-y-2 pl-4 text-sm text-muted-foreground">
+            <li>
+              <strong className="text-foreground">GitHub:</strong> on workflow JSON changes, run Torqa in CI and post a
+              concise summary + link to the saved dashboard report on the pull request (planned; mirrors the CLI gate).
+            </li>
+            <li>
+              <strong className="text-foreground">n8n pull:</strong> periodically fetch active workflows from your
+              registered instance, scan in batch, and surface high-risk items back into Torqa notifications (requires safe
+              read-only API patterns — in design).
+            </li>
+            <li>
+              <strong className="text-foreground">Slack / Discord / email:</strong> only high-risk or FAIL outcomes,
+              each message includes a deep link to the scan report when a <code className="rounded bg-muted px-1 font-mono text-[11px]">scanId</code>{" "}
+              is available (team alerts + notification metadata are evolving toward this consistently).
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+
       {error ? <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       {message ? <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-sm">{message}</p> : null}
 
@@ -263,6 +291,11 @@ export default function IntegrationsPage() {
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="int-key">API key (placeholder)</Label>
+            <p className="text-xs text-muted-foreground">
+              In n8n: <strong className="text-foreground">Settings → API</strong> (or your n8n version’s API keys screen)
+              — create a key with access to the workflows you want Torqa to reference. Only a masked hint is stored
+              here; rotate keys from n8n if you change them.
+            </p>
             <Input
               id="int-key"
               type="password"

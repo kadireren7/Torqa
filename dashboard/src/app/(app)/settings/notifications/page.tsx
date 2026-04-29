@@ -112,6 +112,17 @@ export default function NotificationSettingsPage() {
         <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-sm text-foreground">{message}</p>
       )}
 
+      <Card className="border-border/80 bg-muted/20 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Who this applies to</CardTitle>
+          <CardDescription>
+            These toggles follow the <strong className="text-foreground">signed-in user</strong> and{" "}
+            <strong className="text-foreground">active workspace</strong> cookie when cloud mode is on. They drive in-app
+            scan alerts and optional Slack webhook delivery — not the team <Link href="/alerts" className="text-primary hover:underline">Alerts</Link> rules (those are workspace-scoped destinations).
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
       <Card className="border-border/80 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">

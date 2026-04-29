@@ -13,7 +13,7 @@ type Props = {
   onboarding: HomeOnboardingCounts | null;
 };
 
-type Step = { id: string; label: string; href: string; done: boolean; optional?: boolean };
+type Step = { id: string; label: string; href: string; done: boolean; optional?: boolean; hint: string };
 
 export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Props) {
   const cloud = mode === "supabase" && onboarding !== null;
@@ -26,36 +26,42 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
       label: "Upload n8n workflow",
       href: "/workflow-library",
       done: cloud ? (o!.workflowTemplates > 0) : false,
+      hint: "Save an export to the library so scans and schedules can reuse it.",
     },
     {
       id: "scan",
       label: "Run scan",
       href: "/scan",
       done: scanDone,
+      hint: "Paste JSON or upload a file; Torqa returns deterministic findings and trust score.",
     },
     {
       id: "report",
       label: "Review report",
       href: "/scan/history",
       done: scanDone,
+      hint: "Open a saved run, share a read-only link, or copy a PR remediation template from the report.",
     },
     {
       id: "schedule",
       label: "Create schedule",
       href: "/schedules",
       done: cloud ? (o!.scanSchedules > 0) : false,
+      hint: "Re-scan a template on a cadence; wire cron/tick in production for hands-off runs.",
     },
     {
       id: "policy",
       label: "Apply a policy",
       href: "/policies",
       done: cloud ? (o!.workspacePolicies > 0) : false,
+      hint: "Attach a template or workspace policy so scans surface governance pass/fail alongside engine status.",
     },
     {
       id: "alert",
       label: "Set an alert",
       href: "/alerts",
       done: cloud ? (o!.alertDestinations > 0) : false,
+      hint: "Route FAIL / high-risk outcomes to Slack, Discord, or in-app destinations for the team.",
     },
     {
       id: "team",
@@ -63,6 +69,7 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
       href: "/team",
       done: cloud ? o!.organizationMembers > 1 : false,
       optional: !cloud || o!.organizationMembers <= 1,
+      hint: "Share workspace-scoped history and templates; invites require matching email at sign-in.",
     },
   ];
 
@@ -99,6 +106,7 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
             <Link
               key={s.id}
               href={s.href}
+              title={s.hint}
               className={cn(
                 "group flex items-start gap-3 rounded-xl border px-3 py-3 transition-colors",
                 s.done
