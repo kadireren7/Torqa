@@ -29,6 +29,14 @@ const platform = [
   { title: "Team insights", copy: "Scan history and posture", href: "/insights", icon: BarChart3 },
 ] as const;
 
+const trustReasons = [
+  "Deterministic analysis: same input, same result.",
+  "No workflow execution: Torqa evaluates definitions, not runtime side effects.",
+  "No LLM calls by default in the scan path.",
+  "Explicit engine metadata in every report.",
+  "Policy and risk reasons are inspectable for each decision.",
+] as const;
+
 /** Server-rendered marketing sections (no Framer Motion). */
 export function LandingMarketingStatic() {
   return (
@@ -56,6 +64,22 @@ export function LandingMarketingStatic() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      <section id="trust" className="scroll-mt-28 mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:py-24">
+        <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">Why trust Torqa?</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground">
+          Torqa is built for teams that need explainable governance signals before release, not black-box runtime magic.
+        </p>
+        <div className="mt-10 grid gap-3 sm:grid-cols-2">
+          {trustReasons.map((line) => (
+            <Card key={line} className="border-border/60 bg-card/40">
+              <CardContent className="p-5 text-sm text-foreground">{line}</CardContent>
+            </Card>
+          ))}
         </div>
       </section>
 

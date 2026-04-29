@@ -22,7 +22,7 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold tracking-tight">Torqa</p>
-          <p className="truncate text-xs text-muted-foreground">{orgName}</p>
+          <p className="truncate text-xs text-sidebar-foreground/80">{orgName}</p>
         </div>
       </div>
       <Separator className="bg-sidebar-border" />
@@ -31,11 +31,11 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
           {mainNavSections.map((section) => (
             <div key={section.title}>
               <div className="px-3 pb-1">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/90">
                   {section.title}
                 </p>
                 {section.subtitle ? (
-                  <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground/60">{section.subtitle}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-sidebar-foreground/75">{section.subtitle}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-0.5">
@@ -50,7 +50,7 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                         active
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/90 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
@@ -69,7 +69,7 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
         </nav>
       </ScrollArea>
       <div className="border-t border-sidebar-border p-3">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-wider text-sidebar-foreground/80">
           Governance dashboard
         </p>
       </div>

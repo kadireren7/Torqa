@@ -222,9 +222,9 @@ export default async function ScanHistoryPage({
             <div className="px-4 pb-6 pt-2 sm:px-6">
               <EmptyStateCta
                 icon={History}
-                title="No saved scans yet"
+                title="Scan history is empty"
                 description="Run a scan to store a report you can reopen anytime."
-                primary={{ href: "/scan", label: "Run scan" }}
+                primary={{ href: "/scan", label: "Run your first scan" }}
                 secondary={{ href: "/workflow-library", label: "Workflow library" }}
                 className="border-border/60 bg-muted/20"
               />

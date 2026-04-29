@@ -9,8 +9,8 @@ import type {
 
 export const MOCK_ORG: Organization = {
   id: "org_01",
-  name: "Northwind Automation",
-  slug: "northwind",
+  name: "Sample workspace",
+  slug: "sample-workspace",
 };
 
 export const MOCK_PROJECTS: Project[] = [
@@ -172,7 +172,7 @@ export const MOCK_TEAM: TeamMember[] = [
   {
     userId: "usr_1",
     organizationId: MOCK_ORG.id,
-    email: "alex@northwind.dev",
+    email: "alex@example.com",
     displayName: "Alex Rivera",
     role: "owner",
     avatarUrl: null,
@@ -181,7 +181,7 @@ export const MOCK_TEAM: TeamMember[] = [
   {
     userId: "usr_2",
     organizationId: MOCK_ORG.id,
-    email: "sam@northwind.dev",
+    email: "sam@example.com",
     displayName: "Sam Okonkwo",
     role: "admin",
     avatarUrl: null,
@@ -190,7 +190,7 @@ export const MOCK_TEAM: TeamMember[] = [
   {
     userId: "usr_3",
     organizationId: MOCK_ORG.id,
-    email: "jordan@northwind.dev",
+    email: "jordan@example.com",
     displayName: "Jordan Lee",
     role: "member",
     avatarUrl: null,
@@ -199,7 +199,7 @@ export const MOCK_TEAM: TeamMember[] = [
   {
     userId: "usr_4",
     organizationId: MOCK_ORG.id,
-    email: "taylor@northwind.dev",
+    email: "taylor@example.com",
     displayName: "Taylor Kim",
     role: "viewer",
     avatarUrl: null,

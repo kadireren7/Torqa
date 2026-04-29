@@ -35,22 +35,20 @@ const MarketingSimpleCta = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Continuous governance for automation workflows",
+  title: "Governance gate for automation workflows",
   description:
-    "Connect tools like n8n, scan changes automatically, enforce policies, and alert your team before risky workflows reach production.",
+    "Governance gate for automation workflows before they reach production.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Torqa — Continuous governance for automation workflows",
-    description:
-      "Connect tools like n8n, scan changes automatically, enforce policies, and alert your team before risky workflows reach production.",
+    title: "Torqa — Governance gate for automation workflows",
+    description: "Governance gate for automation workflows before they reach production.",
     url: "/",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Torqa — Continuous governance for automation workflows",
-    description:
-      "Connect tools like n8n, scan changes automatically, enforce policies, and alert your team before risky workflows reach production.",
+    title: "Torqa — Governance gate for automation workflows",
+    description: "Governance gate for automation workflows before they reach production.",
   },
 };
 
@@ -76,9 +74,9 @@ export default function MarketingLandingPage() {
         <SectionDivider />
 
         <section id="demo" className="scroll-mt-28 mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:py-24">
-          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">Live posture</h2>
+          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">Demo report</h2>
           <p className="mx-auto mt-3 max-w-md text-center text-sm text-muted-foreground">
-            One connected stack, continuously checked.
+            See a production-style scan summary before connecting your own workflows.
           </p>
           <div className="mt-12">
             <MarketingDemoStrip />

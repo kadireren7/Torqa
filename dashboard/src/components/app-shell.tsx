@@ -1,10 +1,10 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { getOrganization } from "@/data/queries";
 import { createClient } from "@/lib/supabase/server";
+import { getShellOrganization } from "@/lib/shell-organization";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const org = await getOrganization();
+  const org = await getShellOrganization();
   const supabase = await createClient();
 
   let user: { email: string; displayName: string | null } | null = null;

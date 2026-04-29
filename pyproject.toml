@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torqa"
-version = "0.1.5"
+version = "0.1.6"
 description = "Canonical workflow IR (ir_goal), validation, trust profiles, and CLI — gate specs before execution."
 readme = "README.md"
 license = "MIT"
@@ -50,7 +50,8 @@ Documentation = "https://github.com/kadireren7/Torqa#readme"
 Repository = "https://github.com/kadireren7/Torqa"
 Issues = "https://github.com/kadireren7/Torqa/issues"
 Changelog = "https://github.com/kadireren7/Torqa/blob/main/CHANGELOG.md"
-Releasing = "https://github.com/kadireren7/Torqa/blob/main/docs/releasing.md"
+Releasing = "https://github.com/kadireren7/Torqa/blob/main/docs/release-process.md"
+PyPI = "https://pypi.org/project/torqa/"
 Security = "https://github.com/kadireren7/Torqa/security/policy"
 
 [project.scripts]
@@ -79,7 +80,7 @@ where = ["src"]
 include = ["torqa*"]
 
 [tool.setuptools.package-data]
-torqa = ["py.typed"]
+torqa = ["py.typed", "data/*.json", "bundled/**/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

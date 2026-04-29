@@ -9,6 +9,7 @@ import {
   toRunApi,
   toScheduleApi,
 } from "@/lib/scan-schedules";
+import { validateCronExpression } from "@/lib/cron-schedule";
 import { isLikelyUuid } from "@/lib/policy-input-limits";
 import { apiJsonDatabaseError, apiJsonError } from "@/lib/api-json-error";
 
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("scan_schedules")
     .select(
-      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,last_run_at,next_run_at,created_at,updated_at"
+      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,cron_expression,cron_timezone,last_run_at,next_run_at,created_at,updated_at"
     )
     .order("created_at", { ascending: false });
 
@@ -119,6 +120,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
   }
 
+  const cronExpressionRaw =
+    typeof body.cronExpression === "string"
+      ? body.cronExpression
+      : typeof body.cron_expression === "string"
+        ? body.cron_expression
+        : "";
+  const cronTimezoneRaw =
+    typeof body.cronTimezone === "string"
+      ? body.cronTimezone.trim()
+      : typeof body.cron_timezone === "string"
+        ? body.cron_timezone.trim()
+        : "UTC";
+
+  if (frequencyRaw === "custom") {
+    if (!cronExpressionRaw.trim()) {
+      return NextResponse.json({ error: 'Field "cronExpression" is required when frequency is custom' }, { status: 400 });
+    }
+    const v = validateCronExpression(cronExpressionRaw, cronTimezoneRaw);
+    if (!v.ok) {
+      return NextResponse.json({ error: v.error }, { status: 400 });
+    }
+  }
+
   const organizationId = await resolveListOrganizationId(supabase, user.id);
 
   if (scopeTypeRaw === "workflow_template") {
@@ -155,7 +179,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const nextRunAt = initialNextRunAt(enabled, frequencyRaw);
+  const nextRunAt = initialNextRunAt(enabled, frequencyRaw, {
+    cronExpression: frequencyRaw === "custom" ? cronExpressionRaw.trim() : null,
+    cronTimezone: cronTimezoneRaw || "UTC",
+  });
 
   let workspacePolicyIdInsert: string | null | undefined = undefined;
   if ("workspacePolicyId" in body || "workspace_policy_id" in body) {
@@ -197,6 +224,8 @@ export async function POST(request: Request) {
     frequency: frequencyRaw,
     enabled,
     next_run_at: nextRunAt,
+    cron_expression: frequencyRaw === "custom" ? cronExpressionRaw.trim() : null,
+    cron_timezone: frequencyRaw === "custom" ? cronTimezoneRaw || "UTC" : "UTC",
   };
   if (workspacePolicyIdInsert !== undefined) {
     insertRow.workspace_policy_id = workspacePolicyIdInsert;
@@ -206,7 +235,7 @@ export async function POST(request: Request) {
     .from("scan_schedules")
     .insert(insertRow)
     .select(
-      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,last_run_at,next_run_at,created_at,updated_at"
+      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,cron_expression,cron_timezone,last_run_at,next_run_at,created_at,updated_at"
     )
     .single();
 

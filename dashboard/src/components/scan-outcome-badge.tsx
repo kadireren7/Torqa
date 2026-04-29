@@ -7,7 +7,7 @@ export function ScanOutcomeBadge({ status }: { status: string }) {
     normalized === "PASS"
       ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
       : normalized === "FAIL"
-        ? "border-destructive/35 bg-destructive/10 text-destructive"
+        ? "border-destructive bg-destructive text-destructive-foreground"
         : "border-amber-500/35 bg-amber-500/10 text-amber-800 dark:text-amber-400";
 
   return (

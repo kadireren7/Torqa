@@ -37,43 +37,68 @@ function triggersForScanResult(result: ScanApiSuccess): Set<AlertRuleTrigger> {
   return t;
 }
 
-async function placeholderAlertEmail(_to: string, subject: string, text: string): Promise<void> {
-  void _to;
-  void subject;
-  void text;
+async function sendResendEmail(to: string, subject: string, text: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  const from =
+    process.env.TORQA_ALERT_FROM_EMAIL?.trim() || process.env.RESEND_FROM_EMAIL?.trim() || "Torqa <onboarding@resend.dev>";
+  if (!key) {
+    return { ok: false, error: "RESEND_API_KEY is not configured on the server." };
+  }
+  if (!to.trim()) {
+    return { ok: false, error: "Destination email address is empty." };
+  }
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 10_000);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [to.trim()], subject: subject.slice(0, 998), text: text.slice(0, 100_000) }),
+      signal: ac.signal,
+    });
+    if (!res.ok) {
+      const j = (await res.json().catch(() => null)) as { message?: string } | null;
+      return { ok: false, error: j?.message ?? `Resend HTTP ${res.status}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Email request failed" };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-async function postSlackWebhook(url: string, text: string): Promise<void> {
-  if (!validateSlackWebhookUrlForOutbound(url).ok) return;
+async function postSlackWebhook(url: string, text: string): Promise<Response | null> {
+  if (!validateSlackWebhookUrlForOutbound(url).ok) return null;
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 5000);
   try {
-    await fetch(url, {
+    return await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
       signal: ac.signal,
     });
   } catch {
-    /* optional channel */
+    return null;
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function postDiscordWebhook(url: string, content: string): Promise<void> {
-  if (!validateDiscordWebhookUrlForOutbound(url).ok) return;
+async function postDiscordWebhook(url: string, content: string): Promise<Response | null> {
+  if (!validateDiscordWebhookUrlForOutbound(url).ok) return null;
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 5000);
   try {
-    await fetch(url, {
+    return await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
       signal: ac.signal,
     });
   } catch {
-    /* optional channel */
+    return null;
   } finally {
     clearTimeout(timer);
   }
@@ -172,18 +197,19 @@ export async function deliverToDestination(
     case "slack": {
       const url = typeof dest.config.webhookUrl === "string" ? dest.config.webhookUrl.trim() : "";
       if (!url) return;
-      await postSlackWebhook(url, `*${title}*\n${body}`);
+      void postSlackWebhook(url, `*${title}*\n${body}`);
       break;
     }
     case "discord": {
       const url = typeof dest.config.webhookUrl === "string" ? dest.config.webhookUrl.trim() : "";
       if (!url) return;
-      await postDiscordWebhook(url, `**${title}**\n${body}`);
+      void postDiscordWebhook(url, `**${title}**\n${body}`);
       break;
     }
     case "email": {
       const addr = typeof dest.config.address === "string" ? dest.config.address.trim() : "";
-      await placeholderAlertEmail(addr || "noreply@example.com", title, body);
+      if (!addr) return;
+      void sendResendEmail(addr, title, body).then(() => {});
       break;
     }
     default:
@@ -378,6 +404,28 @@ export async function sendTestForDestination(
     return { ok: false, error: "Invalid destination" };
   }
   try {
+    if (dest.type === "slack") {
+      const url = typeof dest.config.webhookUrl === "string" ? dest.config.webhookUrl.trim() : "";
+      if (!url) return { ok: false, error: "Missing webhookUrl in destination config" };
+      const res = await postSlackWebhook(url, message);
+      if (!res) return { ok: false, error: "Slack webhook URL failed validation or network error" };
+      if (!res.ok) return { ok: false, error: `Slack webhook returned HTTP ${res.status}` };
+      return { ok: true };
+    }
+    if (dest.type === "discord") {
+      const url = typeof dest.config.webhookUrl === "string" ? dest.config.webhookUrl.trim() : "";
+      if (!url) return { ok: false, error: "Missing webhookUrl in destination config" };
+      const res = await postDiscordWebhook(url, message);
+      if (!res) return { ok: false, error: "Discord webhook URL failed validation or network error" };
+      if (!res.ok) return { ok: false, error: `Discord webhook returned HTTP ${res.status}` };
+      return { ok: true };
+    }
+    if (dest.type === "email") {
+      const addr = typeof dest.config.address === "string" ? dest.config.address.trim() : "";
+      const r = await sendResendEmail(addr, "Torqa test", message);
+      if (!r.ok) return { ok: false, error: r.error };
+      return { ok: true };
+    }
     await deliverToDestination(supabase, dest, "Torqa test", message, "info", {
       kind: "destination_test",
     });

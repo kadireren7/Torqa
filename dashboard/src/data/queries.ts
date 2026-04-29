@@ -21,6 +21,7 @@ import type {
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Mock org for legacy data fixtures; app chrome uses `getShellOrganization()` instead. */
 export async function getOrganization(): Promise<Organization> {
   await delay(40);
   return MOCK_ORG;

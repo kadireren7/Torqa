@@ -381,14 +381,39 @@ def cmd_version(_args: argparse.Namespace) -> int:
 
 
 def cmd_quickstart(args: argparse.Namespace) -> int:
-    """One-command first experience using bundled examples."""
-    repo_root = Path(__file__).resolve().parents[3]
-    sample = repo_root / "examples" / "integrations" / "customer_support_n8n.json"
-    if not sample.is_file():
-        print(f"torqa quickstart: sample not found: {sample}", file=sys.stderr)
-        return 1
+    """One-command first experience using bundled examples (works after `pip install torqa`)."""
+    import json
+    import tempfile
+    from importlib import resources
 
-    bundle, err, input_type = load_input(sample, integration_source="n8n")
+    sample: Path | None = None
+    bundle = None
+    err = None
+    input_type = "unknown"
+
+    try:
+        tr = resources.files("torqa.bundled.examples.integrations").joinpath("customer_support_n8n.json")
+        if tr.is_file():
+            raw = json.loads(tr.read_text(encoding="utf-8"))
+            tmp = Path(tempfile.gettempdir()) / "torqa_customer_support_quickstart.json"
+            tmp.write_text(json.dumps(raw), encoding="utf-8")
+            b, e, it = load_input(tmp, integration_source="n8n")
+            if e is None and b is not None:
+                sample, bundle, err, input_type = tmp, b, e, it
+    except Exception:
+        pass
+
+    if bundle is None or err is not None or sample is None:
+        repo_root = Path(__file__).resolve().parents[3]
+        legacy = repo_root / "examples" / "integrations" / "customer_support_n8n.json"
+        if legacy.is_file():
+            sample = legacy
+            bundle, err, input_type = load_input(legacy, integration_source="n8n")
+        else:
+            hint = err if isinstance(err, str) else (str(err) if err is not None else "bundled sample unavailable")
+            print(f"torqa quickstart: could not load sample ({hint})", file=sys.stderr)
+            return 1
+
     if input_type == "unknown" or err is not None or bundle is None:
         print(f"torqa quickstart: could not load sample: {err}", file=sys.stderr)
         return 1
@@ -422,7 +447,7 @@ def cmd_quickstart(args: argparse.Namespace) -> int:
     print("Next steps:")
     print(f"- torqa validate \"{sample}\" --source n8n")
     print(f"- torqa scan \"{sample}\" --source n8n --json")
-    print("- torqa report examples/integrations --format md -o torqa-report.md")
+    print("- torqa report <path-to-exported-json-or-directory> --format md -o torqa-report.md")
 
     if bool(getattr(args, "report", False)):
         from types import SimpleNamespace

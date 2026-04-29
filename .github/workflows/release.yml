@@ -1,5 +1,13 @@
-# Publish to PyPI when a SemVer tag is pushed (e.g. v0.1.1).
-# Prerequisite: configure "Trusted Publishing" for this repo on https://pypi.org
+# Publish to PyPI when a SemVer tag is pushed (e.g. v0.1.6).
+#
+# Default path: Trusted Publishing (OIDC) — link this GitHub repo to the PyPI
+# project at https://pypi.org/manage/project/torqa/settings/publishing/
+#
+# Token fallback: remove OIDC from PyPI project settings and set repo secret
+# PYPI_API_TOKEN, then change the publish step to:
+#   uses: pypa/gh-action-pypi-publish@release/v1
+#   with:
+#     password: ${{ secrets.PYPI_API_TOKEN }}
 
 name: Release
 
@@ -28,6 +36,12 @@ jobs:
 
       - name: Build distributions
         run: python -m build
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: torqa-dist
+          path: dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

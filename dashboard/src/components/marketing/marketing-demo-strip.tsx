@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 const rows = [
   { k: "Source", v: "n8n connected", tone: "ok" as const },
@@ -50,6 +52,11 @@ export function MarketingDemoStrip() {
             </motion.li>
           ))}
         </ul>
+        <div className="border-t border-border/40 px-5 py-4">
+          <Button asChild size="sm">
+            <Link href="/demo/report">View demo report</Link>
+          </Button>
+        </div>
       </motion.div>
     </div>
   );

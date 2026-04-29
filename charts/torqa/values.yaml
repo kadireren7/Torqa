@@ -1,0 +1,13 @@
+replicaCount: 1
+image:
+  repository: torqa/dashboard
+  tag: "0.1.6"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 3000
+env: []
+# Example:
+# env:
+#   - name: NEXT_PUBLIC_SUPABASE_URL
+#     value: "https://xxx.supabase.co"

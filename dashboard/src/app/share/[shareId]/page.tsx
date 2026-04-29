@@ -63,7 +63,13 @@ export default async function SharedScanPage({ params }: PageProps) {
         </div>
       </div>
 
-      <ScanReportView result={payload.result} showPoweredBanner variant="shared" />
+      <ScanReportView
+        result={payload.result}
+        showPoweredBanner
+        variant="shared"
+        pdfExportUrl={`/api/share/${encodeURIComponent(shareId)}/pdf`}
+        pdfFilename={`torqa-scan-report-${shareId}.pdf`}
+      />
     </div>
   );
 }

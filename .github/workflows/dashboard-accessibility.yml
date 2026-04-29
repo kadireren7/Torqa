@@ -1,0 +1,59 @@
+# Dashboard lint, unit tests, and Playwright + axe WCAG-oriented accessibility gate.
+
+name: Dashboard accessibility
+
+on:
+  pull_request:
+    paths:
+      - "dashboard/**"
+      - ".github/workflows/dashboard-accessibility.yml"
+      - "docs/accessibility.md"
+  push:
+    branches: [main]
+    paths:
+      - "dashboard/**"
+      - ".github/workflows/dashboard-accessibility.yml"
+      - "docs/accessibility.md"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: dashboard
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright accessibility (axe)
+        run: npm run test:a11y
+        env:
+          CI: true
+          # Skip second build inside Playwright webServer (build step above).
+          PLAYWRIGHT_A11Y_BUILT: "1"
+          # Demo mode: no Supabase public env → middleware does not redirect protected routes to /login.

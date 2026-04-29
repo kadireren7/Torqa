@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, GitBranch, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { githubUrl } from "@/lib/marketing-content";
+import { docsUrl } from "@/lib/marketing-content";
 
 export function MarketingHero() {
   const reduce = useReducedMotion();
@@ -71,7 +71,7 @@ export function MarketingHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.05 }}
         >
-          Continuous governance for automation workflows.
+          Governance gate for automation workflows before they reach production.
         </motion.h1>
 
         <motion.p
@@ -80,9 +80,19 @@ export function MarketingHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          Connect tools like n8n, scan changes automatically, enforce policies, and alert your team before risky
-          workflows reach production.
+          Built for automation teams, n8n users, and platform/ops teams that need deterministic pre-runtime checks.
         </motion.p>
+
+        <motion.ul
+          className="mt-6 space-y-2 text-sm text-muted-foreground sm:text-base"
+          initial={reduce ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.13 }}
+        >
+          <li>Scan n8n/workflow JSON before runtime</li>
+          <li>Enforce policies and trust scores</li>
+          <li>Share reports, schedule scans, alert teams</li>
+        </motion.ul>
 
         <motion.div
           className="mt-12 flex flex-wrap items-center gap-3"
@@ -93,19 +103,32 @@ export function MarketingHero() {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative">
             <div className="pointer-events-none absolute -inset-0.5 rounded-lg bg-gradient-to-r from-primary/45 to-cyan-400/35 opacity-80 blur-md" />
             <Button asChild size="lg" className="relative gap-2 px-6 shadow-xl shadow-primary/20">
-              <Link href="/integrations">Connect a workflow source</Link>
+              <Link href="/scan">Run a scan</Link>
             </Button>
           </motion.div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button asChild size="lg" variant="outline" className="gap-2 border-border/70 bg-background/40 backdrop-blur">
-              <Link href={githubUrl} target="_blank" rel="noreferrer">
-                <GitBranch className="h-4 w-4" />
-                View GitHub
-                <ArrowUpRight className="h-3.5 w-3.5 opacity-70" />
+              <Link href="/demo/report">View demo report</Link>
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button asChild size="lg" variant="ghost" className="gap-2 text-muted-foreground">
+              <Link href={docsUrl} target="_blank" rel="noreferrer">
+                Read docs
               </Link>
             </Button>
           </motion.div>
         </motion.div>
+
+        <motion.p
+          className="mt-5 max-w-2xl text-xs leading-relaxed text-muted-foreground"
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          Torqa is a governance layer, not a workflow runtime. It analyzes exported workflow definitions with deterministic
+          rules so teams can decide before rollout.
+        </motion.p>
       </div>
     </section>
   );

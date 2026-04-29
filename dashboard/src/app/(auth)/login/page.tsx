@@ -17,6 +17,7 @@ export default function LoginPage() {
   return (
     <div
       id="main-content"
+      role="main"
       className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 p-4"
     >
       {!configured && (

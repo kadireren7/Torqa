@@ -1,6 +1,8 @@
 # Releasing Torqa
 
-This document describes **semantic versioning**, how to **cut a release**, and how **CI** publishes to PyPI.
+**Operational checklist:** [release-process.md](./release-process.md) (version bumps, `build` / `twine`, TestPyPI, wheel contents).
+
+This page summarizes **semantic versioning** and how **CI** is intended to publish to PyPI.
 
 ---
 
@@ -49,7 +51,7 @@ We follow **[Keep a Changelog](https://keepachangelog.com/)** (see `CHANGELOG.md
 5. **Tag:** `git tag -s v0.1.1 -m "Release 0.1.1"` (signing optional but recommended).
 6. **Push:** `git push origin main && git push origin v0.1.1`.
 
-The **[Release](../.github/workflows/release.yml)** workflow builds with `python -m build` and uploads to **PyPI** using **OIDC** (no long-lived API token in GitHub secrets if Trusted Publishing is configured).
+The **[Release](../.github/workflows/release.yml)** workflow builds with `python -m build`, uploads **`dist/`** as a GitHub Actions artifact, then publishes to **PyPI** using **OIDC** by default (no long-lived API token if Trusted Publishing is configured).
 
 ### One-time PyPI setup
 

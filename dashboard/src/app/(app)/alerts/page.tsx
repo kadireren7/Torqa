@@ -313,6 +313,27 @@ export default function AlertsPage() {
           </p>
         </div>
         <GovernanceJourneyStrip />
+        <Card className="border-border/80 bg-muted/15 shadow-sm">
+          <CardContent className="grid gap-3 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">What this does</p>
+              <p className="mt-1">Routes scan outcomes to team destinations so risky workflows do not get missed.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Works now</p>
+              <p className="mt-1">Slack/Discord webhook tests, in-app routes, placeholder email integration.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Next up</p>
+              <p className="mt-1">Broader delivery guarantees and richer per-rule routing controls.</p>
+            </div>
+            <div className="flex items-end">
+              <Button asChild>
+                <Link href="#dest-form">Create your first alert destination</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
           <li>
             <strong className="text-foreground">Add a destination</strong> (Slack/Discord webhook or in-app fanout).
@@ -407,9 +428,9 @@ export default function AlertsPage() {
           ) : destinations.length === 0 ? (
             <EmptyStateCta
               icon={Bell}
-              title="No destinations"
+              title="Alerts are empty"
               description="Add Slack or Discord first, then bind rules."
-              primary={{ href: "#dest-form", label: "Add destination" }}
+              primary={{ href: "#dest-form", label: "Create your first alert destination" }}
               secondary={{ href: "/scan", label: "Run a scan" }}
               compact
               className="border-none bg-transparent py-4"

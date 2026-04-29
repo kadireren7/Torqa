@@ -9,7 +9,11 @@ import { dispatchAlertRulesForScheduleFailure } from "@/lib/alert-dispatch";
 import { dispatchAlertRulesForScanContext } from "@/lib/alert-dispatch";
 import { isPlainObject } from "@/lib/json-guards";
 import { logWorkspaceActivity, notifyWorkspaceMembers } from "@/lib/workspace-activity";
-import { computeNextRunAfter, type ScanScheduleFrequency, type ScanScheduleScopeType } from "@/lib/scan-schedules";
+import {
+  computeNextRunAfterExecution,
+  type ScanScheduleFrequency,
+  type ScanScheduleScopeType,
+} from "@/lib/scan-schedules";
 
 export type ScheduleRunContext = {
   id: string;
@@ -21,6 +25,8 @@ export type ScheduleRunContext = {
   frequency: ScanScheduleFrequency;
   enabled: boolean;
   workspace_policy_id: string | null;
+  cron_expression: string | null;
+  cron_timezone: string | null;
 };
 
 type TemplateRow = {
@@ -75,9 +81,16 @@ async function bumpScheduleAfterAttempt(
   schedule: ScheduleRunContext
 ): Promise<void> {
   const now = new Date();
+  const cron =
+    schedule.frequency === "custom"
+      ? {
+          cronExpression: schedule.cron_expression?.trim() ?? "",
+          cronTimezone: schedule.cron_timezone?.trim() || "UTC",
+        }
+      : null;
   const next =
     schedule.enabled && schedule.frequency !== "manual"
-      ? computeNextRunAfter(now, schedule.frequency)?.toISOString() ?? null
+      ? computeNextRunAfterExecution(now, schedule.frequency, cron)
       : null;
 
   await supabase

@@ -42,17 +42,17 @@ export function AppMobileNav({ orgName }: AppMobileNavProps) {
             </span>
             <span className="truncate font-semibold">Torqa</span>
           </SheetTitle>
-          <p className="text-xs text-muted-foreground">{orgName}</p>
+          <p className="text-xs text-sidebar-foreground/80">{orgName}</p>
         </SheetHeader>
         <nav className="space-y-3 p-2">
           {mainNavSections.map((section) => (
             <div key={section.title}>
               <div className="px-3 pb-1">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/90">
                   {section.title}
                 </p>
                 {section.subtitle ? (
-                  <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground/60">{section.subtitle}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-sidebar-foreground/75">{section.subtitle}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-0.5">
@@ -67,7 +67,7 @@ export function AppMobileNav({ orgName }: AppMobileNavProps) {
                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
                         active
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "hover:bg-sidebar-accent/60"
+                          : "text-sidebar-foreground/90 hover:bg-sidebar-accent/60"
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -85,7 +85,7 @@ export function AppMobileNav({ orgName }: AppMobileNavProps) {
           ))}
         </nav>
         <Separator className="bg-sidebar-border" />
-        <p className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <p className="p-3 text-xs uppercase tracking-wider text-sidebar-foreground/80">
           MVP · mock data
         </p>
       </SheetContent>

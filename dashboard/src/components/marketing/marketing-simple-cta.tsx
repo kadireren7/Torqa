@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { docsUrl } from "@/lib/marketing-content";
 
 export function MarketingSimpleCta() {
   const reduce = useReducedMotion();
@@ -29,7 +30,12 @@ export function MarketingSimpleCta() {
           </Link>
         </Button>
         <Button asChild size="lg" variant="outline" className="border-border/70 bg-background/50 backdrop-blur">
-          <Link href="/integrations">Connect integrations</Link>
+          <Link href="/demo/report">View demo report</Link>
+        </Button>
+        <Button asChild size="lg" variant="ghost" className="text-muted-foreground">
+          <Link href={docsUrl} target="_blank" rel="noreferrer">
+            Read docs
+          </Link>
         </Button>
       </div>
     </motion.div>

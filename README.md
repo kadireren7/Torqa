@@ -30,7 +30,7 @@ Strongest path today: `n8n export -> scan -> risk/policy report -> share or sche
 
 **Product positioning:** Torqa is the **deterministic gate** for workflow specs (validate, score, policy-check) before anything runs in production. The **Next.js dashboard** (`dashboard/`) is the team surface: scan uploads (including n8n JSON), **workspace policies**, **schedules**, **alerts**, **insights**, **API keys**, and **shareable reports** — all optional until you wire **Supabase** (see [dashboard/README.md](dashboard/README.md)).
 
-**v0.1.5 focus:** growth readiness + release cleanup for **n8n / automation workflow governance**. This release tightens first-run clarity, examples, CI adoption guidance, API/report contracts, and dashboard onboarding copy (not broad platform expansion).
+**v0.1.6 focus:** dashboard automation (cron, onboarding, webhooks, alerts), operator packaging (Docker/Helm), and **PyPI-ready** CLI distribution (`pip install torqa`). See [CHANGELOG.md](CHANGELOG.md) and [docs/release-process.md](docs/release-process.md).
 
 - **Live demo (hosted):** this repository does not ship a fixed production URL. After you deploy, document your canonical URL (for example `https://your-torqa.example.com`) in your runbook and in `NEXT_PUBLIC_APP_URL`.
 - **Local demo:** `cd dashboard && npm install && npm run dev` → [http://localhost:3000](http://localhost:3000) (landing at `/`; app routes under `/overview`, `/scan`, etc.).
@@ -63,9 +63,23 @@ Torqa gives you a deterministic gate:
 
 ---
 
+## Install Torqa (Python CLI)
+
+| Goal | Command |
+|------|---------|
+| **Stable (PyPI)** — when `torqa` is published | `pip install torqa` or `pipx install torqa` |
+| **Dev / tests from PyPI** (ruff + pytest extras) | `pip install "torqa[dev]"` or `pip install "torqa[test]"` for tests only |
+| **Pre-release / dry run** | `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ torqa==<version>` (see [docs/release-process.md](docs/release-process.md)) |
+| **From this repo (editable)** | `pip install -e ".[dev]"` from repository root |
+| **From Git tag** (no PyPI) | `pip install "git+https://github.com/kadireren7/Torqa.git@v0.1.6"` |
+
+After any install, run `torqa version` (or `python -m torqa version`) to confirm the distribution.
+
+---
+
 ## 2-minute quickstart
 
-From repo root:
+From repo root (contributors / editable install):
 
 ```bash
 git clone https://github.com/kadireren7/Torqa.git
@@ -86,7 +100,7 @@ python -m torqa quickstart
 python -m torqa validate examples/integrations/minimal_n8n.json --source n8n
 ```
 
-`torqa quickstart` is the fastest adoption path in v0.1.5: it runs a bundled n8n sample, prints decision/risk summary, and can generate a shareable report artifact.
+`torqa quickstart` uses a **bundled** n8n sample when installed from PyPI (or your git checkout’s `examples/` when developing from the repo). It prints decision/risk summary and can generate a report artifact with `--report`.
 
 ---
 
@@ -228,6 +242,14 @@ Core package layout:
 
 Torqa **does not** orchestrate tasks, execute workflows, host jobs, or call LLM APIs by default.
 It validates and scores workflow specs so your runtime can execute with stronger guarantees.
+
+### Why trust Torqa?
+
+- **Deterministic analysis:** same input yields the same result.
+- **No workflow execution:** Torqa inspects definitions; it does not run your automations.
+- **No default LLM calls:** baseline scan path stays explicit and auditable.
+- **Explicit engine metadata:** reports include engine/mode metadata for every scan.
+- **Inspectable reasons:** risk and policy outcomes are tied to concrete findings.
 
 ---
 
