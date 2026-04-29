@@ -9,6 +9,7 @@ import {
   Download,
   Gauge,
   Loader2,
+  Mail,
   Printer,
   Shield,
   Sparkles,
@@ -175,8 +176,9 @@ export function InsightsPageClient() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-2">
-            <Label>Scope</Label>
+            <Label htmlFor="insights-scope">Scope</Label>
             <select
+              id="insights-scope"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={scope}
               onChange={(e) => setScope(e.target.value as InsightsScope)}
@@ -186,8 +188,9 @@ export function InsightsPageClient() {
             </select>
           </div>
           <div className="space-y-2">
-            <Label>Time range</Label>
+            <Label htmlFor="insights-days">Time range</Label>
             <select
+              id="insights-days"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={days}
               onChange={(e) => setDays(Number(e.target.value) as 7 | 30 | 90)}
@@ -198,8 +201,9 @@ export function InsightsPageClient() {
             </select>
           </div>
           <div className="space-y-2">
-            <Label>Engine status</Label>
+            <Label htmlFor="insights-engine-status">Engine status</Label>
             <select
+              id="insights-engine-status"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value as InsightsPayload["status"])}
@@ -211,8 +215,9 @@ export function InsightsPageClient() {
             </select>
           </div>
           <div className="space-y-2">
-            <Label>Policy gate</Label>
+            <Label htmlFor="insights-policy-gate">Policy gate</Label>
             <select
+              id="insights-policy-gate"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={policyGate}
               onChange={(e) => setPolicyGate(e.target.value as InsightsPayload["policyGate"])}
@@ -224,8 +229,9 @@ export function InsightsPageClient() {
             </select>
           </div>
           <div className="space-y-2">
-            <Label>Applied policy</Label>
+            <Label htmlFor="insights-policy-name">Applied policy</Label>
             <select
+              id="insights-policy-name"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={policyName}
               onChange={(e) => setPolicyName(e.target.value)}
@@ -267,6 +273,16 @@ export function InsightsPageClient() {
           >
             <Printer className="h-3.5 w-3.5" />
             Print / Save as PDF
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="gap-2" asChild>
+            <a
+              href={`mailto:?subject=${encodeURIComponent(`Torqa insights (${data.scope}, ${data.totals.totalScans} scans)`)}&body=${encodeURIComponent(
+                `Window: ${days}d · Status filter: ${status}\nPolicy gate: ${policyGate}\nTotal scans: ${data.totals.totalScans}\nOpen dashboard: ${typeof window !== "undefined" ? window.location.origin : ""}/insights`
+              )}`}
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Email snapshot
+            </a>
           </Button>
         </div>
       ) : null}

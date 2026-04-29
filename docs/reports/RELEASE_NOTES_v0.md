@@ -1,6 +1,22 @@
 # Torqa — early release notes (v0.x)
 
-**Package version:** 0.1.0 (see `pyproject.toml`)
+**Package version:** 0.1.6 (see `pyproject.toml` and [CHANGELOG.md](../../CHANGELOG.md)).
+
+## 0.1.6 launch-ready summary
+
+Torqa 0.1.6 focuses on first-user confidence: a clearer landing message, stronger onboarding language, demo-friendly report surfaces, and release docs that make `pip install torqa` and TestPyPI validation straightforward for maintainers.
+
+For users, this means faster time-to-value:
+
+- upload workflow
+- run scan
+- review risk/policy outcomes
+- save/share report
+- schedule recurring checks + team alerts
+
+### v0.1.6 (Python distribution)
+
+The **`torqa`** wheel on PyPI (when published) includes the CLI, `py.typed`, **`torqa/data/semantic_warning_policy_bundle.json`**, and a **bundled** n8n quickstart JSON under `torqa/bundled/examples/`. Full `spec/`, `examples/`, and `tests/` remain in the **source distribution** and git checkout—not every file is duplicated inside the importable package. Install: `pip install torqa`; contributors: `pip install -e ".[dev]"` from the repo. See [release-process.md](../release-process.md).
 
 ## What Torqa is
 

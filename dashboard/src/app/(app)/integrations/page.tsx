@@ -38,9 +38,9 @@ const providers = [
   {
     id: "github",
     title: "GitHub",
-    desc: "PR and workflow-level governance hooks.",
+    desc: "Push webhooks validate signatures; auto-scan + PR comments need a worker with repo tokens.",
     icon: GitBranch,
-    available: false,
+    available: true,
   },
   {
     id: "zapier",
@@ -67,6 +67,8 @@ export default function IntegrationsPage() {
   const [name, setName] = useState("n8n workspace");
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [n8nPreview, setN8nPreview] = useState<string | null>(null);
+  const [n8nPreviewErr, setN8nPreviewErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!useCloud) {
@@ -97,6 +99,22 @@ export default function IntegrationsPage() {
   }, [load]);
 
   const n8nRows = useMemo(() => items.filter((i) => i.provider === "n8n"), [items]);
+
+  const loadN8nWorkflowsPreview = async () => {
+    setN8nPreview(null);
+    setN8nPreviewErr(null);
+    try {
+      const res = await fetch("/api/integrations/n8n/workflows", { credentials: "include" });
+      const j = (await res.json()) as { workflows?: unknown; error?: string };
+      if (!res.ok) {
+        setN8nPreviewErr(j.error ?? "Request failed");
+        return;
+      }
+      setN8nPreview(JSON.stringify(j.workflows, null, 2).slice(0, 8000));
+    } catch {
+      setN8nPreviewErr("Network error");
+    }
+  };
 
   const createN8n = async () => {
     setSaving(true);
@@ -212,6 +230,27 @@ export default function IntegrationsPage() {
           </p>
         </div>
         <GovernanceJourneyStrip />
+        <Card className="border-border/80 bg-muted/15 shadow-sm">
+          <CardContent className="grid gap-3 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">What this does</p>
+              <p className="mt-1">Registers n8n/GitHub sources so scans can run in a repeatable team workflow.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Works now</p>
+              <p className="mt-1">n8n config save + preview endpoint, GitHub webhook signature checks.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Next up</p>
+              <p className="mt-1">Deeper sync and background workers for auto-scan + PR automation.</p>
+            </div>
+            <div className="flex items-end">
+              <Button asChild>
+                <Link href="#create-n8n">Add n8n integration</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="border-border/80 bg-muted/10 shadow-sm">
@@ -225,13 +264,20 @@ export default function IntegrationsPage() {
         <CardContent>
           <ul className="list-disc space-y-2 pl-4 text-sm text-muted-foreground">
             <li>
-              <strong className="text-foreground">GitHub:</strong> on workflow JSON changes, run Torqa in CI and post a
-              concise summary + link to the saved dashboard report on the pull request (planned; mirrors the CLI gate).
+              <strong className="text-foreground">GitHub:</strong> <code className="rounded bg-muted px-1 font-mono text-[11px]">POST /api/webhooks/github</code>{" "}
+              verifies <code className="rounded bg-muted px-1 font-mono text-[11px]">X-Hub-Signature-256</code> with{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[11px]">GITHUB_WEBHOOK_SECRET</code>.{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[11px]">pull_request</code> (opened / synchronize / reopened) lists changed{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[11px]">.tq</code> / <code className="rounded bg-muted px-1 font-mono text-[11px]">.json</code>, runs the
+              dashboard preview scan, and upserts a PR comment when <code className="rounded bg-muted px-1 font-mono text-[11px]">GITHUB_BOT_TOKEN</code> or a GitHub App is
+              configured (<span className="font-mono text-xs">docs/github-pr-automation.md</span>). Push events still return lightweight{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[11px]">workflowRelatedPaths</code> metadata.
             </li>
             <li>
-              <strong className="text-foreground">n8n pull:</strong> periodically fetch active workflows from your
-              registered instance, scan in batch, and surface high-risk items back into Torqa notifications (requires safe
-              read-only API patterns — in design).
+              <strong className="text-foreground">n8n pull:</strong> authenticated{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[11px]">GET /api/integrations/n8n/workflows</code> lists
+              workflows when <code className="rounded bg-muted px-1 font-mono text-[11px]">N8N_BASE_URL</code> +{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[11px]">N8N_API_KEY</code> are set on the server.
             </li>
             <li>
               <strong className="text-foreground">Slack / Discord / email:</strong> only high-risk or FAIL outcomes,
@@ -266,6 +312,43 @@ export default function IntegrationsPage() {
           );
         })}
       </section>
+
+      <Card className="border-border/80 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">Server-driven hooks</CardTitle>
+          <CardDescription>
+            Configure secrets on the host, then call these routes from GitHub or your automation platform.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            <strong className="text-foreground">GitHub webhook:</strong>{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">POST /api/webhooks/github</code> with JSON body
+            and header <code className="rounded bg-muted px-1 font-mono text-[11px]">X-Hub-Signature-256</code>.
+          </p>
+          <p>
+            <strong className="text-foreground">n8n workflow JSON:</strong>{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">GET /api/integrations/n8n/workflows</code>{" "}
+            (session required).
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => void loadN8nWorkflowsPreview()}>
+              Preview n8n workflows JSON
+            </Button>
+          </div>
+          {n8nPreviewErr ? (
+            <p className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs text-destructive">
+              {n8nPreviewErr}
+            </p>
+          ) : null}
+          {n8nPreview ? (
+            <pre className="max-h-64 overflow-auto rounded-md border border-border/60 bg-muted/30 p-3 text-xs text-foreground">
+              {n8nPreview}
+              {n8nPreview.length >= 8000 ? "\n…(truncated)" : ""}
+            </pre>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <Card id="create-n8n" className="border-border/80 shadow-sm scroll-mt-24">
         <CardHeader>

@@ -61,6 +61,8 @@ export default async function ScanDetailPage({ params }: PageProps) {
         result={result}
         showPoweredBanner
         share={{ scanId, configured: isSupabaseConfigured() }}
+        pdfExportUrl={`/api/scans/${encodeURIComponent(scanId)}/pdf`}
+        pdfFilename={`torqa-scan-report-${scanId}.pdf`}
       />
     </div>
   );

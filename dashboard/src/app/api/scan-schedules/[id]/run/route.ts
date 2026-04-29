@@ -26,7 +26,9 @@ export async function POST(_request: Request, context: Ctx) {
 
   const { data: row, error } = await supabase
     .from("scan_schedules")
-    .select("id,name,user_id,organization_id,scope_type,scope_id,frequency,enabled,workspace_policy_id")
+    .select(
+      "id,name,user_id,organization_id,scope_type,scope_id,frequency,enabled,workspace_policy_id,cron_expression,cron_timezone"
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -56,6 +58,8 @@ export async function POST(_request: Request, context: Ctx) {
     frequency: r.frequency as ScanScheduleFrequency,
     enabled: r.enabled,
     workspace_policy_id: typeof r.workspace_policy_id === "string" ? r.workspace_policy_id : null,
+    cron_expression: typeof r.cron_expression === "string" ? r.cron_expression : null,
+    cron_timezone: typeof r.cron_timezone === "string" ? r.cron_timezone : null,
   };
   if (!schedule.enabled) {
     return NextResponse.json(

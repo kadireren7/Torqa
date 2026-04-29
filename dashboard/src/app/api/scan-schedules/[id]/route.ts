@@ -7,6 +7,7 @@ import {
   toScheduleApi,
   type ScanScheduleFrequency,
 } from "@/lib/scan-schedules";
+import { validateCronExpression } from "@/lib/cron-schedule";
 
 export const runtime = "nodejs";
 
@@ -42,7 +43,7 @@ export async function PATCH(request: Request, context: Ctx) {
   const { data: existing, error: selErr } = await supabase
     .from("scan_schedules")
     .select(
-      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,last_run_at,next_run_at,created_at,updated_at"
+      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,cron_expression,cron_timezone,last_run_at,next_run_at,created_at,updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -65,10 +66,45 @@ export async function PATCH(request: Request, context: Ctx) {
 
   const enabled = typeof body.enabled === "boolean" ? body.enabled : (row.enabled as boolean);
 
+  let cronExpression =
+    typeof row.cron_expression === "string" && row.cron_expression.trim() ? row.cron_expression.trim() : null;
+  let cronTimezone =
+    typeof row.cron_timezone === "string" && row.cron_timezone.trim() ? row.cron_timezone.trim() : "UTC";
+
+  if (body.cronExpression !== undefined || body.cron_expression !== undefined) {
+    const raw = body.cronExpression ?? body.cron_expression;
+    cronExpression = typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }
+  if (body.cronTimezone !== undefined || body.cron_timezone !== undefined) {
+    const rawT = body.cronTimezone ?? body.cron_timezone;
+    cronTimezone = typeof rawT === "string" && rawT.trim() ? rawT.trim() : "UTC";
+  }
+
+  if (frequency === "custom") {
+    if (!cronExpression?.trim()) {
+      return NextResponse.json({ error: "cronExpression is required for custom frequency" }, { status: 400 });
+    }
+    const v = validateCronExpression(cronExpression, cronTimezone);
+    if (!v.ok) {
+      return NextResponse.json({ error: v.error }, { status: 400 });
+    }
+  }
+
   const freqChanged = body.frequency !== undefined && frequency !== row.frequency;
   const enabledChanged = body.enabled !== undefined && enabled !== row.enabled;
+  const cronChanged =
+    body.cronExpression !== undefined ||
+    body.cron_expression !== undefined ||
+    body.cronTimezone !== undefined ||
+    body.cron_timezone !== undefined;
+
   const nextRunAt =
-    freqChanged || enabledChanged ? initialNextRunAt(enabled, frequency) : (row.next_run_at as string | null);
+    freqChanged || enabledChanged || cronChanged
+      ? initialNextRunAt(enabled, frequency, {
+          cronExpression: frequency === "custom" ? cronExpression : null,
+          cronTimezone,
+        })
+      : (row.next_run_at as string | null);
 
   const orgIdForPolicy = typeof row.organization_id === "string" ? row.organization_id : null;
 
@@ -108,6 +144,8 @@ export async function PATCH(request: Request, context: Ctx) {
     frequency,
     enabled,
     next_run_at: nextRunAt ?? null,
+    cron_expression: frequency === "custom" ? cronExpression : null,
+    cron_timezone: frequency === "custom" ? cronTimezone : "UTC",
   };
   if (workspacePolicyIdUpdate !== undefined) {
     updateRow.workspace_policy_id = workspacePolicyIdUpdate;
@@ -118,7 +156,7 @@ export async function PATCH(request: Request, context: Ctx) {
     .update(updateRow)
     .eq("id", id)
     .select(
-      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,last_run_at,next_run_at,created_at,updated_at"
+      "id,user_id,organization_id,name,scope_type,scope_id,frequency,enabled,workspace_policy_id,cron_expression,cron_timezone,last_run_at,next_run_at,created_at,updated_at"
     )
     .single();
 

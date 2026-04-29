@@ -12,9 +12,9 @@ export default async function ProjectsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Projects</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Each project maps to a Torqa scope (directory, repo path, or bundle set). Wire{" "}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">GET /projects</code>{" "}
-          later.
+          Projects group workflows and recent scan outcomes. Open a project for validation links and scoped scans.
+          Workspace roles and soft limits: see{" "}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">docs/workspace-limits.md</code> in the repo.
         </p>
       </div>
 

@@ -31,7 +31,9 @@ export async function POST(request: Request) {
   const nowIso = new Date().toISOString();
   const { data, error } = await admin
     .from("scan_schedules")
-    .select("id,name,user_id,organization_id,scope_type,scope_id,frequency,enabled,workspace_policy_id,next_run_at")
+    .select(
+      "id,name,user_id,organization_id,scope_type,scope_id,frequency,enabled,workspace_policy_id,cron_expression,cron_timezone,next_run_at"
+    )
     .eq("enabled", true)
     .neq("frequency", "manual")
     .lte("next_run_at", nowIso)
@@ -81,6 +83,8 @@ export async function POST(request: Request) {
       frequency: r.frequency as ScanScheduleFrequency,
       enabled: r.enabled,
       workspace_policy_id: typeof r.workspace_policy_id === "string" ? r.workspace_policy_id : null,
+      cron_expression: typeof r.cron_expression === "string" ? r.cron_expression : null,
+      cron_timezone: typeof r.cron_timezone === "string" ? r.cron_timezone : null,
     };
     schedulesRun += 1;
     const outcome = await executeManualScheduleRun(admin, schedule.user_id, schedule);

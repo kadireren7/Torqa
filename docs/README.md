@@ -32,6 +32,7 @@ Use this page as the central map for repository documentation.
 - [Project config](project-config.md)
 - [Security](security.md)
 - [Launch checklist](launch-checklist.md)
+- [Analytics events](analytics-events.md)
 - [Operations and debugging](operations-and-debugging.md)
 
 ## Product and launch context
@@ -39,5 +40,8 @@ Use this page as the central map for repository documentation.
 - [Why now](why-now.md)
 - [Use cases](use-cases.md)
 - [Public launch](public-launch.md)
+- [Launch plan](launch-plan.md)
+- [Demo script](demo-script.md)
+- [Pricing hypothesis](pricing-hypothesis.md)
 - [Flagship demo](flagship-demo.md)
 - [Guardrail demo](guardrail-demo.md)

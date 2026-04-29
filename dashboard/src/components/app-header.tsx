@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { NotificationBell } from "@/components/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { hasPublicSupabaseUrl } from "@/lib/env";
 
 export type AppHeaderUser = {
@@ -137,6 +138,7 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
         </h1>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         <NotificationBell enabled={notificationsEnabled} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

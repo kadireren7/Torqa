@@ -15,6 +15,7 @@ import {
   Sparkles,
   XCircle,
 } from "lucide-react";
+import { ExportPdfButton } from "@/components/export-pdf-button";
 import { ShareScanButton } from "@/components/share-scan-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import type { ScanApiSuccess, ScanDecision, ScanFinding } from "@/lib/scan-engine";
 import type { PolicyEvaluationResult, PolicyGateStatus } from "@/lib/policy-types";
+import { buildScanRecommendations } from "@/lib/scan-report-recommendations";
 import { cn } from "@/lib/utils";
 
 /* ——— Visual tokens (dark-first SaaS security) ——— */
@@ -191,9 +193,14 @@ function buildPrTemplateMarkdown(result: ScanApiSuccess): string {
 function ExportToolbar({
   result,
   share,
+  pdfExportUrl,
+  pdfFilename,
 }: {
   result: ScanApiSuccess;
   share?: ShareToolbarProps | null;
+  /** When set, enables server-side PDF download (same-origin; sends session cookies). */
+  pdfExportUrl?: string | null;
+  pdfFilename?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [copiedPr, setCopiedPr] = useState(false);
@@ -220,6 +227,7 @@ function ExportToolbar({
 
   const showShare = Boolean(share?.scanId);
   const shareReady = Boolean(share?.configured);
+  const pdfReady = Boolean(pdfExportUrl);
 
   return (
     <div className="flex w-full max-w-xl flex-col gap-3 sm:max-w-none">
@@ -239,18 +247,24 @@ function ExportToolbar({
           <FileCode2 className="h-3.5 w-3.5" aria-hidden />
           {copiedPr ? "Copied PR template" : "Copy PR template"}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 gap-2 border-border/80 bg-muted/30 text-muted-foreground shadow-sm"
-          disabled
-          title="Server-side PDF export is planned; use Copy PR template or browser print."
-        >
-          <Download className="h-3.5 w-3.5 opacity-70" aria-hidden />
-          PDF export
-        </Button>
-        <span className="hidden text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:inline">Soon</span>
+        {pdfReady && pdfExportUrl ? (
+          <ExportPdfButton url={pdfExportUrl} filename={pdfFilename ?? "torqa-scan-report.pdf"} />
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 border-border/80 bg-muted/30 text-muted-foreground shadow-sm"
+              disabled
+              title="PDF export requires a saved scan context (Supabase)."
+            >
+              <Download className="h-3.5 w-3.5 opacity-70" aria-hidden />
+              Export PDF
+            </Button>
+            <span className="hidden text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:inline">—</span>
+          </>
+        )}
       </div>
 
       {showShare && (
@@ -275,32 +289,8 @@ function ExportToolbar({
   );
 }
 
-function buildRecommendations(result: ScanApiSuccess): string[] {
-  const lines: string[] = [];
-  if (result.status === "FAIL") {
-    lines.push("Resolve all critical findings before production handoff.");
-  } else if (result.status === "NEEDS REVIEW") {
-    lines.push("Schedule a security review for flagged workflow nodes.");
-  } else {
-    lines.push("No blocking issues under current preview rules — keep running CLI validation for full coverage.");
-  }
-  const fixes = result.findings.map((f) => f.suggested_fix.trim()).filter(Boolean);
-  const seen = new Set<string>();
-  for (const f of fixes) {
-    if (seen.has(f) || lines.length >= 8) break;
-    seen.add(f);
-    lines.push(f);
-  }
-  if (result.source === "n8n") {
-    lines.push("Prefer least-privilege credentials and explicit HTTP error paths for n8n exports.");
-  } else {
-    lines.push("For richer checks on workflow exports, re-run with source set to n8n when applicable.");
-  }
-  return lines.slice(0, 8);
-}
-
 function RecommendationsPanel({ result }: { result: ScanApiSuccess }) {
-  const items = useMemo(() => buildRecommendations(result), [result]);
+  const items = useMemo(() => buildScanRecommendations(result), [result]);
 
   return (
     <Card className="border-border/60 bg-gradient-to-b from-card to-muted/20 shadow-lg ring-1 ring-white/[0.04]">
@@ -448,6 +438,10 @@ export type ScanReportViewProps = {
   variant?: "default" | "shared";
   /** When set with a saved scan id, shows share link controls (Supabase-backed). */
   share?: ShareToolbarProps | null;
+  /** Same-origin PDF export API path (authenticated or share PDF route). */
+  pdfExportUrl?: string | null;
+  /** Suggested download filename (e.g. torqa-scan-report-{uuid}.pdf). */
+  pdfFilename?: string;
 };
 
 export function ScanReportView({
@@ -456,6 +450,8 @@ export function ScanReportView({
   notice,
   variant = "default",
   share,
+  pdfExportUrl,
+  pdfFilename,
 }: ScanReportViewProps) {
   const isShared = variant === "shared";
   const fallbackMeta = result.fallback ?? {
@@ -499,7 +495,12 @@ export function ScanReportView({
               : "Deterministic security posture for this workflow snapshot. Expand each finding for remediation detail."}
           </p>
         </div>
-        <ExportToolbar result={result} share={isShared ? undefined : share} />
+        <ExportToolbar
+          result={result}
+          share={isShared ? undefined : share}
+          pdfExportUrl={pdfExportUrl ?? null}
+          pdfFilename={pdfFilename}
+        />
       </div>
 
       {showPoweredBanner && (

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyRound, Loader2, ShieldAlert, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,12 @@ export default function ApiSettingsPage() {
           Connect Supabase and set <code className="rounded bg-muted px-1 font-mono text-xs">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
           to enable API key auth for <code className="rounded bg-muted px-1 font-mono text-xs">POST /api/public/scan</code>.
         </p>
+        <p className="text-sm text-muted-foreground">
+          OpenAPI 3 spec (same host):{" "}
+          <Link href="/openapi.yaml" className="font-medium text-primary underline-offset-4 hover:underline">
+            /openapi.yaml
+          </Link>
+        </p>
       </div>
     );
   }
@@ -143,9 +150,34 @@ export default function ApiSettingsPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Settings</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">User API</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Generate and revoke keys for server-to-server scans. Raw secrets are shown once and only stored as hashes.
+          Generate and revoke keys for server-to-server scans. Raw secrets are shown once and only stored as hashes. OpenAPI:{" "}
+          <Link href="/openapi.yaml" className="font-medium text-primary underline-offset-4 hover:underline">
+            /openapi.yaml
+          </Link>
         </p>
       </div>
+
+      <Card className="border-border/80 bg-muted/15 shadow-sm">
+        <CardContent className="grid gap-3 p-4 text-sm sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">What this does</p>
+            <p className="mt-1">Creates scoped API keys for server-to-server scans through Torqa public endpoints.</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Works now</p>
+            <p className="mt-1">One-time key reveal, revoke flow, and usage log trail for key activity.</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Next up</p>
+            <p className="mt-1">Per-key scopes, stricter rate limiting tiers, and org-level audit overlays.</p>
+          </div>
+          <div className="flex items-end">
+            <Button type="button" onClick={() => void createKey()} disabled={saving || loading}>
+              Generate your first API key
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {message && (
         <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-sm text-foreground">{message}</p>

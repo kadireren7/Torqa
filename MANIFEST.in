@@ -1,5 +1,5 @@
 # Ensures sdist contains files outside discovered Python packages (docs, tests, schema).
-include LICENSE README.md CHANGELOG.md
+include LICENSE README.md CHANGELOG.md semantic_warning_policy_bundle.json
 graft spec
 graft tests
 graft docs

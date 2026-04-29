@@ -8,6 +8,47 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 _No user-facing changes yet._
 
+## [0.1.6] — 2026-04-29
+
+Release track: **dashboard automation, onboarding, integrations, operator packaging, and PyPI-ready CLI** (incremental; self-host friendly). See [docs/launch-checklist.md](docs/launch-checklist.md) § “0.1.6 release verification” before tagging.
+
+### What this means for users
+
+- You can move from first scan to recurring governance faster: upload, scan, review, share, schedule, alert.
+- Public/demo-facing report UX is clearer for non-authors (risk, policy, findings, recommendations, PDF export).
+- Launch docs now include TestPyPI and release process steps so teams can install and evaluate with less friction.
+
+### Added
+
+- **PyPI packaging prep:** `torqa` wheel ships `semantic_warning_policy_bundle.json` under `torqa/data/`, bundled n8n quickstart sample under `torqa/bundled/`, `[tool.setuptools.package-data]` for JSON assets, `docs/release-process.md`, README install matrix (stable / TestPyPI / editable / Git), and release workflow **artifact upload** for `dist/`.
+- **Custom cron schedules** on `scan_schedules` (`frequency=custom`, `cron_expression`, `cron_timezone`) with UI presets, validated via `cron-parser`, and honored in `POST /api/scan-schedules/cron/tick` + schedule bump logic.
+- **Onboarding wizard** (first-run dialog) with `user_onboarding_progress` table and `GET/PATCH /api/onboarding/progress`.
+- **GitHub webhook** receiver: `POST /api/webhooks/github` with `X-Hub-Signature-256` verification (`GITHUB_WEBHOOK_SECRET`).
+- **n8n workflow list proxy**: `GET /api/integrations/n8n/workflows` (session auth; `N8N_BASE_URL` + `N8N_API_KEY` on server).
+- **Alert delivery**: Slack/Discord test paths verify HTTP status; **Resend** email when `RESEND_API_KEY` (+ optional `TORQA_ALERT_FROM_EMAIL`) is set.
+- **Docker** `dashboard/Dockerfile` + root `docker-compose.yml`; **Helm** baseline chart under `charts/torqa/`; **cron helper** `scripts/torqa-cron-tick.sh`.
+- **Docs**: `docs/workspace-limits.md` (roles and soft limits); expanded `dashboard/public/openapi.yaml` (version **0.1.6**); Vitest coverage for cron parsing; `docs/backlog-0.1.7.md` for follow-ups.
+
+### Changed
+
+- **Integrations** page documents server hooks and offers n8n JSON preview; GitHub provider marked available for webhook-led flows.
+- **Schedules** UI explains UTC/custom cron and fixes last-run status labels (`completed` vs legacy “succeeded”).
+- **Insights** adds “Email snapshot” (`mailto:`) beside CSV / print.
+- **Login** landmark: `role="main"` on the sign-in surface for accessibility tooling.
+- **`.env.example`**: grouped and documented variables for cron, Resend, GitHub webhook, and n8n preview.
+
+### Fixed
+
+- **Migration `20260430180000_v016_cron_onboarding.sql`**: idempotent RLS policies and trigger (`DROP … IF EXISTS` before `CREATE`) so `supabase db push` retries do not fail on duplicate policy/trigger errors.
+
+### Known limitations
+
+- **GitHub:** webhook validates and returns metadata only; auto-scan and PR comments require a separate worker with repo credentials (see backlog).
+- **Email:** live alert fan-out uses Resend when configured; otherwise email destinations are skipped without failing scans.
+- **n8n preview:** lists workflows via server env; does not sync labels/tags into n8n or auto-queue scans.
+- **WCAG:** no bundled `@axe-core/playwright` gate in CI yet (see [docs/backlog-0.1.7.md](docs/backlog-0.1.7.md)).
+- **Helm chart:** minimal Deployment/Service only — ingress, secrets, and HPA are operator-defined.
+
 ## [0.1.5] — 2026-04-28
 
 v0.1.5 continues the adoption and release-quality work started in the prior rapid iteration.
@@ -106,7 +147,8 @@ First early public release of the Torqa core: canonical IR, validation, referenc
 
 Earlier development history is folded into **0.1.0** for clarity; subsequent versions list incremental changes here.
 
-[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/kadireren7/Torqa/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/kadireren7/Torqa/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/kadireren7/Torqa/compare/v0.1.1...v0.1.4
 [0.1.1]: https://github.com/kadireren7/Torqa/releases/tag/v0.1.1

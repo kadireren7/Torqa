@@ -27,6 +27,8 @@ type ScheduleRow = {
   frequency: ScanScheduleFrequency;
   enabled: boolean;
   workspacePolicyId: string | null;
+  cronExpression: string | null;
+  cronTimezone: string;
   lastRunAt: string | null;
   nextRunAt: string | null;
   createdAt: string;
@@ -69,6 +71,8 @@ function SchedulesContent() {
   const [templateId, setTemplateId] = useState("");
   const [integrationId, setIntegrationId] = useState("");
   const [frequency, setFrequency] = useState<ScanScheduleFrequency>("daily");
+  const [cronExpression, setCronExpression] = useState("0 9 * * 1");
+  const [cronTimezone, setCronTimezone] = useState("UTC");
   const [createEnabled, setCreateEnabled] = useState(true);
   const [createPolicyId, setCreatePolicyId] = useState("");
 
@@ -168,6 +172,9 @@ function SchedulesContent() {
           scopeId,
           frequency,
           enabled: createEnabled,
+          ...(frequency === "custom"
+            ? { cronExpression: cronExpression.trim(), cronTimezone: cronTimezone.trim() || "UTC" }
+            : {}),
           ...(createPolicyId ? { workspacePolicyId: createPolicyId } : {}),
         }),
       });
@@ -291,6 +298,27 @@ function SchedulesContent() {
           </p>
         </div>
         <GovernanceJourneyStrip />
+        <Card className="border-border/80 bg-muted/15 shadow-sm">
+          <CardContent className="grid gap-3 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">What this does</p>
+              <p className="mt-1">Runs recurring governance scans on saved workflows and keeps history fresh.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Works now</p>
+              <p className="mt-1">Daily/weekly/custom cron setup, Run now execution, policy binding.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Next up</p>
+              <p className="mt-1">Expanded integration-backed execution and deeper schedule insights.</p>
+            </div>
+            <div className="flex items-end">
+              <Button asChild>
+                <Link href="#new-schedule">Schedule a recurring scan</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {error ? (
@@ -306,13 +334,13 @@ function SchedulesContent() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Timezone &amp; cadence</CardTitle>
           <CardDescription>
-            Today, <strong className="text-foreground">daily / weekly</strong> windows follow the server clock (UTC on
-            typical hosts). Per-user timezone and “first run at 09:00 Monday” style anchors are planned — track{" "}
-            <code className="rounded bg-muted px-1 font-mono text-[11px]">next_run_at</code> in the DB for upcoming
-            work. Background execution uses{" "}
+            <strong className="text-foreground">Daily / weekly</strong> use simple UTC offsets.{" "}
+            <strong className="text-foreground">Custom</strong> uses a 5-field cron plus an IANA timezone (e.g.{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">Europe/Istanbul</code>) interpreted by the
+            server scheduler. Wire{" "}
             <code className="rounded bg-muted px-1 font-mono text-[11px]">POST /api/scan-schedules/cron/tick</code> with{" "}
-            <code className="rounded bg-muted px-1 font-mono text-[11px]">TORQA_CRON_SECRET</code> or your platform
-            scheduler; there is no hidden in-app cron yet.
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">TORQA_CRON_SECRET</code> (see{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px]">scripts/torqa-cron-tick.sh</code>).
           </CardDescription>
         </CardHeader>
       </Card>
@@ -351,8 +379,70 @@ function SchedulesContent() {
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="manual">Manual only</option>
+              <option value="custom">Custom (cron + timezone)</option>
             </select>
           </div>
+          {frequency === "custom" ? (
+            <div className="space-y-3 sm:col-span-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setCronExpression("0 9 * * 1");
+                    setCronTimezone("UTC");
+                  }}
+                >
+                  Mon 09:00 UTC
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setCronExpression("0 9 * * *");
+                    setCronTimezone("UTC");
+                  }}
+                >
+                  Daily 09:00 UTC
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setCronExpression("*/30 * * * *");
+                    setCronTimezone("UTC");
+                  }}
+                >
+                  Every 30 min UTC
+                </Button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="sch-cron">Cron (minute hour day month weekday)</Label>
+                  <Input
+                    id="sch-cron"
+                    value={cronExpression}
+                    onChange={(e) => setCronExpression(e.target.value)}
+                    placeholder="0 9 * * 1"
+                    className="font-mono text-xs"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sch-tz">IANA timezone</Label>
+                  <Input
+                    id="sch-tz"
+                    value={cronTimezone}
+                    onChange={(e) => setCronTimezone(e.target.value)}
+                    placeholder="UTC"
+                    className="font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
           {scopeType === "workflow_template" ? (
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="sch-template">Workflow template</Label>
@@ -440,9 +530,9 @@ function SchedulesContent() {
           ) : sortedSchedules.length === 0 ? (
             <EmptyStateCta
               icon={CalendarClock}
-              title="No schedules yet"
+              title="Schedules are empty"
               description="Pick a saved workflow and cadence, then use Run now to confirm report output."
-              primary={{ href: "#new-schedule", label: "Create schedule" }}
+              primary={{ href: "#new-schedule", label: "Schedule a recurring scan" }}
               secondary={{ href: "/workflow-library", label: "Library" }}
               compact
               className="border-none bg-transparent py-4"
@@ -457,6 +547,15 @@ function SchedulesContent() {
                       <p className="text-sm font-medium">{s.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {s.scopeType === "workflow_template" ? "Workflow template" : "Integration"} · {s.frequency}
+                        {s.frequency === "custom" && s.cronExpression ? (
+                          <>
+                            {" "}
+                            ·{" "}
+                            <code className="rounded bg-muted px-1 font-mono text-[10px]">
+                              {s.cronExpression} ({s.cronTimezone})
+                            </code>
+                          </>
+                        ) : null}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -475,7 +574,7 @@ function SchedulesContent() {
                       Last run:{" "}
                       <span className="font-medium text-foreground">
                         {last
-                          ? `${last.status === "succeeded" ? "Succeeded" : last.status === "failed" ? "Failed" : last.status}${last.error ? ` — ${last.error.slice(0, 80)}` : ""}`
+                          ? `${last.status === "completed" ? "Completed" : last.status === "failed" ? "Failed" : last.status}${last.error ? ` — ${last.error.slice(0, 80)}` : ""}`
                           : "—"}
                       </span>
                     </span>

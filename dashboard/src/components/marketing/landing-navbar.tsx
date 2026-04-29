@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { docsUrl, githubUrl } from "@/lib/marketing-content";
 import { cn } from "@/lib/utils";
 
@@ -92,6 +93,7 @@ export function LandingNavbar() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <ThemeToggle />
           <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             <Link href="/login">Sign in</Link>
           </Button>
@@ -101,6 +103,7 @@ export function LandingNavbar() {
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle />
           <Button asChild size="sm" variant="ghost" className="px-2 text-muted-foreground">
             <Link href="/login">Sign in</Link>
           </Button>

@@ -121,7 +121,8 @@ function unwrapN8nDoc(data: Record<string, unknown>): Record<string, unknown> {
   return data;
 }
 
-function isLikelyN8nExport(data: unknown): boolean {
+/** Exported for PR automation / callers that need the same n8n heuristics as the scan engine. */
+export function isLikelyN8nExport(data: unknown): boolean {
   if (!isRecord(data)) return false;
   const doc = unwrapN8nDoc(data);
   const nodes = doc.nodes;

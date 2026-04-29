@@ -459,9 +459,9 @@ export default function WorkflowLibraryPage() {
                         {items.length === 0 ? (
                           <EmptyStateCta
                             icon={Library}
-                            title="Library is empty"
+                            title="Workflow library is empty"
                             description="Upload a workflow JSON to build your first template."
-                            primary={{ href: "#wf-upload", label: "Upload JSON" }}
+                            primary={{ href: "#wf-upload", label: "Save your first template" }}
                             secondary={{ href: "/integrations", label: "Integrations" }}
                             compact
                             className="border-none bg-transparent py-4"
