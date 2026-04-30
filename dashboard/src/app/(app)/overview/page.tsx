@@ -33,8 +33,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Overview",
-  description: "Automation governance overview — n8n scans, risk trends, and quick actions.",
+  title: "Home",
+  description: "Connect sources, monitor workflows, enforce policies continuously.",
 };
 
 function formatRatio(pass: number, fail: number): string {
@@ -86,40 +86,44 @@ export default async function DashboardOverviewPage() {
                   : "Connect Supabase to replace with your workspace."}
               </span>
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Automation governance command center</h1>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Workflow governance, automated.</h1>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Upload n8n workflows, run deterministic scans, review reports, and schedule recurring checks.
+              Connect your automation sources, select workflows, enforce policies, and get notified on every change — continuously.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm" className="gap-2 shadow-md">
-                <Link href="/scan">
-                  Run a scan
+                <Link href="/sources">
+                  Connect a source
                   <ArrowUpRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button variant="secondary" asChild size="sm">
-                <Link href="/workflow-library">Upload workflow</Link>
+                <Link href="/runs">View runs</Link>
               </Button>
               <Button variant="outline" asChild size="sm" className="border-border/80 bg-background/50">
-                <Link href="/scan/history">View reports</Link>
+                <Link href="/reports">Reports</Link>
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Prefer manual?{" "}
+              <Link href="/advanced/manual-scan" className="text-primary hover:underline">Advanced: manual scan</Link>
+            </p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col lg:items-end">
             <Button asChild className="gap-2 shadow-md">
-              <Link href="/scan">
-                Upload and scan
+              <Link href="/sources">
+                Connect a source
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button variant="outline" asChild className="border-border/80 bg-background/50 backdrop-blur">
-              <Link href="/workspace">Workspace</Link>
+              <Link href="/automations">Automations</Link>
             </Button>
             <Button variant="outline" asChild className="border-border/80 bg-background/50 backdrop-blur">
-              <Link href="/workflow-library">Upload workflow</Link>
+              <Link href="/policies">Policies</Link>
             </Button>
             <Button variant="outline" asChild className="border-border/80 bg-background/50 backdrop-blur">
-              <Link href="/scan/history">Scan history</Link>
+              <Link href="/runs">Runs</Link>
             </Button>
           </div>
         </div>
