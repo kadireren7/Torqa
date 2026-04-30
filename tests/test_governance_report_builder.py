@@ -5,14 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from torqa.report.builder import (
     governance_report_blocked,
     governance_report_from_policy,
     governance_report_to_dict,
 )
-from torqa.report.contract import GovernanceReport, Finding
+from torqa.report.contract import GovernanceReport
 
 REPO = Path(__file__).resolve().parents[1]
 FIX = REPO / "tests" / "fixtures" / "n8n"

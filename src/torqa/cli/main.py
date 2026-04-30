@@ -1,6 +1,7 @@
 """
 ``torqa`` CLI — load .tq or bundle JSON, validate IR, print diagnostics. No execution engine.
 """
+# ruff: noqa: E402  — _PACK_CHOICES must be computed from POLICY_PACK_REGISTRY before remaining imports
 
 from __future__ import annotations
 
