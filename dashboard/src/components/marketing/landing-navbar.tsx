@@ -61,16 +61,16 @@ export function LandingNavbar() {
 
       <div className="flex items-center gap-2.5">
         <Link
-          href="/auth/sign-in"
+          href="/login"
           className="rounded-md px-3.5 py-2 text-[13px] text-[#a8b1bd] transition-colors hover:text-[#f0f3f7]"
         >
           Sign in
         </Link>
         <Link
-          href="/auth/sign-up"
+          href="/login"
           className="rounded-md bg-[#22d3ee] px-3.5 py-2 text-[13px] font-semibold text-[#06080b] transition-[box-shadow,transform] hover:-translate-y-px hover:shadow-[0_0_24px_rgba(34,211,238,0.4)]"
         >
-          Request access
+          Get started
         </Link>
       </div>
     </nav>
