@@ -122,55 +122,82 @@ export default async function RunsPage() {
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="pl-6">When</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Trigger</TableHead>
-                    <TableHead>Workflow</TableHead>
-                    <TableHead>Risk</TableHead>
-                    <TableHead>Outcome</TableHead>
-                    <TableHead className="pr-6 text-right">Report</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {list.map((row) => {
-                    const r = row.result as { status?: string; riskScore?: number } | null;
-                    return (
-                      <TableRow key={row.id} className="border-border/60">
-                        <TableCell className="pl-6 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(row.created_at).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-normal capitalize">
-                            {row.source}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {triggerType(row.source)}
-                        </TableCell>
-                        <TableCell className="max-w-[180px] truncate text-sm">
-                          {row.workflow_name ?? "—"}
-                        </TableCell>
-                        <TableCell className="tabular-nums text-sm text-muted-foreground">
-                          {r?.riskScore ?? "—"}
-                        </TableCell>
-                        <TableCell>
-                          <ScanOutcomeBadge status={r?.status ?? "unknown"} />
-                        </TableCell>
-                        <TableCell className="pr-6 text-right">
-                          <Link href={`/scan/${row.id}`} className="font-mono text-xs text-primary hover:underline">
-                            View
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              {/* Mobile card list */}
+              <div className="flex flex-col divide-y divide-border/60 sm:hidden">
+                {list.map((row) => {
+                  const r = row.result as { status?: string; riskScore?: number } | null;
+                  return (
+                    <div key={row.id} className="flex flex-col gap-2 px-4 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge variant="secondary" className="font-normal capitalize shrink-0">{row.source}</Badge>
+                          <span className="truncate text-sm font-medium">{row.workflow_name ?? "—"}</span>
+                        </div>
+                        <ScanOutcomeBadge status={r?.status ?? "unknown"} />
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{triggerType(row.source)} · Risk {r?.riskScore ?? "—"}</span>
+                        <span>{new Date(row.created_at).toLocaleString()}</span>
+                      </div>
+                      <Link href={`/scan/${row.id}`} className="text-xs font-medium text-primary hover:underline self-start">
+                        View report →
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden overflow-x-auto sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="pl-6">When</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Trigger</TableHead>
+                      <TableHead>Workflow</TableHead>
+                      <TableHead>Risk</TableHead>
+                      <TableHead>Outcome</TableHead>
+                      <TableHead className="pr-6 text-right">Report</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {list.map((row) => {
+                      const r = row.result as { status?: string; riskScore?: number } | null;
+                      return (
+                        <TableRow key={row.id} className="border-border/60">
+                          <TableCell className="pl-6 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(row.created_at).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="font-normal capitalize">
+                              {row.source}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {triggerType(row.source)}
+                          </TableCell>
+                          <TableCell className="max-w-[180px] truncate text-sm">
+                            {row.workflow_name ?? "—"}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-sm text-muted-foreground">
+                            {r?.riskScore ?? "—"}
+                          </TableCell>
+                          <TableCell>
+                            <ScanOutcomeBadge status={r?.status ?? "unknown"} />
+                          </TableCell>
+                          <TableCell className="pr-6 text-right">
+                            <Link href={`/scan/${row.id}`} className="font-mono text-xs text-primary hover:underline">
+                              View
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
