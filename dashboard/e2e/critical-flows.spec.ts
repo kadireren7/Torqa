@@ -41,7 +41,7 @@ test.describe("scan flow", () => {
 
     await page.getByRole("button", { name: /run scan/i }).click();
 
-    await expect(page.getByText(/paste json/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByLabel(/paste json/i)).toBeVisible({ timeout: 5_000 });
   });
 });
 

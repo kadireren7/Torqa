@@ -13,8 +13,8 @@ test.describe("alert flow", () => {
 
   test("alerts page has cloud-gate or list when no Supabase configured", async ({ page }) => {
     await page.goto("/alerts");
-    // Either shows Connect Supabase message or the full alert rules UI
-    const hasCloudGate = await page.getByText(/connect supabase/i).count() > 0;
+    // Either shows cloud-gate ("Alerts need cloud") or the full alert rules UI
+    const hasCloudGate = await page.getByText(/alerts need cloud/i).count() > 0;
     const hasAlertsUi = await page.getByText(/destination/i).count() > 0;
     expect(hasCloudGate || hasAlertsUi).toBeTruthy();
   });
