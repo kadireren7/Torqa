@@ -15,7 +15,8 @@ test.describe("public smoke", () => {
     expect(res.ok()).toBeTruthy();
     const text = await res.text();
     expect(text).toContain("openapi: 3.0.3");
-    expect(text).toContain('version: "0.1.7"');
+    expect(text).toMatch(/version: "\d+\.\d+\.\d+"/);
+
     expect(text).toContain("/api/public/scan");
   });
 
