@@ -7,6 +7,7 @@ import {
   Cable,
   Loader2,
   Pencil,
+  RefreshCw,
   Trash2,
   GitBranch,
   Workflow,
@@ -61,6 +62,7 @@ export default function SourcesPage() {
     searchParams.get("connected") === "github" ? "GitHub connected successfully." : null
   );
 
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [formName, setFormName] = useState("");
@@ -154,6 +156,19 @@ export default function SourcesPage() {
   const n8nRow = useMemo(() => items.find((i) => i.provider === "n8n"), [items]);
   const n8nBaseUrl = typeof n8nRow?.config?.baseUrl === "string" ? n8nRow.config.baseUrl : undefined;
   const n8nApiKeyMask = typeof n8nRow?.config?.apiKeyMask === "string" ? n8nRow.config.apiKeyMask : undefined;
+
+  const syncSource = async (id: string) => {
+    setSyncingId(id);
+    try {
+      const res = await fetch(`/api/integrations/${id}/sync`, { method: "POST", credentials: "include" });
+      const j = (await res.json()) as { error?: string; added?: number; updated?: number; unchanged?: number };
+      if (!res.ok) { setError(j.error ?? "Sync failed"); return; }
+      const added = j.added ?? 0;
+      const updated = j.updated ?? 0;
+      setMessage(`Sync complete — ${added} added, ${updated} updated.`);
+    } catch { setError("Network error"); }
+    finally { setSyncingId(null); }
+  };
 
   const disconnectN8n = async () => {
     if (!n8nRow) return;
@@ -319,6 +334,16 @@ export default function SourcesPage() {
                       >
                         {row.status}
                       </Badge>
+                      {row.status === "connected" && (
+                        <Button
+                          size="sm" variant="ghost" className="h-7 w-7 p-0"
+                          disabled={syncingId === row.id}
+                          onClick={() => void syncSource(row.id)}
+                          title="Sync now"
+                        >
+                          <RefreshCw className={`h-3.5 w-3.5 ${syncingId === row.id ? "animate-spin" : ""}`} />
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => void editSource(row)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
