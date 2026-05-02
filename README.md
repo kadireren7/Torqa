@@ -57,7 +57,7 @@ n8n  ·  GitHub Actions  ·  AI Agents  ·  Zapier  ·  Make  ─→  Torqa  ─
 
 > Screenshots will be added in v0.2.0 once the public demo environment is live.
 
----
+![Torqa Sources](docs/images/screenshot-sources.png)
 
 ## Architecture
 
@@ -94,7 +94,7 @@ WorkspacePolicy                                     · findings (severity, rule,
 
 **Key invariant:** same input → same output. No hidden LLM calls in the scan path. Every decision is traceable to a concrete finding.
 
----
+<br />
 
 ## Dashboard
 
