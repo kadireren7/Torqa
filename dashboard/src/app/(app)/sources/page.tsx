@@ -88,7 +88,7 @@ export default function SourcesPage() {
   const openConnect = (id: string) => {
     const connector = connectorRegistry.find((c) => c.id === id);
     if (connector?.authType === "oauth") {
-      window.location.href = "/api/integrations/github/oauth/start";
+      window.location.assign("/api/integrations/github/oauth/start");
       return;
     }
     if (id === "n8n") {
