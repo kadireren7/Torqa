@@ -26,7 +26,7 @@ import { hasPublicSupabaseUrl } from "@/lib/env";
 import { connectorRegistry } from "@/lib/connectors";
 import { ProviderCard } from "@/components/provider-card";
 import { N8nConnectPanel } from "@/components/n8n-connect-panel";
-import { AiAgentScanPanel } from "@/components/ai-agent-scan-panel";
+import { AiAgentConnectPanel } from "@/components/ai-agent-connect-panel";
 import type { IntegrationProvider, IntegrationStatus } from "@/lib/integrations";
 
 const useCloud = hasPublicSupabaseUrl();
@@ -380,7 +380,7 @@ export default function SourcesPage() {
         </Link>
       </p>
 
-      <AiAgentScanPanel
+      <AiAgentConnectPanel
         open={aiAgentPanelOpen}
         onClose={() => setAiAgentPanelOpen(false)}
       />

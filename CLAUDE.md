@@ -78,6 +78,57 @@ Every workflow must produce:
 
 ---
 
+## Governance Operation Modes
+
+Torqa must support three operation modes, selectable per workspace or per run:
+
+### Autonomous Mode
+Torqa acts without asking. Scans, enforces policies, auto-applies safe fixes.
+Only pauses for:
+- Destructive changes (delete, disable, override)
+- Actions that break policy boundaries
+- Irreversible operations
+
+### Supervised Mode
+Torqa proposes every action before executing. User approves or rejects each step.
+Default for new workspaces.
+
+### Interactive Mode (Dialogue-Driven)
+Torqa asks questions and accepts user context before deciding.
+User can push back: "this will break X", "we depend on Y", "that's intentional".
+Torqa adjusts its decision based on the response — it does not blindly re-apply.
+Findings marked as "accepted risk" are logged but not re-flagged.
+
+### Key Rules
+- Mode is configurable per workspace, per policy pack, or per run.
+- Autonomous mode must NEVER auto-fix without a dry-run preview in the audit log.
+- Interactive mode responses must be stored as context (not re-asked on next scan).
+- All mode decisions must be auditable — who approved, what was said, when.
+
+---
+
+## Edit / Fix Capability
+
+Torqa is NOT just a scanner. It can suggest and apply fixes.
+
+Fix pipeline:
+```
+Finding → Fix Suggestion → Mode Check → Apply / Propose / Ask → Audit Log
+```
+
+Fix types:
+- **Safe auto-fix**: rename, add missing field, set secure default — Autonomous mode applies immediately.
+- **Structural fix**: move nodes, change flow — Supervised mode proposes diff, user approves.
+- **Policy override**: mark finding as accepted risk with user justification — Interactive mode records context.
+
+Fix suggestions must:
+- Show what will change (diff view)
+- Show WHY (rule violated)
+- Show risk level of the fix itself
+- Be reversible where possible
+
+---
+
 ## Development Phases
 
 ### Phase 1 — DONE
