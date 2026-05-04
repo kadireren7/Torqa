@@ -73,7 +73,7 @@ If you believe you found a **security vulnerability**, please **do not** open a 
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the same terms as the project: **[MIT](LICENSE)**.
+By contributing, you agree that your contributions are licensed under the same terms as the project: **[GNU Affero General Public License v3 or later (AGPL-3.0-or-later)](LICENSE)**.
 
 ## Where to look next
 

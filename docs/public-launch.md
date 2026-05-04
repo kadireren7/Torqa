@@ -10,7 +10,7 @@ Five alternatives (each ≤ 160 characters for short repo taglines / bios):
 
 1. **Canonical workflow spec core: `.tq` → JSON IR, structural + semantic validation. Reference Python impl. Not a runtime.** (119 chars)
 
-2. **Verifiable workflow specifications for AI-native automation. Parse `.tq` to canonical IR, validate before execution. Open source, MIT.** (115 chars)
+2. **Verifiable workflow specifications for AI-native automation. Parse `.tq` to canonical IR, validate before execution. Open source, AGPL-3.0.** (122 chars)
 
 3. **Small language + IR for workflow intent: deterministic parsing, `validate_ir`, semantic reports. Hand off validated specs to your own executor.** (132 chars)
 
@@ -37,7 +37,7 @@ Ten alternatives:
 3. Workflow intent as a real contract—parseable, lintable, and portable—without bundling a runtime.
 4. For teams that want one place to define “what the automation is” before anything runs.
 5. Deterministic parsing plus explicit validation gates between authors (including LLMs) and your executors.
-6. Canonical workflow IR with JSON Schema and a reference Python validator—early core, MIT-licensed.
+6. Canonical workflow IR with JSON Schema and a reference Python validator—early core, AGPL-licensed.
 7. Replace ad-hoc JSON blobs with a small language and checks you can run in CI.
 8. AI-native in the boring sense: the same checkable artifact for human edits and generated drafts.
 9. Specification layer only: if you need execution, you bring it; Torqa supplies the verifiable definition.
@@ -49,7 +49,7 @@ Ten alternatives:
 
 Five variations (under typical length; adjust for your handle / link):
 
-1. **Shipped an early open-source core:** Torqa—workflow specs as `.tq` → canonical JSON IR + structural/semantic validation. Not a runtime; meant for review + CI before execution. MIT. [link]
+1. **Shipped an early open-source core:** Torqa—workflow specs as `.tq` → canonical JSON IR + structural/semantic validation. Not a runtime; meant for review + CI before execution. AGPL-3.0. [link]
 
 2. **Problem:** generated + fragmented workflow definitions are hard to validate consistently. **Approach:** tiny `.tq` surface, versioned `ir_goal`, `validate_ir` + semantic reports. Torqa is that layer—reference Python, no hype.
 
@@ -69,7 +69,7 @@ Ten honest, technical titles (no vanity metrics):
 2. Torqa: a small workflow specification language and JSON IR—not a runtime
 3. Show HN: Verifiable workflow specs (`.tq` → `ir_goal`) for automation before execution
 4. Torqa – reference implementation of a workflow spec layer with JSON Schema and CI-friendly validation
-5. A specification core for workflow automation: parse, validate, hand off (early MIT project)
+5. A specification core for workflow automation: parse, validate, hand off (early AGPL project)
 6. Show HN: Torqa – deterministic `.tq` parsing and IR validation for AI-assisted workflow authoring
 7. Torqa: workflow intent as a versioned bundle with explicit validation errors
 8. Open source workflow spec core – canonical IR, no bundled executor
@@ -88,7 +88,7 @@ Five subreddit-friendly angles (adapt tone per community rules):
 
 3. **r/LocalLLaMA / r/MachineLearning (carefully):** “For generated automation drafts, we wanted a canonical target with deterministic parse + validation; sharing an early open-source core (not an LLM product).”
 
-4. **r/opensource:** “New MIT project: reference implementation for verifiable workflow specifications—feedback on scope and docs welcome.”
+4. **r/opensource:** “New AGPL project: reference implementation for verifiable workflow specifications—feedback on scope and docs welcome.”
 
 5. **r/ExperiencedDevs / r/softwarearchitecture:** “Separation of workflow *definition* from *execution*: one IR, explicit validators—early-stage OSS, looking for critique of the model.”
 
