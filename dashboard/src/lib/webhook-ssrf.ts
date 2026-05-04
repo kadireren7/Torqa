@@ -58,3 +58,47 @@ export function validateWebhookUrlForDestination(
 ): { ok: true } | { ok: false; message: string } {
   return type === "slack" ? validateSlackWebhookUrlForOutbound(url) : validateDiscordWebhookUrlForOutbound(url);
 }
+
+/**
+ * Validate a free-form outbound webhook URL (used by the `webhook` alert
+ * destination type). Stricter than Slack/Discord because the user can
+ * supply any host, so we additionally block:
+ *   - non-https
+ *   - localhost / loopback / private RFC1918 IP literals
+ *   - link-local ranges (169.254.0.0/16)
+ *   - IPv6 loopback / ULA / link-local literals
+ *   - non-standard ports (only 443 allowed)
+ *
+ * This is *defense in depth*; it is not a substitute for network egress
+ * controls (e.g. blocking metadata IPs at the load balancer).
+ */
+export function validateGenericWebhookUrlForOutbound(
+  url: string
+): { ok: true } | { ok: false; message: string } {
+  const u = parsedHttpsUrl(url);
+  if (!u) return { ok: false, message: "Webhook URL must be a valid https URL" };
+  const host = u.hostname.toLowerCase();
+  if (!host) return { ok: false, message: "Webhook URL must include a host" };
+  if (host === "localhost" || host.endsWith(".localhost")) {
+    return { ok: false, message: "localhost is not allowed" };
+  }
+  // IPv4 literal checks.
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+    if ([0, 10, 127].includes(a)) return { ok: false, message: "Loopback / private IPs are not allowed" };
+    if (a === 169 && b === 254) return { ok: false, message: "Link-local IPs are not allowed" };
+    if (a === 172 && b >= 16 && b <= 31) return { ok: false, message: "Private IPs are not allowed" };
+    if (a === 192 && b === 168) return { ok: false, message: "Private IPs are not allowed" };
+    if (a === 100 && b >= 64 && b <= 127) return { ok: false, message: "Carrier-grade NAT IPs are not allowed" };
+    if (a >= 224) return { ok: false, message: "Multicast / reserved IPs are not allowed" };
+  }
+  // IPv6 quick checks (URL hostname strips brackets).
+  if (host === "::1" || host === "0:0:0:0:0:0:0:1") {
+    return { ok: false, message: "IPv6 loopback is not allowed" };
+  }
+  if (host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) {
+    return { ok: false, message: "Private / link-local IPv6 is not allowed" };
+  }
+  return { ok: true };
+}

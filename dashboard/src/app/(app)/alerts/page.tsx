@@ -11,9 +11,77 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { hasPublicSupabaseUrl } from "@/lib/env";
-import type { AlertDestinationType, AlertRuleTrigger } from "@/lib/alerts";
+import type { AlertDestinationType, AlertRuleFilters, AlertRuleTrigger } from "@/lib/alerts";
 
 const useCloud = hasPublicSupabaseUrl();
+
+const SCAN_TRIGGERS: AlertRuleTrigger[] = [
+  "scan_failed",
+  "scan_needs_review",
+  "high_severity_finding",
+  "schedule_failed",
+];
+
+function isGovernanceTrigger(t: AlertRuleTrigger): boolean {
+  return !SCAN_TRIGGERS.includes(t);
+}
+
+function parseCsv(s: string): string[] {
+  return s.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 64);
+}
+
+function filtersFromCsvFields(fields: {
+  severities: string;
+  sources: string;
+  decisionTypes: string;
+  targetPatterns: string;
+}): AlertRuleFilters {
+  const out: AlertRuleFilters = {};
+  const sev = parseCsv(fields.severities);
+  const src = parseCsv(fields.sources);
+  const dt = parseCsv(fields.decisionTypes);
+  const tp = parseCsv(fields.targetPatterns);
+  if (sev.length) out.severities = sev;
+  if (src.length) out.sources = src;
+  if (dt.length) out.decisionTypes = dt;
+  if (tp.length) out.targetPatterns = tp;
+  return out;
+}
+
+function formatFiltersSummary(f: AlertRuleFilters | undefined): string {
+  if (!f) return "";
+  const parts: string[] = [];
+  if (f.severities?.length) parts.push(`${f.severities.length} sev`);
+  if (f.sources?.length) parts.push(`${f.sources.length} src`);
+  if (f.decisionTypes?.length) parts.push(`${f.decisionTypes.length} decision types`);
+  if (f.targetPatterns?.length) parts.push(`${f.targetPatterns.length} target patterns`);
+  return parts.join(" · ");
+}
+
+const SCAN_TRIGGER_OPTIONS: { value: AlertRuleTrigger; label: string }[] = [
+  { value: "scan_failed", label: "Scan failed (FAIL)" },
+  { value: "scan_needs_review", label: "Scan needs review" },
+  { value: "high_severity_finding", label: "High / critical finding" },
+  { value: "schedule_failed", label: "Scheduled run failed" },
+];
+
+const GOVERNANCE_TRIGGER_OPTIONS: { value: AlertRuleTrigger; label: string }[] = [
+  { value: "governance_decision", label: "Any governance decision (all types)" },
+  { value: "fix_applied", label: "Fix applied" },
+  { value: "risk_accepted", label: "Risk accepted" },
+  { value: "risk_revoked", label: "Risk revoked" },
+  { value: "approval_pending", label: "Approval pending (reserved)" },
+  { value: "approval_decided", label: "Approval approved / rejected" },
+  { value: "mode_changed", label: "Governance mode changed" },
+];
+
+function triggerOptionLabel(trigger: AlertRuleTrigger): string {
+  return (
+    SCAN_TRIGGER_OPTIONS.find((o) => o.value === trigger)?.label ??
+    GOVERNANCE_TRIGGER_OPTIONS.find((o) => o.value === trigger)?.label ??
+    trigger
+  );
+}
 
 type DestinationRow = {
   id: string;
@@ -29,6 +97,7 @@ type RuleRow = {
   enabled: boolean;
   trigger: AlertRuleTrigger;
   destinationIds: string[];
+  filters?: AlertRuleFilters;
 };
 
 type DeliveryRow = {
@@ -43,13 +112,6 @@ type DeliveryRow = {
   created_at: string;
 };
 
-const TRIGGER_OPTIONS: { value: AlertRuleTrigger; label: string }[] = [
-  { value: "scan_failed", label: "Scan failed (FAIL)" },
-  { value: "scan_needs_review", label: "Scan needs review" },
-  { value: "high_severity_finding", label: "High / critical finding" },
-  { value: "schedule_failed", label: "Scheduled run failed" },
-];
-
 export default function AlertsPage() {
   const [destinations, setDestinations] = useState<DestinationRow[]>([]);
   const [rules, setRules] = useState<RuleRow[]>([]);
@@ -62,11 +124,23 @@ export default function AlertsPage() {
   const [destName, setDestName] = useState("");
   const [destType, setDestType] = useState<AlertDestinationType>("slack");
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [genericWebhookUrl, setGenericWebhookUrl] = useState("");
+  const [genericWebhookSecret, setGenericWebhookSecret] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
 
   const [ruleName, setRuleName] = useState("");
   const [ruleTrigger, setRuleTrigger] = useState<AlertRuleTrigger>("scan_failed");
   const [ruleDestIds, setRuleDestIds] = useState<string[]>([]);
+  const [newRuleSev, setNewRuleSev] = useState("");
+  const [newRuleSrc, setNewRuleSrc] = useState("");
+  const [newRuleDecisionTypes, setNewRuleDecisionTypes] = useState("");
+  const [newRuleTargets, setNewRuleTargets] = useState("");
+
+  const [filterEditRuleId, setFilterEditRuleId] = useState<string | null>(null);
+  const [editSev, setEditSev] = useState("");
+  const [editSrc, setEditSrc] = useState("");
+  const [editDecisionTypes, setEditDecisionTypes] = useState("");
+  const [editTargets, setEditTargets] = useState("");
 
   const load = useCallback(async () => {
     if (!useCloud) {
@@ -124,8 +198,26 @@ export default function AlertsPage() {
         return;
       }
       config = { address: emailAddress.trim() };
-    } else {
+    } else if (destType === "webhook") {
+      const url = genericWebhookUrl.trim();
+      if (!url.startsWith("https://")) {
+        setError("HTTPS webhook URL required.");
+        setSaving(false);
+        return;
+      }
+      const secret = genericWebhookSecret.trim();
+      if (secret && (secret.length < 16 || secret.length > 256)) {
+        setError("Signing secret must be 16–256 characters if set.");
+        setSaving(false);
+        return;
+      }
+      config = { url, secret: secret || "", version: "v1" };
+    } else if (destType === "in_app") {
       config = { channel: "in_app" };
+    } else {
+      setError("Unsupported destination type.");
+      setSaving(false);
+      return;
     }
     try {
       const res = await fetch("/api/alert-destinations", {
@@ -141,8 +233,10 @@ export default function AlertsPage() {
       }
       setDestName("");
       setWebhookUrl("");
+      setGenericWebhookUrl("");
+      setGenericWebhookSecret("");
       setEmailAddress("");
-      setMessage("Destination saved. Webhook URLs are not shown again after save.");
+      setMessage("Destination saved. Secrets and webhook URLs stay on the server after save.");
       await load();
     } catch {
       setError("Network error");
@@ -161,6 +255,16 @@ export default function AlertsPage() {
       return;
     }
     try {
+      const governanceFilters =
+        isGovernanceTrigger(ruleTrigger)
+          ? filtersFromCsvFields({
+              severities: newRuleSev,
+              sources: newRuleSrc,
+              decisionTypes: newRuleDecisionTypes,
+              targetPatterns: newRuleTargets,
+            })
+          : {};
+
       const res = await fetch("/api/alert-rules", {
         method: "POST",
         credentials: "include",
@@ -170,6 +274,7 @@ export default function AlertsPage() {
           trigger: ruleTrigger,
           enabled: true,
           destinationIds: ruleDestIds,
+          filters: governanceFilters,
         }),
       });
       const j = (await res.json()) as { error?: string };
@@ -179,6 +284,10 @@ export default function AlertsPage() {
       }
       setRuleName("");
       setRuleDestIds([]);
+      setNewRuleSev("");
+      setNewRuleSrc("");
+      setNewRuleDecisionTypes("");
+      setNewRuleTargets("");
       setMessage("Rule created.");
       await load();
     } catch {
@@ -209,7 +318,7 @@ export default function AlertsPage() {
     }
   };
 
-  const patchRule = async (id: string, patch: Record<string, unknown>) => {
+  const patchRule = async (id: string, patch: Record<string, unknown>): Promise<boolean> => {
     setSaving(true);
     setError(null);
     try {
@@ -222,9 +331,13 @@ export default function AlertsPage() {
       const j = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(j.error ?? "Update failed");
-        return;
+        return false;
       }
       await load();
+      return true;
+    } catch {
+      setError("Network error");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -280,7 +393,7 @@ export default function AlertsPage() {
         setError(j.error ?? "Test failed");
         return;
       }
-      setMessage("Test sent (Slack/Discord/in-app) or placeholder logged for email.");
+      setMessage("Test succeeded (Slack, Discord, HTTPS webhook — check `X-Torqa-Signature` when signing is enabled — in-app) or logged for placeholder email.");
     } catch {
       setError("Network error");
     } finally {
@@ -292,6 +405,31 @@ export default function AlertsPage() {
     setRuleDestIds((prev) =>
       prev.includes(destId) ? prev.filter((x) => x !== destId) : [...prev, destId]
     );
+  };
+
+  const saveEditedRuleFilters = async () => {
+    if (!filterEditRuleId) return;
+    const ok = await patchRule(filterEditRuleId, {
+      filters: filtersFromCsvFields({
+        severities: editSev,
+        sources: editSrc,
+        decisionTypes: editDecisionTypes,
+        targetPatterns: editTargets,
+      }),
+    });
+    if (ok) setFilterEditRuleId(null);
+  };
+
+  const openRuleFilterEditor = (r: RuleRow) => {
+    if (filterEditRuleId === r.id) {
+      setFilterEditRuleId(null);
+      return;
+    }
+    setFilterEditRuleId(r.id);
+    setEditSev((r.filters?.severities ?? []).join(", "));
+    setEditSrc((r.filters?.sources ?? []).join(", "));
+    setEditDecisionTypes((r.filters?.decisionTypes ?? []).join(", "));
+    setEditTargets((r.filters?.targetPatterns ?? []).join(", "));
   };
 
   if (!useCloud) {
@@ -319,7 +457,8 @@ export default function AlertsPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Alert</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Alerts</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Slack, Discord, in-app, or email placeholder. Webhooks stay on the server after save.
+            Route scan outcomes, governance decisions, fixes, approvals, mode changes — to Slack,
+            Discord, signed HTTPS webhooks, in-app, or email placeholders. Secrets stay on the server after save.
           </p>
         </div>
         <GovernanceJourneyStrip />
@@ -327,15 +466,20 @@ export default function AlertsPage() {
           <CardContent className="grid gap-3 p-4 text-sm sm:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">What this does</p>
-              <p className="mt-1">Routes scan outcomes to team destinations so risky workflows do not get missed.</p>
+              <p className="mt-1">
+                Routes scan outcomes and governance signals to destinations so risky workflows do not go unnoticed.
+              </p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Works now</p>
-              <p className="mt-1">Slack/Discord webhook tests, in-app routes, placeholder email integration.</p>
+              <p className="mt-1">
+                Slack / Discord webhook tests; signed outbound webhooks (<code className="text-xs">sha256</code> HMAC);
+                governance triggers + optional filters per rule; in-app; placeholder email integration.
+              </p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Next up</p>
-              <p className="mt-1">Broader delivery guarantees and richer per-rule routing controls.</p>
+              <p className="mt-1">Broader delivery guarantees and richer playbook templates.</p>
             </div>
             <div className="flex items-end">
               <Button asChild>
@@ -352,7 +496,8 @@ export default function AlertsPage() {
             <strong className="text-foreground">Test it</strong> — use Test on each row to confirm delivery.
           </li>
           <li>
-            <strong className="text-foreground">Create rules</strong> — map FAIL, review, high-severity, or schedule failures to destinations.
+            <strong className="text-foreground">Create rules</strong> — scans, governance signals, approvals, mode changes —
+            optionally narrow governance rules by severity / source / decision type / target pattern.
           </li>
         </ol>
       </div>
@@ -389,6 +534,7 @@ export default function AlertsPage() {
             >
               <option value="slack">Slack incoming webhook</option>
               <option value="discord">Discord webhook</option>
+              <option value="webhook">HTTPS webhook (Torqa-signed JSON)</option>
               <option value="email">Email (placeholder)</option>
               <option value="in_app">In-app (workspace fanout)</option>
             </select>
@@ -403,6 +549,31 @@ export default function AlertsPage() {
                 placeholder="https://hooks.slack.com/..."
                 autoComplete="off"
               />
+            </div>
+          ) : null}
+          {destType === "webhook" ? (
+            <div className="space-y-3 sm:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="ad-gw-url">Destination URL (<code className="text-xs">https://</code> only)</Label>
+                <Input
+                  id="ad-gw-url"
+                  value={genericWebhookUrl}
+                  onChange={(e) => setGenericWebhookUrl(e.target.value)}
+                  placeholder="https://api.example.com/torqa-alerts"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ad-gw-secret">Signing secret (optional · 16–256 chars)</Label>
+                <Input
+                  id="ad-gw-secret"
+                  type="password"
+                  value={genericWebhookSecret}
+                  onChange={(e) => setGenericWebhookSecret(e.target.value)}
+                  placeholder="When set, body is signed in X-Torqa-Signature"
+                  autoComplete="new-password"
+                />
+              </div>
             </div>
           ) : null}
           {destType === "email" ? (
@@ -461,6 +632,17 @@ export default function AlertsPage() {
                     {d.type === "email" ? (
                       <> · email {d.config.emailConfigured ? "on file" : "not set"}</>
                     ) : null}
+                    {d.type === "webhook" ? (
+                      <>
+                        {" "}
+                        ·{" "}
+                        {typeof d.config.webhookHost === "string" && d.config.webhookHost.length > 0
+                          ? d.config.webhookHost
+                          : "endpoint"}{" "}
+                        · URL {d.config.webhookConfigured ? "on file" : "not set"}
+                        {d.config.signingConfigured ? " · HMAC signing on" : ""}
+                      </>
+                    ) : null}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -490,7 +672,7 @@ export default function AlertsPage() {
       <Card className="border-border/80 shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg">New rule</CardTitle>
-          <CardDescription>Trigger → where to notify.</CardDescription>
+          <CardDescription>Trigger and optional governance filters (narrow by severity, source, decision type, target substring).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -505,11 +687,20 @@ export default function AlertsPage() {
                 value={ruleTrigger}
                 onChange={(e) => setRuleTrigger(e.target.value as AlertRuleTrigger)}
               >
-                {TRIGGER_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
+                <optgroup label="Scan & schedule">
+                  {SCAN_TRIGGER_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Governance">
+                  {GOVERNANCE_TRIGGER_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
             </div>
           </div>
@@ -540,6 +731,62 @@ export default function AlertsPage() {
               </ul>
             )}
           </div>
+          {isGovernanceTrigger(ruleTrigger) ? (
+            <div className="rounded-lg border border-border/70 bg-muted/15 p-3 text-xs text-muted-foreground space-y-2">
+              <p className="font-medium text-foreground text-sm">Optional routing filters</p>
+              <p>Comma-separated lists; governance rules combine filters with AND. Empty fields match anything.</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="arf-sev" className="text-xs">
+                    Severities (e.g. high, critical)
+                  </Label>
+                  <Input
+                    id="arf-sev"
+                    value={newRuleSev}
+                    onChange={(e) => setNewRuleSev(e.target.value)}
+                    placeholder="critical, high"
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="arf-src" className="text-xs">
+                    Sources (n8n, zapier, …)
+                  </Label>
+                  <Input
+                    id="arf-src"
+                    value={newRuleSrc}
+                    onChange={(e) => setNewRuleSrc(e.target.value)}
+                    placeholder="zapier, lambda"
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="arf-dt" className="text-xs">
+                    Decision types
+                  </Label>
+                  <Input
+                    id="arf-dt"
+                    value={newRuleDecisionTypes}
+                    onChange={(e) => setNewRuleDecisionTypes(e.target.value)}
+                    placeholder="accept_risk, mode_change"
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="arf-tgt" className="text-xs">
+                    Target substring patterns
+                  </Label>
+                  <Input
+                    id="arf-tgt"
+                    value={newRuleTargets}
+                    onChange={(e) => setNewRuleTargets(e.target.value)}
+                    placeholder="workflow-id-"
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
           <Button type="button" disabled={saving || loading} onClick={() => void createRule()}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create rule"}
           </Button>
@@ -555,44 +802,130 @@ export default function AlertsPage() {
             <EmptyStateCta
               icon={Megaphone}
               title="No rules yet"
-              description="Wire scan FAIL, review, or high-severity triggers to a destination."
+              description="Connect scan or governance triggers to a destination. Use filters to narrow governance alerts."
               primary={{ href: "#dest-form", label: "Check destinations" }}
               secondary={{ href: "/policies", label: "Policies" }}
               compact
               className="border-none bg-transparent py-4"
             />
           ) : (
-            rules.map((r) => (
-              <div key={r.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{r.name}</p>
-                    <p className="text-xs text-muted-foreground">{r.trigger}</p>
+            rules.map((r) => {
+              const filtSummary = formatFiltersSummary(r.filters);
+              const filtersOpen = filterEditRuleId === r.id;
+              return (
+                <div key={r.id} className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{r.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {triggerOptionLabel(r.trigger)}{" "}
+                        <span className="font-mono text-[11px] opacity-80">({r.trigger})</span>
+                      </p>
+                      {filtSummary ? (
+                        <p className="text-[11px] text-muted-foreground mt-1">Filters: {filtSummary}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={r.enabled ? "default" : "secondary"}>{r.enabled ? "on" : "off"}</Badge>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={filtersOpen ? "secondary" : "outline"}
+                        onClick={() => openRuleFilterEditor(r)}
+                      >
+                        {filtersOpen ? "Close filters" : "Filters"}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => void patchRule(r.id, { enabled: !r.enabled })}>
+                        Toggle
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const next = prompt("Rule name", r.name);
+                          if (!next?.trim()) return;
+                          void patchRule(r.id, { name: next.trim() });
+                        }}
+                      >
+                        Rename
+                      </Button>
+                      <Button type="button" size="sm" variant="destructive" onClick={() => void deleteRule(r.id)}>
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant={r.enabled ? "default" : "secondary"}>{r.enabled ? "on" : "off"}</Badge>
-                    <Button type="button" size="sm" variant="outline" onClick={() => void patchRule(r.id, { enabled: !r.enabled })}>
-                      Toggle
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const next = prompt("Rule name", r.name);
-                        if (!next?.trim()) return;
-                        void patchRule(r.id, { name: next.trim() });
-                      }}
-                    >
-                      Rename
-                    </Button>
-                    <Button type="button" size="sm" variant="destructive" onClick={() => void deleteRule(r.id)}>
-                      Delete
-                    </Button>
-                  </div>
+                  {filtersOpen ? (
+                    <div className="rounded-md border border-border/50 bg-background/60 p-3 text-xs space-y-2">
+                      {!isGovernanceTrigger(r.trigger) ? (
+                        <p className="text-muted-foreground">
+                          Filters are evaluated for governance alert dispatch. You can still store them for when you switch this
+                          rule to a governance trigger.
+                        </p>
+                      ) : null}
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor={`ef-sev-${r.id}`} className="text-xs">
+                            Severities
+                          </Label>
+                          <Input
+                            id={`ef-sev-${r.id}`}
+                            value={editSev}
+                            onChange={(e) => setEditSev(e.target.value)}
+                            className="h-9 text-xs"
+                            placeholder="critical, high"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`ef-src-${r.id}`} className="text-xs">
+                            Sources
+                          </Label>
+                          <Input
+                            id={`ef-src-${r.id}`}
+                            value={editSrc}
+                            onChange={(e) => setEditSrc(e.target.value)}
+                            className="h-9 text-xs"
+                            placeholder="zapier, n8n"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`ef-dt-${r.id}`} className="text-xs">
+                            Decision types
+                          </Label>
+                          <Input
+                            id={`ef-dt-${r.id}`}
+                            value={editDecisionTypes}
+                            onChange={(e) => setEditDecisionTypes(e.target.value)}
+                            className="h-9 text-xs"
+                            placeholder="accept_risk"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`ef-tgt-${r.id}`} className="text-xs">
+                            Target patterns
+                          </Label>
+                          <Input
+                            id={`ef-tgt-${r.id}`}
+                            value={editTargets}
+                            onChange={(e) => setEditTargets(e.target.value)}
+                            className="h-9 text-xs"
+                            placeholder="substring"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button type="button" size="sm" disabled={saving} onClick={() => void saveEditedRuleFilters()}>
+                          Save filters
+                        </Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => setFilterEditRuleId(null)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </CardContent>
       </Card>
@@ -604,7 +937,9 @@ export default function AlertsPage() {
           <div className="h-px flex-1 bg-border/40" />
         </div>
         {deliveries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No deliveries yet. Alerts fire when a scan matches a rule.</p>
+          <p className="text-sm text-muted-foreground">
+            No deliveries yet. Alerts fire when a scan or governance event matches a rule.
+          </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border/50">
             {deliveries.map((d, i) => (

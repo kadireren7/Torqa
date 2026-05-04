@@ -1,0 +1,34 @@
+# Example consumer workflow for the Torqa Governance Gate action.
+# Drop this in `.github/workflows/torqa.yml` of your project repo and set
+# the `TORQA_API_KEY` secret on the repo.
+
+name: Torqa Governance Gate
+
+on:
+  pull_request:
+    paths:
+      - "workflows/**.json"
+      - "agents/**.json"
+
+jobs:
+  governance-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Torqa scan + verdict
+        id: torqa
+        uses: torqa/governance-gate@v0.2.1
+        with:
+          api-key: ${{ secrets.TORQA_API_KEY }}
+          base-url: https://dashboard.torqa.dev
+          source: n8n
+          workflow-file: workflows/main.json
+          policy-pack-id: ${{ vars.TORQA_PACK_ID }}
+          fail-on: block
+
+      - name: Surface verdict in PR
+        if: always()
+        run: |
+          echo "Torqa verdict: ${{ steps.torqa.outputs.verdict }}"
+          echo "Request id:    ${{ steps.torqa.outputs.request-id }}"

@@ -7,7 +7,7 @@ name = "torqa"
 version = "0.2.0"
 description = "Canonical workflow IR (ir_goal), validation, trust profiles, and CLI — gate specs before execution."
 readme = "README.md"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [{ name = "Torqa contributors" }]

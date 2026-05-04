@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveListOrganizationId } from "@/lib/workspace-scope";
 import { isPlainObject } from "@/lib/json-guards";
 import { isAlertDestinationType, toDestinationApi } from "@/lib/alerts";
-import { validateWebhookUrlForDestination } from "@/lib/webhook-ssrf";
+import {
+  validateGenericWebhookUrlForOutbound,
+  validateWebhookUrlForDestination,
+} from "@/lib/webhook-ssrf";
 import { apiJsonDatabaseError, apiJsonError } from "@/lib/api-json-error";
 
 export const runtime = "nodejs";
@@ -97,6 +100,25 @@ export async function POST(request: Request) {
   }
   if (type === "in_app") {
     config.channel = "in_app";
+  }
+  if (type === "webhook") {
+    const url = typeof config.url === "string" ? config.url.trim() : "";
+    const v = validateGenericWebhookUrlForOutbound(url);
+    if (!v.ok) {
+      return apiJsonError(request, 400, v.message, "invalid_webhook_url");
+    }
+    config.url = url;
+    const secret = typeof config.secret === "string" ? config.secret : "";
+    if (secret && (secret.length < 16 || secret.length > 256)) {
+      return apiJsonError(
+        request,
+        400,
+        "config.secret must be 16..256 chars (used to HMAC-sign payloads)",
+        "bad_request"
+      );
+    }
+    config.secret = secret;
+    config.version = "v1";
   }
 
   const { data, error } = await supabase

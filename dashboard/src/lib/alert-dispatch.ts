@@ -4,6 +4,8 @@ import { notifyWorkspaceMembers } from "@/lib/workspace-activity";
 import type { AlertDestinationType, AlertRuleTrigger } from "@/lib/alerts";
 import { validateDiscordWebhookUrlForOutbound, validateSlackWebhookUrlForOutbound } from "@/lib/webhook-ssrf";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { postSignedGovernanceWebhook } from "@/lib/governance-signals";
+import { isAlertRuleTrigger } from "@/lib/alerts";
 
 /* ─── Alert message template ─────────────────────────────────── */
 
@@ -82,6 +84,14 @@ type DestinationRow = {
   enabled: boolean;
   config: Record<string, unknown>;
 };
+
+const VALID_DESTINATION_TYPES = new Set<AlertDestinationType>([
+  "in_app",
+  "slack",
+  "discord",
+  "email",
+  "webhook",
+]);
 
 type RuleRow = {
   id: string;
@@ -180,7 +190,8 @@ function rowToDestination(row: Record<string, unknown>): DestinationRow | null {
     typeof row.user_id !== "string" ||
     typeof row.name !== "string" ||
     typeof row.enabled !== "boolean" ||
-    (type !== "in_app" && type !== "slack" && type !== "discord" && type !== "email")
+    typeof type !== "string" ||
+    !VALID_DESTINATION_TYPES.has(type as AlertDestinationType)
   ) {
     return null;
   }
@@ -192,7 +203,7 @@ function rowToDestination(row: Record<string, unknown>): DestinationRow | null {
     id: row.id,
     user_id: row.user_id,
     organization_id: typeof row.organization_id === "string" ? row.organization_id : null,
-    type,
+    type: type as AlertDestinationType,
     name: row.name,
     enabled: row.enabled,
     config,
@@ -206,10 +217,7 @@ function rowToRule(row: Record<string, unknown>): RuleRow | null {
     typeof row.user_id !== "string" ||
     typeof row.name !== "string" ||
     typeof row.enabled !== "boolean" ||
-    (rt !== "scan_failed" &&
-      rt !== "scan_needs_review" &&
-      rt !== "high_severity_finding" &&
-      rt !== "schedule_failed")
+    !isAlertRuleTrigger(rt)
   ) {
     return null;
   }
@@ -284,6 +292,30 @@ export async function deliverToDestination(
       if (!addr) return { ok: false, error: "missing email address" };
       const r = await sendResendEmail(addr, title, body);
       if (!r.ok) return { ok: false, error: r.error };
+      return { ok: true };
+    }
+    case "webhook": {
+      const url = typeof dest.config.url === "string" ? dest.config.url.trim() : "";
+      if (!url) return { ok: false, error: "missing webhook url" };
+      const secret = typeof dest.config.secret === "string" ? dest.config.secret : "";
+      const trigger =
+        typeof metadata.ruleTrigger === "string"
+          ? (metadata.ruleTrigger as string)
+          : "scan_failed";
+      const payload = JSON.stringify({
+        schema: "torqa.alert.v1",
+        title,
+        body,
+        severity,
+        metadata,
+      });
+      const outcome = await postSignedGovernanceWebhook({
+        url,
+        body: payload,
+        secret,
+        event: trigger as Parameters<typeof postSignedGovernanceWebhook>[0]["event"],
+      });
+      if (!outcome.ok) return { ok: false, error: outcome.error };
       return { ok: true };
     }
     default:

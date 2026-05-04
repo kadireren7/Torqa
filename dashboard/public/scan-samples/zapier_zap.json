@@ -1,0 +1,44 @@
+{
+  "zap": {
+    "id": "12345",
+    "title": "Stripe → Customer onboarding",
+    "live": true
+  },
+  "steps": [
+    {
+      "id": "trg-1",
+      "type_of": "trigger",
+      "selected_api": "WebhookV2",
+      "title": "Catch raw webhook",
+      "params": {
+        "url": "https://hooks.zapier.com/hooks/catch/0000/abcd",
+        "auth": "none"
+      }
+    },
+    {
+      "id": "act-1",
+      "type_of": "action",
+      "selected_api": "HTTPRequest",
+      "title": "Forward to internal API",
+      "params": {
+        "url": "http://internal-billing.example.com/v1/charges",
+        "method": "POST",
+        "headers": {
+          "X-API-Key": "real_key_4f8c1d3a2b97"
+        },
+        "skip_throttle": true,
+        "continue_on_error": true
+      }
+    },
+    {
+      "id": "act-2",
+      "type_of": "action",
+      "selected_api": "SlackAPI",
+      "title": "Notify Slack",
+      "params": {
+        "channel": "#sales",
+        "text": "New paid customer."
+      }
+    }
+  ]
+}

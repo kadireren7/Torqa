@@ -1,0 +1,37 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Resources": {
+    "BillingProcessor": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "FunctionName": "billing-processor",
+        "Runtime": "python3.7",
+        "Handler": "app.handler",
+        "Timeout": 120,
+        "Role": "arn:aws:iam::111122223333:role/AdministratorAccess",
+        "Environment": {
+          "Variables": {
+            "STRIPE_API_KEY": "sk_live_abcdef1234567890",
+            "DB_PASSWORD": "supersecret-prod-pw"
+          }
+        }
+      }
+    },
+    "HealthCheck": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "healthcheck",
+        "Runtime": "nodejs20.x",
+        "Handler": "index.handler",
+        "Timeout": 2,
+        "Role": "arn:aws:iam::111122223333:role/lambda-readonly",
+        "Environment": {
+          "Variables": {
+            "LOG_LEVEL": "info"
+          }
+        }
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@ Inspect, enforce, and audit every workflow — before it runs in production.</p>
 <br />
 
 [![Version](https://img.shields.io/badge/version-0.2.0-0ea5e9?style=flat-square)](CHANGELOG.md)
-[![License: MIT](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-6366f1?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3b82f6?style=flat-square)](pyproject.toml)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](dashboard/)
 [![CI](https://github.com/kadireren7/Torqa/actions/workflows/ci.yml/badge.svg)](https://github.com/kadireren7/Torqa/actions/workflows/ci.yml)
@@ -376,4 +376,4 @@ Issues, bug reports, and PRs are welcome.
 
 ## License
 
-[MIT](LICENSE) — © 2026 Kadir Eren Altıntaş
+[GNU Affero General Public License v3](LICENSE) (AGPL-3.0-or-later) — © 2026 Kadir Eren Altıntaş

@@ -12,7 +12,9 @@ import {
   ListTree,
   Radar,
   Shield,
+  ShieldCheck,
   Sparkles,
+  Wand2,
   XCircle,
 } from "lucide-react";
 import { ExportPdfButton } from "@/components/export-pdf-button";
@@ -21,8 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { ScanApiSuccess, ScanDecision, ScanFinding } from "@/lib/scan-engine";
+import { FixProposalDialog } from "@/components/governance/fix-proposal-dialog";
+import type { ScanApiSuccess, ScanDecision, ScanFinding, ScanSource } from "@/lib/scan-engine";
 import type { PolicyEvaluationResult, PolicyGateStatus } from "@/lib/policy-types";
+import type { PolicyV2EvaluationResult } from "@/lib/governance/policy-v2/types";
+import { DEFAULT_GOVERNANCE_MODE, type GovernanceMode } from "@/lib/governance/types";
 import { buildScanRecommendations } from "@/lib/scan-report-recommendations";
 import { cn } from "@/lib/utils";
 
@@ -323,15 +328,33 @@ function RecommendationsPanel({ result }: { result: ScanApiSuccess }) {
   );
 }
 
-function FindingCard({ f }: { f: ScanFinding }) {
+type FindingCardProps = {
+  f: ScanFinding;
+  onFix?: (finding: ScanFinding) => void;
+  /** Set when this finding is filtered out by an active accepted-risk row. */
+  governance?: { mode: GovernanceMode };
+};
+
+function FindingCard({ f, onFix, governance }: FindingCardProps) {
   const styles = severityStyles(f.severity);
   const label = severityLabel(f.severity);
+  const accepted = f.accepted_risk;
+  const fixType = f.fix?.type;
+  const canActOnFix = Boolean(f.fix && onFix);
+  const fixLabel = !governance
+    ? "Open fix"
+    : fixType === "safe_auto" && governance.mode === "autonomous"
+      ? "Apply fix"
+      : fixType === "manual_required"
+        ? "Manual fix"
+        : "Review fix";
 
   return (
     <details
       className={cn(
         "group relative overflow-hidden rounded-xl border border-border/70 bg-card/40 shadow-md backdrop-blur-sm transition-[box-shadow,background-color] open:bg-card/85 open:shadow-lg open:ring-1 open:ring-primary/20",
-        "[&_summary::-webkit-details-marker]:hidden"
+        "[&_summary::-webkit-details-marker]:hidden",
+        accepted ? "opacity-80 ring-1 ring-amber-500/20" : null
       )}
     >
       <summary className="cursor-pointer list-none select-none rounded-xl px-4 py-3.5 sm:px-5 sm:py-4">
@@ -348,6 +371,26 @@ function FindingCard({ f }: { f: ScanFinding }) {
                 {label}
               </span>
               <code className="rounded-md bg-muted/80 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">{f.rule_id}</code>
+              {accepted ? (
+                <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+                  <ShieldCheck className="h-3 w-3" aria-hidden />
+                  Accepted risk
+                </span>
+              ) : fixType ? (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                    fixType === "safe_auto"
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                      : fixType === "structural"
+                        ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+                        : "border-slate-500/40 bg-slate-500/10 text-slate-200"
+                  )}
+                >
+                  <Wand2 className="h-3 w-3" aria-hidden />
+                  {fixType === "safe_auto" ? "Auto-fix" : fixType === "structural" ? "Structural" : "Manual"}
+                </span>
+              ) : null}
             </div>
             <p className="text-sm font-semibold leading-snug text-foreground">{f.target}</p>
             <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{f.explanation}</p>
@@ -363,8 +406,37 @@ function FindingCard({ f }: { f: ScanFinding }) {
           </div>
           <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] p-3 sm:p-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/95">Recommended fix</p>
-            <p className="mt-1 text-sm leading-relaxed text-emerald-50/95">{f.suggested_fix}</p>
+            <p className="mt-1 text-sm leading-relaxed text-emerald-50/95">
+              {f.fix?.explanation ?? f.suggested_fix}
+            </p>
           </div>
+
+          {accepted ? (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] p-3 text-xs leading-relaxed text-amber-100/95">
+              <p className="font-semibold">Accepted risk</p>
+              <p className="mt-0.5">
+                Recorded {new Date(accepted.acceptedAt).toLocaleString()}{" "}
+                {accepted.expiresAt ? `· expires ${new Date(accepted.expiresAt).toLocaleDateString()}` : "· no expiry"}
+              </p>
+              <p className="mt-1 italic text-amber-50/90">“{accepted.rationale}”</p>
+            </div>
+          ) : canActOnFix ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onFix?.(f);
+                }}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Wand2 className="h-3.5 w-3.5" aria-hidden />
+                {fixLabel}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
     </details>
@@ -430,6 +502,68 @@ function PolicyEvaluationPanel({ pe }: { pe: PolicyEvaluationResult }) {
   );
 }
 
+function PolicyV2EvaluationPanel({ pe }: { pe: PolicyV2EvaluationResult }) {
+  return (
+    <section className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.08] via-card to-card p-5 shadow-lg ring-1 ring-indigo-500/10 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Programmable pack</p>
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{pe.packName}</h3>
+          <p className="text-sm text-muted-foreground">
+            Verdict combined from {pe.hits.length} rule hit{pe.hits.length === 1 ? "" : "s"} + default verdict.
+          </p>
+        </div>
+        <Badge variant="outline" className={cn("w-fit shrink-0 font-bold uppercase", policyGateBadgeClass(pe.gateStatus))}>
+          {pe.verdict}
+        </Badge>
+      </div>
+
+      {pe.hits.length > 0 ? (
+        <div className="mt-5 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rule hits</p>
+          <ul className="space-y-2">
+            {pe.hits.map((h, i) => (
+              <li
+                key={`${h.ruleId}-${i}`}
+                className={cn(
+                  "rounded-lg border px-3 py-2 text-sm",
+                  h.verdict === "block"
+                    ? "border-rose-500/35 bg-rose-500/[0.06] text-rose-100"
+                    : h.verdict === "review"
+                      ? "border-amber-500/30 bg-amber-500/[0.06] text-amber-100"
+                      : "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-100"
+                )}
+              >
+                <span className="font-mono text-[11px] text-muted-foreground">{h.ruleId}</span>
+                <span className="mx-2 text-muted-foreground/50">→</span>
+                <span className="font-semibold uppercase">{h.verdict}</span>
+                <span className="mx-2 text-muted-foreground/50">·</span>
+                <span>{h.ruleName}</span>
+                {h.message ? (
+                  <span className="ml-2 text-muted-foreground">— {h.message}</span>
+                ) : null}
+                {h.findingTarget ? (
+                  <span className="ml-2 font-mono text-[11px] text-muted-foreground">on {h.findingTarget}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">No rules matched this scan.</p>
+      )}
+
+      {pe.reasons.length > 0 ? (
+        <ul className="mt-5 list-inside list-disc space-y-1 text-xs text-muted-foreground">
+          {pe.reasons.map((r, i) => (
+            <li key={i}>{r}</li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 export type ScanReportViewProps = {
   result: ScanApiSuccess;
   showPoweredBanner?: boolean;
@@ -442,6 +576,20 @@ export type ScanReportViewProps = {
   pdfExportUrl?: string | null;
   /** Suggested download filename (e.g. torqa-scan-report-{uuid}.pdf). */
   pdfFilename?: string;
+  /**
+   * v0.2.1 governance: when provided, each finding renders a Fix button that
+   * opens the FixProposalDialog with this content + scan id.
+   */
+  governance?: {
+    content: unknown;
+    source: ScanSource;
+    scanId?: string | null;
+    /** Called after a fix is applied/queued/accepted so the parent can refresh state. */
+    onResolved?: (event:
+      | { kind: "applied"; signature: string }
+      | { kind: "queued"; signature: string }
+      | { kind: "accepted"; signature: string }) => void;
+  } | null;
 };
 
 export function ScanReportView({
@@ -452,6 +600,7 @@ export function ScanReportView({
   share,
   pdfExportUrl,
   pdfFilename,
+  governance,
 }: ScanReportViewProps) {
   const isShared = variant === "shared";
   const fallbackMeta = result.fallback ?? {
@@ -460,6 +609,11 @@ export function ScanReportView({
     fallback_to: null,
     fallback_reason: null,
   };
+
+  const activeMode: GovernanceMode = result.governance?.mode ?? DEFAULT_GOVERNANCE_MODE;
+  const [activeFix, setActiveFix] = useState<ScanFinding | null>(null);
+  const fixDialogOpen = activeFix !== null;
+  const findingsRendered: ScanFinding[] = result.findings;
 
   return (
     <div className="space-y-10 sm:space-y-12">
@@ -608,6 +762,7 @@ export function ScanReportView({
       </div>
 
       {result.policyEvaluation ? <PolicyEvaluationPanel pe={result.policyEvaluation} /> : null}
+      {result.policyV2Evaluation ? <PolicyV2EvaluationPanel pe={result.policyV2Evaluation} /> : null}
 
       {/* Main + sidebar */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_min(100%,340px)] lg:items-start lg:gap-10">
@@ -632,8 +787,13 @@ export function ScanReportView({
               </div>
             ) : (
               <div className="space-y-3">
-                {result.findings.map((f, i) => (
-                  <FindingCard key={`${f.rule_id}-${f.target}-${i}`} f={f} />
+                {findingsRendered.map((f, i) => (
+                  <FindingCard
+                    key={`${f.rule_id}-${f.target}-${i}`}
+                    f={f}
+                    onFix={governance ? () => setActiveFix(f) : undefined}
+                    governance={governance ? { mode: activeMode } : undefined}
+                  />
                 ))}
               </div>
             )}
@@ -649,6 +809,24 @@ export function ScanReportView({
           </p>
         </aside>
       </div>
+
+      {governance && activeFix ? (
+        <FixProposalDialog
+          open={fixDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) setActiveFix(null);
+          }}
+          finding={activeFix}
+          source={governance.source}
+          content={governance.content}
+          mode={activeMode}
+          scanId={governance.scanId ?? null}
+          onResolved={(event) => {
+            governance.onResolved?.(event);
+            setActiveFix(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
