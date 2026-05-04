@@ -7,6 +7,7 @@ import {
   Zap,
   BarChart3,
   Settings,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ export const mainNavItems: NavItem[] = [
   { title: "Workflows", href: "/workflows", icon: Workflow },
   { title: "Runs", href: "/runs", icon: Play },
   { title: "Policies", href: "/policies", icon: Shield },
+  { title: "Audit", href: "/audit", icon: ScrollText, badge: "new" },
   { title: "Automations", href: "/automations", icon: Zap },
   { title: "Reports", href: "/reports", icon: BarChart3 },
   { title: "Settings", href: "/settings", icon: Settings },
@@ -43,9 +45,11 @@ export function titleForPath(pathname: string): string {
   if (pathname.startsWith("/workflows")) return "Workflows";
   if (pathname.startsWith("/runs")) return "Runs";
   if (pathname.startsWith("/policies") || pathname.startsWith("/policy")) return "Policies";
+  if (pathname.startsWith("/audit")) return "Audit";
   if (pathname.startsWith("/automations")) return "Automations";
   if (pathname.startsWith("/reports")) return "Reports";
   if (pathname.startsWith("/settings")) return "Settings";
+  if (pathname.startsWith("/approvals")) return "Approvals";
   if (pathname.startsWith("/advanced")) return "Advanced";
   if (pathname.startsWith("/scan/")) return "Scan report";
   if (pathname.startsWith("/scan")) return "Scan";

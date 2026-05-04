@@ -12,6 +12,10 @@ import { readJsonBodyWithByteLimit, SCAN_JSON_BODY_MAX_BYTES } from "@/lib/reque
 import { attachRequestIdHeader, jsonErrorResponse } from "@/lib/api-json-error";
 import { getOrCreateRequestId } from "@/lib/api-request-id";
 import { isLikelyUuid, isReasonablePolicyTemplateSlug } from "@/lib/policy-input-limits";
+import { enrichScanWithGovernance } from "@/lib/governance/enrich-scan";
+import { resolvePolicyPack } from "@/lib/governance/policy-v2/resolver";
+import { evaluatePolicyRules } from "@/lib/governance/policy-v2/evaluator";
+import { detectSource, listSourceIds } from "@/lib/scan/source-registry";
 
 export const runtime = "nodejs";
 
@@ -53,9 +57,15 @@ export async function POST(request: Request) {
   const sourceRaw = body.source;
   const content = body.content;
 
-  const VALID_SOURCES = ["n8n", "generic", "github", "ai-agent"] as const;
-  if (!VALID_SOURCES.includes(sourceRaw as (typeof VALID_SOURCES)[number])) {
-    return jsonErrorResponse(400, `Field "source" must be one of: ${VALID_SOURCES.join(", ")}`, requestId, "bad_request");
+  const VALID_SOURCES = listSourceIds();
+  const isAuto = sourceRaw === "auto";
+  if (!isAuto && !VALID_SOURCES.includes(sourceRaw as ScanSource)) {
+    return jsonErrorResponse(
+      400,
+      `Field "source" must be one of: ${["auto", ...VALID_SOURCES].join(", ")}`,
+      requestId,
+      "bad_request"
+    );
   }
 
   if (!isPlainObject(content)) {
@@ -67,7 +77,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const source = sourceRaw as ScanSource;
+  let detectionMeta: { confidence: number; candidates: { source: ScanSource; confidence: number }[] } | null = null;
+  let source: ScanSource;
+  if (isAuto) {
+    const result = detectSource(content);
+    source = result.source;
+    detectionMeta = { confidence: result.confidence, candidates: result.candidates };
+  } else {
+    source = sourceRaw as ScanSource;
+  }
   const input = { source, content };
 
   const workspacePolicyId =
@@ -78,12 +96,19 @@ export async function POST(request: Request) {
     typeof body.policyTemplateSlug === "string" && body.policyTemplateSlug.trim()
       ? body.policyTemplateSlug.trim()
       : null;
+  const policyPackId =
+    typeof body.policyPackId === "string" && body.policyPackId.trim()
+      ? body.policyPackId.trim()
+      : null;
 
   if (workspacePolicyId && !isLikelyUuid(workspacePolicyId)) {
     return jsonErrorResponse(400, "workspacePolicyId must be a valid UUID", requestId, "bad_request");
   }
   if (policyTemplateSlug && !isReasonablePolicyTemplateSlug(policyTemplateSlug)) {
     return jsonErrorResponse(400, "policyTemplateSlug format is invalid", requestId, "bad_request");
+  }
+  if (policyPackId && !isLikelyUuid(policyPackId)) {
+    return jsonErrorResponse(400, "policyPackId must be a valid UUID", requestId, "bad_request");
   }
 
   let provider;
@@ -107,9 +132,12 @@ export async function POST(request: Request) {
       return attachRequestIdHeader(NextResponse.json(payload), requestId);
     }
 
-    let responsePayload: ScanApiSuccess = payload;
+    const supabase = await createClient();
+
+    let responsePayload: ScanApiSuccess = detectionMeta
+      ? { ...payload, detection: detectionMeta }
+      : payload;
     if (workspacePolicyId || policyTemplateSlug) {
-      const supabase = await createClient();
       const resolved = await resolveScanPolicy(supabase, { workspacePolicyId, policyTemplateSlug });
       if (resolved) {
         responsePayload = {
@@ -119,7 +147,29 @@ export async function POST(request: Request) {
       }
     }
 
-    const supabase = await createClient();
+    // v0.2.1 Governance Engine: signature + fix proposals + accepted-risk filter + mode.
+    const enriched = await enrichScanWithGovernance(responsePayload, source, content, supabase);
+    responsePayload = enriched.payload;
+
+    // v0.2.1 Block 2: Policy Pack v2 evaluation (independent from legacy thresholds).
+    if (policyPackId && supabase) {
+      const resolvedPack = await resolvePolicyPack(supabase, policyPackId);
+      if (resolvedPack) {
+        const v2Result = evaluatePolicyRules(
+          resolvedPack.rules,
+          resolvedPack.defaultVerdict,
+          resolvedPack.name,
+          resolvedPack.packId,
+          {
+            findings: responsePayload.findings,
+            riskScore: responsePayload.riskScore,
+            source,
+          }
+        );
+        responsePayload = { ...responsePayload, policyV2Evaluation: v2Result };
+      }
+    }
+
     if (supabase) {
       const {
         data: { user },

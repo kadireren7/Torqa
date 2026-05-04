@@ -70,7 +70,9 @@ export function ScanPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [jsonText, setJsonText] = useState("");
-  const [source, setSource] = useState<ScanSource>("n8n");
+  const [source, setSource] = useState<ScanSource | "auto">("auto");
+  const [detectedSource, setDetectedSource] = useState<ScanSource | null>(null);
+  const [detectionConfidence, setDetectionConfidence] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingSample, setLoadingSample] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -79,6 +81,9 @@ export function ScanPageClient() {
   const [policySelect, setPolicySelect] = useState("none");
   const [policyTemplates, setPolicyTemplates] = useState<{ slug: string; name: string }[]>([]);
   const [workspacePolicies, setWorkspacePolicies] = useState<{ id: string; name: string }[]>([]);
+  const [policyPacks, setPolicyPacks] = useState<{ id: string; name: string; level: string; sourceType: string | null }[]>([]);
+  const [policyPackSelect, setPolicyPackSelect] = useState("none");
+  const [scannedContent, setScannedContent] = useState<unknown>(null);
 
   const libraryId = searchParams.get("library")?.trim() ?? "";
   const projectSlug = searchParams.get("project")?.trim() ?? "";
@@ -110,6 +115,26 @@ export function ScanPageClient() {
               .map((p) => ({ id: p.id as string, name: p.name as string }))
           : [];
         setWorkspacePolicies(plist);
+      } catch {
+        /* ignore */
+      }
+      try {
+        const packRes = await fetch("/api/policy-packs", { credentials: "include" });
+        if (cancelled || !packRes.ok) return;
+        const j = (await packRes.json()) as {
+          items?: { id?: string; name?: string; level?: string; sourceType?: string | null }[];
+        };
+        const list = Array.isArray(j.items)
+          ? j.items
+              .filter((p) => typeof p.id === "string" && typeof p.name === "string")
+              .map((p) => ({
+                id: p.id as string,
+                name: p.name as string,
+                level: typeof p.level === "string" ? p.level : "workspace",
+                sourceType: typeof p.sourceType === "string" ? p.sourceType : null,
+              }))
+          : [];
+        setPolicyPacks(list);
       } catch {
         /* ignore */
       }
@@ -192,10 +217,15 @@ export function ScanPageClient() {
     setIsScanning(true);
     try {
       const scanBody: Record<string, unknown> = { source, content: parsed };
+      setDetectedSource(null);
+      setDetectionConfidence(null);
       if (policySelect.startsWith("template:")) {
         scanBody.policyTemplateSlug = policySelect.slice("template:".length);
       } else if (policySelect.startsWith("workspace:")) {
         scanBody.workspacePolicyId = policySelect.slice("workspace:".length);
+      }
+      if (policyPackSelect !== "none") {
+        scanBody.policyPackId = policyPackSelect;
       }
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -227,10 +257,16 @@ export function ScanPageClient() {
         return;
       }
       setResult(data);
-      if (!hasSupabase) {
-        appendLocalScanNotifications(data, source);
+      setScannedContent(parsed);
+      if (data.detection) {
+        setDetectedSource(data.source);
+        setDetectionConfidence(data.detection.confidence);
       }
-      const persisted = await persistScanToHistory(source, contentObj, data);
+      const resolvedSource = data.source;
+      if (!hasSupabase) {
+        appendLocalScanNotifications(data, resolvedSource);
+      }
+      const persisted = await persistScanToHistory(resolvedSource, contentObj, data);
       if (persisted.ok && !persisted.skipped) {
         setSaveNotice("Saved to your scan history.");
       }
@@ -239,7 +275,7 @@ export function ScanPageClient() {
     } finally {
       setIsScanning(false);
     }
-  }, [jsonText, source, policySelect]);
+  }, [jsonText, source, policySelect, policyPackSelect]);
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -257,12 +293,20 @@ export function ScanPageClient() {
     e.target.value = "";
   };
 
-  const loadSample = async (name: "minimal_n8n" | "customer_support_n8n") => {
+  const loadSample = async (
+    name:
+      | "minimal_n8n"
+      | "customer_support_n8n"
+      | "make_scenario"
+      | "zapier_zap"
+      | "lambda_function",
+    sourceHint: ScanSource | "auto" = "auto"
+  ) => {
     setLoadingSample(name);
     setError(null);
     setResult(null);
     setSaveNotice(null);
-    setSource("n8n");
+    setSource(sourceHint);
     try {
       const res = await fetch(`/scan-samples/${name}.json`);
       if (!res.ok) throw new Error("fetch failed");
@@ -357,7 +401,7 @@ export function ScanPageClient() {
                 size="sm"
                 className="h-10 w-full justify-center sm:w-auto"
                 disabled={busy}
-                onClick={() => loadSample("minimal_n8n")}
+                onClick={() => loadSample("minimal_n8n", "n8n")}
               >
                 {loadingSample === "minimal_n8n" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -372,14 +416,59 @@ export function ScanPageClient() {
                 size="sm"
                 className="h-10 w-full justify-center sm:w-auto"
                 disabled={busy}
-                onClick={() => loadSample("customer_support_n8n")}
+                onClick={() => loadSample("customer_support_n8n", "n8n")}
               >
                 {loadingSample === "customer_support_n8n" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <ShieldAlert className="mr-2 h-4 w-4" />
                 )}
-                Risky support example
+                Risky n8n
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full justify-center sm:w-auto"
+                disabled={busy}
+                onClick={() => loadSample("make_scenario", "auto")}
+              >
+                {loadingSample === "make_scenario" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileJson2 className="mr-2 h-4 w-4" />
+                )}
+                Make.com sample
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full justify-center sm:w-auto"
+                disabled={busy}
+                onClick={() => loadSample("zapier_zap", "auto")}
+              >
+                {loadingSample === "zapier_zap" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileJson2 className="mr-2 h-4 w-4" />
+                )}
+                Zapier sample
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full justify-center sm:w-auto"
+                disabled={busy}
+                onClick={() => loadSample("lambda_function", "auto")}
+              >
+                {loadingSample === "lambda_function" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileJson2 className="mr-2 h-4 w-4" />
+                )}
+                Lambda sample
               </Button>
             </div>
           </div>
@@ -393,12 +482,26 @@ export function ScanPageClient() {
                 id="scan-source"
                 value={source}
                 disabled={busy}
-                onChange={(e) => setSource(e.target.value as ScanSource)}
+                onChange={(e) => setSource(e.target.value as ScanSource | "auto")}
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
+                <option value="auto">Auto-detect (recommended)</option>
                 <option value="n8n">n8n workflow export</option>
+                <option value="make">Make.com scenario</option>
+                <option value="zapier">Zapier zap</option>
+                <option value="lambda">AWS Lambda / SAM</option>
+                <option value="github">GitHub Actions workflow</option>
+                <option value="ai-agent">AI Agent JSON</option>
                 <option value="generic">Generic JSON</option>
               </select>
+              {detectedSource && source === "auto" ? (
+                <p className="text-xs text-muted-foreground">
+                  Detected as <span className="font-mono font-medium text-foreground">{detectedSource}</span>
+                  {detectionConfidence !== null
+                    ? ` · confidence ${Math.round(detectionConfidence * 100)}%`
+                    : ""}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2 sm:col-span-1">
               <Label htmlFor="scan-policy" className="text-sm font-medium">
@@ -440,6 +543,37 @@ export function ScanPageClient() {
               </p>
             </div>
           </div>
+
+          {policyPacks.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="scan-policy-pack" className="text-sm font-medium">
+                  Policy pack v2 (optional)
+                </Label>
+                <select
+                  id="scan-policy-pack"
+                  value={policyPackSelect}
+                  disabled={busy}
+                  onChange={(e) => setPolicyPackSelect(e.target.value)}
+                  className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="none">None — no v2 evaluation</option>
+                  {policyPacks.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} · {p.level === "source" ? `source · ${p.sourceType ?? ""}` : "workspace"}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Attaches a programmable verdict computed from custom rules (independent from the threshold policy
+                  above).{" "}
+                  <Link href="/policies/packs" className="font-medium text-primary hover:underline">
+                    Manage packs
+                  </Link>
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor="scan-json" className="text-sm font-medium">
@@ -507,7 +641,27 @@ export function ScanPageClient() {
 
           {isScanning && <SummarySkeleton />}
 
-          {result && !isScanning && <ScanReportView result={result} notice={saveNotice} />}
+          {result && !isScanning && (
+            <ScanReportView
+              result={result}
+              notice={saveNotice}
+              governance={
+                scannedContent !== null
+                  ? {
+                      content: scannedContent,
+                      source: result.source,
+                      onResolved: () => {
+                        // Hint to operators that re-running the scan will re-evaluate
+                        // the gate now that an action has been recorded.
+                        setSaveNotice(
+                          "Action recorded. Re-run the scan to refresh the gate decision against the latest accepted-risks and applied fixes."
+                        );
+                      },
+                    }
+                  : null
+              }
+            />
+          )}
         </section>
       )}
 

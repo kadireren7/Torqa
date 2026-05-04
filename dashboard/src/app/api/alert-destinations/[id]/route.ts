@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isPlainObject } from "@/lib/json-guards";
 import { isAlertDestinationType, toDestinationApi } from "@/lib/alerts";
-import { validateWebhookUrlForDestination } from "@/lib/webhook-ssrf";
+import {
+  validateGenericWebhookUrlForOutbound,
+  validateWebhookUrlForDestination,
+} from "@/lib/webhook-ssrf";
 import { apiJsonDatabaseError } from "@/lib/api-json-error";
 
 export const runtime = "nodejs";
@@ -77,6 +80,27 @@ export async function PATCH(request: Request, context: Ctx) {
         }
         nextConfig.webhookUrl = url;
       }
+    }
+    if (type === "webhook") {
+      if (typeof body.config.url === "string" && body.config.url.trim()) {
+        const url = body.config.url.trim();
+        const v = validateGenericWebhookUrlForOutbound(url);
+        if (!v.ok) {
+          return NextResponse.json({ error: v.message, code: "invalid_webhook_url" }, { status: 400 });
+        }
+        nextConfig.url = url;
+      }
+      if (typeof body.config.secret === "string") {
+        const secret = body.config.secret;
+        if (secret && (secret.length < 16 || secret.length > 256)) {
+          return NextResponse.json(
+            { error: "config.secret must be 16..256 chars", code: "bad_request" },
+            { status: 400 }
+          );
+        }
+        nextConfig.secret = secret;
+      }
+      nextConfig.version = "v1";
     }
   }
 

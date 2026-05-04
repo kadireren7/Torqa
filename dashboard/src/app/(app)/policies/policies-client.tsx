@@ -251,6 +251,15 @@ export function PoliciesPageClient() {
             <Link href="/scan" className="font-medium text-primary hover:underline">
               Scan with policy →
             </Link>
+            <Link href="/policies/packs" className="font-medium text-primary hover:underline">
+              Programmable packs →
+            </Link>
+            <Link href="/policies/accepted-risks" className="font-medium text-primary hover:underline">
+              Accepted Risk Registry →
+            </Link>
+            <Link href="/approvals" className="font-medium text-primary hover:underline">
+              Pending approvals →
+            </Link>
             <Link href="/policy" className="font-medium text-muted-foreground hover:text-foreground hover:underline">
               Legacy settings
             </Link>

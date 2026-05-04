@@ -4,6 +4,15 @@
  */
 
 import type { PolicyEvaluationResult } from "@/lib/policy-types";
+import type {
+  AcceptedRiskMarker,
+  FixProposal,
+  GovernanceModeView,
+} from "@/lib/governance/types";
+import type { PolicyV2EvaluationResult } from "@/lib/governance/policy-v2/types";
+import { analyzeMake } from "@/lib/scan/adapters/make";
+import { analyzeZapier } from "@/lib/scan/adapters/zapier";
+import { analyzeLambda } from "@/lib/scan/adapters/lambda";
 
 export type ScanSeverity = "info" | "review" | "high" | "critical";
 
@@ -13,10 +22,37 @@ export type ScanFinding = {
   target: string;
   explanation: string;
   suggested_fix: string;
+  /**
+   * Deterministic finding signature (sha256 of source|rule_id|target).
+   * Set by the governance enrichment layer; absent on raw engine output.
+   */
+  signature?: string;
+  /**
+   * Structured fix proposal produced by the Fix Engine. Always set when
+   * enrichment runs; UI uses this to render the diff dialog and apply patches.
+   */
+  fix?: FixProposal;
+  /**
+   * When non-null, this finding matches an active accepted-risk row and was
+   * filtered out of the gate decision by the governance layer.
+   */
+  accepted_risk?: AcceptedRiskMarker | null;
 };
 
 export type ScanDecision = "PASS" | "NEEDS REVIEW" | "FAIL";
-export type ScanSource = "generic" | "n8n" | "github" | "ai-agent";
+/**
+ * Supported source adapters. v0.2.1 Block 3 expanded the surface to cover
+ * Make.com, Zapier, and AWS Lambda automation bundles in addition to the
+ * original n8n / generic / github / ai-agent sources.
+ */
+export type ScanSource =
+  | "generic"
+  | "n8n"
+  | "github"
+  | "ai-agent"
+  | "make"
+  | "zapier"
+  | "lambda";
 
 export type ScanTotals = {
   high: number;
@@ -54,6 +90,28 @@ export type ScanApiSuccess = {
   source: ScanSource;
   /** Present when a governance policy was applied to this scan response. */
   policyEvaluation?: PolicyEvaluationResult;
+  /**
+   * Policy Pack v2 evaluation (v0.2.1 Block 2). Set when a `policyPackId` was
+   * supplied to the scan request and successfully resolved. Independent from
+   * the legacy threshold `policyEvaluation` — both can coexist.
+   */
+  policyV2Evaluation?: PolicyV2EvaluationResult;
+  /**
+   * Governance Engine v0.2.1 metadata: active mode, scope, and admin flag.
+   * Attached by the enrichment layer; null when running fully offline.
+   */
+  governance?: GovernanceModeView | null;
+  /** Number of findings filtered out because of an active accepted-risk match. */
+  acceptedRiskCount?: number;
+  /**
+   * v0.2.1 Block 3: when the request used `source: "auto"`, this field carries
+   * the detection result so the UI can show what was inferred and the
+   * second-best candidates. Omitted when the user explicitly picked a source.
+   */
+  detection?: {
+    confidence: number;
+    candidates: { source: ScanSource; confidence: number }[];
+  };
 };
 
 type N8nNode = {
@@ -788,6 +846,12 @@ export function runScanAnalysis(raw: unknown, source: ScanSource): {
     findings.push(...analyzeGitHubActions(raw));
   } else if (source === "ai-agent") {
     findings.push(...analyzeAiAgent(raw));
+  } else if (source === "make") {
+    findings.push(...analyzeMake(raw));
+  } else if (source === "zapier") {
+    findings.push(...analyzeZapier(raw));
+  } else if (source === "lambda") {
+    findings.push(...analyzeLambda(raw));
   } else {
     findings.push(...analyzeGeneric(raw));
     if (looksN8n) {
