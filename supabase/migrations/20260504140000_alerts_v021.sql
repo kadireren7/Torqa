@@ -61,8 +61,26 @@ comment on column public.alert_rules.filters is
 -- ---------------------------------------------------------------
 alter table public.alert_deliveries
   add column if not exists organization_id uuid references public.organizations (id) on delete set null,
-  add column if not exists decision_id uuid references public.governance_decisions (id) on delete set null,
+  add column if not exists decision_id uuid,
   add column if not exists signature_payload text;
+
+do $$
+begin
+  if to_regclass('public.governance_decisions') is not null
+     and not exists (
+       select 1
+       from pg_constraint
+       where conname = 'alert_deliveries_decision_id_fkey'
+         and conrelid = 'public.alert_deliveries'::regclass
+     ) then
+    alter table public.alert_deliveries
+      add constraint alert_deliveries_decision_id_fkey
+      foreign key (decision_id)
+      references public.governance_decisions (id)
+      on delete set null;
+  end if;
+end
+$$;
 
 create index if not exists alert_deliveries_org_created_idx
   on public.alert_deliveries (organization_id, created_at desc)

@@ -38,7 +38,6 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
 ]
 dependencies = [
     "rich>=13.7.0,<16",
