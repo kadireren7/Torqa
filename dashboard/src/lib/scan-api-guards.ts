@@ -7,7 +7,11 @@ export function isScanApiSuccess(data: unknown): data is ScanApiSuccess {
   if (!t || typeof t !== "object" || Array.isArray(t)) return false;
   const totals = t as Record<string, unknown>;
   const statusOk = o.status === "PASS" || o.status === "NEEDS REVIEW" || o.status === "FAIL";
-  const sourceOk = o.source === "n8n" || o.source === "generic";
+  const sourceOk =
+    o.source === "n8n" ||
+    o.source === "generic" ||
+    o.source === "github" ||
+    o.source === "ai-agent";
   const engineOk = o.engine === "server-preview" || o.engine === "server-v1" || o.engine === "hosted-python";
   const modeOk =
     o.engine_mode === undefined ||

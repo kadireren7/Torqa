@@ -18,6 +18,7 @@ import { getOrCreateRequestId } from "@/lib/api-request-id";
 import { isLikelyUuid, isReasonablePolicyTemplateSlug } from "@/lib/policy-input-limits";
 import { logStructured } from "@/lib/structured-log";
 import { wrapPublicError, wrapPublicSuccess } from "@/lib/public-api-envelope";
+import { listSourceIds } from "@/lib/scan/source-registry";
 
 export const runtime = "nodejs";
 
@@ -126,8 +127,8 @@ export async function POST(request: Request) {
     const sourceRaw = body.source;
     const content = body.content;
 
-    const VALID_SOURCES = ["n8n", "generic", "github", "ai-agent"] as const;
-    if (!VALID_SOURCES.includes(sourceRaw as (typeof VALID_SOURCES)[number])) {
+    const VALID_SOURCES = listSourceIds();
+    if (!VALID_SOURCES.includes(sourceRaw as ScanSource)) {
       statusCode = 400;
       errorCode = "invalid_source";
       return respondError(400, `Field "source" must be one of: ${VALID_SOURCES.join(", ")}`, "bad_request");

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveListOrganizationId } from "@/lib/workspace-scope";
 import { isPlainObject } from "@/lib/json-guards";
-import { isAlertRuleTrigger, toRuleApi } from "@/lib/alerts";
+import { isAlertRuleTrigger, normalizeRuleFilters, toRuleApi } from "@/lib/alerts";
 import { isLikelyUuid } from "@/lib/policy-input-limits";
 import { apiJsonDatabaseError } from "@/lib/api-json-error";
 
@@ -63,7 +63,7 @@ export async function PATCH(request: Request, context: Ctx) {
 
   const { data: existing, error: selErr } = await supabase
     .from("alert_rules")
-    .select("id,name,enabled,rule_trigger,destination_ids,organization_id")
+    .select("id,user_id,name,enabled,rule_trigger,destination_ids,filters,organization_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -114,11 +114,18 @@ export async function PATCH(request: Request, context: Ctx) {
     return NextResponse.json({ error: "Invalid destination ids for this scope" }, { status: 400 });
   }
 
+  const filters =
+    body.filters === undefined
+      ? normalizeRuleFilters(row.filters)
+      : normalizeRuleFilters(body.filters);
+
   const { data, error } = await supabase
     .from("alert_rules")
-    .update({ name, enabled, rule_trigger, destination_ids })
+    .update({ name, enabled, rule_trigger, destination_ids, filters })
     .eq("id", id)
-    .select("id,user_id,organization_id,name,enabled,rule_trigger,destination_ids,created_at,updated_at")
+    .select(
+      "id,user_id,organization_id,name,enabled,rule_trigger,destination_ids,filters,created_at,updated_at"
+    )
     .single();
 
   if (error) {

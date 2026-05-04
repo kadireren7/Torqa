@@ -18,7 +18,17 @@
       "Bash(npx --prefix /c/Users/kadir/Desktop/Project-X/dashboard tsc --noEmit)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kadir\\\\Desktop\\\\Project-X\" -Directory)",
       "Bash(Select-Object Name)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kadir\\\\Desktop\\\\Project-X\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kadir\\\\Desktop\\\\Project-X\\\\dashboard\\\\src\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "Bash(npx vitest *)",
+      "Bash(npm install *)",
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(python -m py_compile src/torqa/cli/io.py src/torqa/integrations/registry.py tests/test_adapter_registry.py)",
+      "Bash(ruff check *)"
     ]
   }
 }

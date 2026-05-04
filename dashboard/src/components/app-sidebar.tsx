@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { mainNavItems } from "@/lib/nav";
 import { TorqaLogoMark } from "@/components/torqa-logo";
+import { GovernanceModeBadge } from "@/components/governance/mode-badge";
 
 type AppSidebarProps = {
   orgName: string;
@@ -55,11 +56,12 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border px-5 py-3">
+      <div className="space-y-2 border-t border-sidebar-border px-5 py-3">
         <p className="text-[11px] text-sidebar-foreground/70 uppercase tracking-wider">Workflow governance</p>
+        <GovernanceModeBadge />
         <Link
           href="/"
-          className="mt-2 inline-flex text-xs font-medium text-sidebar-foreground/80 transition-colors hover:text-sidebar-foreground"
+          className="block text-xs font-medium text-sidebar-foreground/80 transition-colors hover:text-sidebar-foreground"
         >
           ← Torqa home
         </Link>

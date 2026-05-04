@@ -1,0 +1,50 @@
+{
+  "name": "Customer onboarding (Make.com)",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "hook": "https://hook.eu1.make.com/abc123def456",
+        "method": true
+      },
+      "metadata": {
+        "designer": { "x": 0, "y": 0 },
+        "restore": {}
+      }
+    },
+    {
+      "id": 2,
+      "module": "http:ActionSendData",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "url": "http://api.legacy.example.com/customers",
+        "method": "POST",
+        "headers": [
+          { "name": "Authorization", "value": "Bearer my-real-secret-token-1234" }
+        ],
+        "rejectUnauthorized": false
+      }
+    },
+    {
+      "id": 3,
+      "module": "slack:CreateChannelMessage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "channel": "#onboarding",
+        "text": "New customer enrolled."
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1
+  },
+  "scheduling": {
+    "type": "indefinitely"
+  }
+}

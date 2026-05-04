@@ -66,7 +66,15 @@ function buildOutcomeTrend(rows: ScanHistoryRow[], sinceIso: string): RiskTrendP
   });
 }
 
-const VALID_SOURCES = new Set(["n8n", "generic", "github", "ai-agent"]);
+const VALID_SOURCES = new Set([
+  "n8n",
+  "generic",
+  "github",
+  "ai-agent",
+  "make",
+  "zapier",
+  "lambda",
+]);
 
 function rowToRecent(row: ScanHistoryRow): HomeRecentScan | null {
   if (!VALID_SOURCES.has(row.source)) return null;
