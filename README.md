@@ -9,12 +9,12 @@ Inspect, enforce, and audit every workflow — before it runs in production.</p>
 
 <br />
 
-[![Version](https://img.shields.io/badge/version-0.2.0-0ea5e9?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.2-0ea5e9?style=flat-square)](CHANGELOG.md)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-6366f1?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3b82f6?style=flat-square)](pyproject.toml)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](dashboard/)
 [![CI](https://github.com/kadireren7/Torqa/actions/workflows/ci.yml/badge.svg)](https://github.com/kadireren7/Torqa/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-51%20passing-22c55e?style=flat-square)](dashboard/)
+[![Tests](https://img.shields.io/badge/tests-133%20passing-22c55e?style=flat-square)](dashboard/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript)](dashboard/tsconfig.json)
 
 <br />
@@ -55,7 +55,7 @@ n8n  ·  GitHub Actions  ·  AI Agents  ·  Zapier  ·  Make  ─→  Torqa  ─
 | **Enforcement Webhooks** | Real-time outbound governance callbacks with HMAC-SHA256 signing |
 | **Audit Log** | Full event trail across workspace activity |
 
-> Screenshots will be added in v0.2.0 once the public demo environment is live.
+> Screenshots are continuously updated as dashboard surfaces evolve.
 
 ![Torqa Sources](docs/images/screenshot-sources.png)
 
@@ -104,11 +104,13 @@ The **Next.js 16 dashboard** (`dashboard/`) is the team surface for Torqa. It pr
 |---|---|
 | **Integration Center** | Connect n8n, GitHub, AI agents. Auto-sync workflows on connect. |
 | **Scan Schedules** | Automated recurring scans — cron, hourly, daily, manual. |
-| **Governance Reports** | Per-scan trust score, findings, policy status, PDF export. |
+| **Governance Reports** | Per-scan trust score, findings, policy status, and PDF evidence export. |
 | **Workspace Policies** | Custom enforcement thresholds per workspace or project. |
 | **Alert Rules** | Slack, Discord, email — triggered on FAIL or review decisions. |
 | **Enforcement Webhooks** | HMAC-signed outbound POST on every governance decision. |
 | **Audit Log** | Full event trail — integrations, scans, API keys, policy changes. |
+| **Workflow Detail View** | Per-workflow trust history, stale-scan signal, latest findings, and one-click jump to fixes. |
+| **Compliance Export** | Audit export in CSV, JSON, and PDF for external audit evidence. |
 | **API Keys** | Machine-to-machine access for CLI and CI workflows. |
 | **Multi-workspace** | Organization support with member roles and scoped governance. |
 
@@ -224,9 +226,9 @@ Torqa posts a decision summary comment directly on the PR with trust score, deci
 | **GitHub Actions** | Active | Workflow YAML — permissions, secret exposure, unpinned actions, pwn-request patterns |
 | **AI Agents** | Active | Agent definitions — prompt injection, dangerous tools, scope creep, privileged permissions |
 | **Generic JSON/TQ** | Active | Any `ir_goal` bundle or raw workflow spec |
-| **Zapier** | Beta | API key connection — scan Zap orchestrations |
-| **Make** | Beta | API token connection — scan Make scenarios |
-| **Pipedream** | Planned | — |
+| **Zapier** | Active | API key or OAuth connection — scan Zap orchestrations |
+| **Make** | Active | API token connection — scan Make scenarios |
+| **Pipedream** | Beta | API key connection — scan Pipedream workflows |
 
 ---
 
@@ -278,7 +280,7 @@ Response envelope:
     "findings": [...],
     "engine": "torqa-scan-v1"
   },
-  "meta": { "version": "0.2.0" }
+  "meta": { "version": "0.2.2" }
 }
 ```
 
@@ -354,6 +356,7 @@ helm install torqa charts/torqa/ \
 
 | Version | Date | Highlights |
 |---|---|---|
+| **v0.2.2** | 2026-05-07 | Workflow detail page with trust-score history + findings, compliance audit export now supports PDF in addition to CSV/JSON, and outbound webhook URL validation hardened against SSRF-style misuse |
 | **v0.2.0** | 2026-05-02 | Real GitHub Actions + AI Agent adapters (Python + dashboard), SVG provider logos, Zapier/Make beta connections, scan route expanded to all sources, Next.js 16 |
 | v0.1.9 | 2026-05-01 | Source connections, enforcement webhooks, GitHub Actions + AI agent scan engine, audit log, CI workflow |
 | v0.1.8 | 2026-04-30 | Axe contrast fixes, smoke E2E alignment, UI stabilization |
