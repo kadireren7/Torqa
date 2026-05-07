@@ -13,7 +13,6 @@ const ROUTES = [
   "/workflow-library",
   "/policies",
   "/insights",
-  "/workspace",
   "/alerts",
   "/schedules",
   "/settings/api",
