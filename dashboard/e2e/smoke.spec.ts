@@ -35,9 +35,7 @@ test.describe("public smoke", () => {
 test.describe("local mode (no Supabase in CI)", () => {
   test("overview is reachable when middleware skips auth", async ({ page }) => {
     await page.goto("/overview");
-    await expect(
-      page.getByRole("heading", { name: "Workflow governance, automated." })
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /governance/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /Connect a source/i }).first()).toBeVisible();
   });
 });

@@ -21,7 +21,7 @@ export default function LoginPage() {
       className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 p-4"
     >
       {!configured && (
-        <div className="max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+        <div className="max-w-md rounded-lg border border-amber-500/40 bg-amber-100 px-4 py-3 text-sm text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
           Set <code className="rounded bg-muted px-1 font-mono text-xs">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
           <code className="rounded bg-muted px-1 font-mono text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{" "}
           <code className="font-mono text-xs">.env</code> to enable auth. Until then, the dashboard runs without a login
