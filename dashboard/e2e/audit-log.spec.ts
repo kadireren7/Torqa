@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("audit log", () => {
   test("settings page shows audit log card", async ({ page }) => {
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: /audit log/i })).toBeVisible();
   });
 

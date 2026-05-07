@@ -13,7 +13,7 @@ const MINIMAL_N8N = JSON.stringify({
 test.describe("scan flow", () => {
   test("scan page renders input form", async ({ page }) => {
     await page.goto("/scan");
-    await expect(page.getByRole("heading", { name: "Scan" })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Scan" })).toBeVisible();
     await expect(page.locator("#scan-json")).toBeVisible();
     await expect(page.getByRole("button", { name: /run scan/i })).toBeVisible();
   });
