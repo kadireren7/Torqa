@@ -3,25 +3,14 @@
 import { usePathname, useRouter } from "next/navigation";
 import { titleForPath } from "@/lib/nav";
 import { AppMobileNav } from "@/components/app-mobile-nav";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -40,8 +29,8 @@ type AppHeaderProps = {
 function initialsFrom(email: string, displayName: string | null): string {
   if (displayName?.trim()) {
     const parts = displayName.trim().split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return parts[0].slice(0, 2).toUpperCase();
+    if (parts.length >= 2) return (parts[0][0]! + parts[1][0]!).toUpperCase();
+    return parts[0]!.slice(0, 2).toUpperCase();
   }
   const local = email.split("@")[0] ?? "?";
   return local.slice(0, 2).toUpperCase();
@@ -49,19 +38,14 @@ function initialsFrom(email: string, displayName: string | null): string {
 
 const hasSupabaseEnv = hasPublicSupabaseUrl();
 
-export function AppHeader({ orgName, user }: AppHeaderProps) {
+export function AppHeader({ orgName: _orgName, user }: AppHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const title = titleForPath(pathname);
   const notificationsEnabled = !hasSupabaseEnv || Boolean(user);
-  const runMatch = pathname.match(/^\/validation\/([^/]+)$/);
-  const runId = runMatch?.[1];
 
-  const scanHistory = pathname.startsWith("/scan/history");
   const scanDetailMatch = pathname.match(/^\/scan\/([^/]+)$/);
-  const scanDetailId =
-    scanDetailMatch && scanDetailMatch[1] !== "history" ? scanDetailMatch[1] : null;
-  const onScanSection = pathname.startsWith("/scan");
+  const scanDetailId = scanDetailMatch && scanDetailMatch[1] !== "history" ? scanDetailMatch[1] : null;
 
   async function signOut() {
     const supabase = getBrowserSupabase();
@@ -70,106 +54,86 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
     router.refresh();
   }
 
+  const pageLabel = scanDetailId ? "Scan report" : title;
+
+  const initials = user ? initialsFrom(user.email, user.displayName) : "?";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Guest";
+
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
-      <AppMobileNav orgName={orgName} />
-      <Breadcrumb className="hidden min-w-0 sm:flex">
-        <BreadcrumbList className="flex-wrap">
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/overview" className="text-muted-foreground hover:text-foreground">
-                Dashboard
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {pathname !== "/overview" && (
-            <>
-              <BreadcrumbSeparator />
-              {runId ? (
-                <>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                      <Link href="/validation" className="text-muted-foreground hover:text-foreground">
-                        Validation
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="max-w-[160px] truncate font-medium">{runId}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              ) : scanHistory ? (
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="font-medium">Scan history</BreadcrumbPage>
-                </BreadcrumbItem>
-              ) : scanDetailId ? (
-                <>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                      <Link href="/scan" className="text-muted-foreground hover:text-foreground">
-                        Scan
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="max-w-[140px] truncate font-mono text-xs font-medium">
-                      {scanDetailId}
-                    </BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              ) : onScanSection ? (
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="font-medium">{title}</BreadcrumbPage>
-                </BreadcrumbItem>
-              ) : (
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="font-medium">{title}</BreadcrumbPage>
-                </BreadcrumbItem>
-              )}
-            </>
-          )}
-        </BreadcrumbList>
-      </Breadcrumb>
-      <div className="min-w-0 flex-1 sm:hidden">
-        <h1 className="truncate text-sm font-semibold">
-          {runId ? `Run ${runId}` : scanDetailId ? "Scan report" : title}
-        </h1>
+    <header
+      className="sticky top-0 z-30 flex h-[56px] shrink-0 items-center gap-4 px-5"
+      style={{
+        background: "rgba(9,9,13,0.85)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid var(--line)",
+      }}
+    >
+      <AppMobileNav orgName="" />
+
+      {/* Page title */}
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {scanDetailId ? (
+          <div className="flex items-center gap-2 text-[13px]">
+            <Link href="/scan" className="text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]">
+              Scan
+            </Link>
+            <span className="text-[var(--fg-4)]">/</span>
+            <span className="font-mono text-[11px] text-[var(--fg-2)] opacity-70">{scanDetailId.slice(0, 8)}…</span>
+          </div>
+        ) : (
+          <h1 className="text-[13px] font-medium text-[var(--fg-2)]">{pageLabel}</h1>
+        )}
       </div>
-      <div className="ml-auto flex items-center gap-2">
+
+      {/* Right actions */}
+      <div className="flex items-center gap-1.5">
         <ThemeToggle />
         <NotificationBell enabled={notificationsEnabled} />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 gap-2 rounded-full pl-2 pr-1">
-              <span className="hidden max-w-[120px] truncate text-xs text-muted-foreground sm:inline">
-                {user?.displayName || user?.email || "Guest"}
-              </span>
-              <Avatar className="h-8 w-8 border border-border">
-                <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                  {user ? initialsFrom(user.email, user.displayName) : "?"}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            <button
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-all hover:ring-2 hover:ring-white/10 focus:outline-none"
+              style={{
+                background: "rgba(34,211,238,0.12)",
+                color: "var(--cyan)",
+                border: "1px solid rgba(34,211,238,0.2)",
+              }}
+            >
+              {initials}
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-normal">
-              {user ? (
-                <>
-                  <p className="text-sm font-medium">{user.displayName || "Signed in"}</p>
-                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground">Not signed in (Supabase off or bypass)</p>
+          <DropdownMenuContent
+            align="end"
+            className="w-52 border-[var(--line)]"
+            style={{ background: "var(--surface-1)" }}
+          >
+            <div className="px-3 py-2">
+              <p className="text-[13px] font-medium text-[var(--fg-1)]">{displayName}</p>
+              {user?.email && (
+                <p className="truncate text-[11px] text-[var(--fg-3)]">{user.email}</p>
               )}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            </div>
+            <DropdownMenuSeparator style={{ background: "var(--line)" }} />
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="cursor-pointer text-[13px] text-[var(--fg-2)]">
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator style={{ background: "var(--line)" }} />
             {user ? (
-              <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => void signOut()}
+                className="cursor-pointer text-[13px] text-[var(--fg-3)]"
+              >
+                Sign out
+              </DropdownMenuItem>
             ) : (
               <DropdownMenuItem asChild>
-                <Link href="/login">Sign in</Link>
+                <Link href="/login" className="cursor-pointer text-[13px]">
+                  Sign in
+                </Link>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

@@ -10,20 +10,24 @@ export default {
   theme: {
   	extend: {
   		colors: {
-  			'tr-void': 'var(--tr-void)',
-  			'tr-surface': 'var(--tr-surface)',
-  			'tr-s2': 'var(--tr-s2)',
-  			'tr-line': 'var(--tr-line)',
-  			'tr-line2': 'var(--tr-line2)',
-  			'tr-fg': 'var(--tr-fg)',
-  			'tr-fg2': 'var(--tr-fg2)',
-  			'tr-fg3': 'var(--tr-fg3)',
-  			'tr-fg4': 'var(--tr-fg4)',
-  			'tr-cyan': 'var(--tr-cyan)',
-  			'tr-cyl': 'var(--tr-cyl)',
-  			'tr-cyd': 'var(--tr-cyd)',
-  			'tr-red': 'var(--tr-red)',
-  			'tr-amb': 'var(--tr-amb)',
+  			/* Design token aliases */
+  			'tq-void': 'var(--void)',
+  			'tq-surface-0': 'var(--surface-0)',
+  			'tq-surface-1': 'var(--surface-1)',
+  			'tq-surface-2': 'var(--surface-2)',
+  			'tq-fg-1': 'var(--fg-1)',
+  			'tq-fg-2': 'var(--fg-2)',
+  			'tq-fg-3': 'var(--fg-3)',
+  			'tq-cyan': 'var(--cyan)',
+  			'tq-rose': 'var(--rose)',
+  			'tq-amber': 'var(--amber)',
+  			'tq-emerald': 'var(--emerald)',
+  			/* Legacy aliases (kept for backward compat) */
+  			'tr-void': 'var(--void)',
+  			'tr-surface': 'var(--surface-0)',
+  			'tr-cyan': 'var(--cyan)',
+  			'tr-red': 'var(--rose)',
+  			'tr-amb': 'var(--amber)',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

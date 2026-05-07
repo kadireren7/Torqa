@@ -15,55 +15,95 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
-      <div className="flex h-14 items-center gap-2.5 px-5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-sidebar-accent/80">
-          <TorqaLogoMark size={22} />
+    <aside
+      className="hidden lg:flex w-[220px] shrink-0 flex-col"
+      style={{
+        background: "var(--surface-0)",
+        borderRight: "1px solid var(--line)",
+      }}
+    >
+      {/* Logo */}
+      <div className="flex h-[56px] shrink-0 items-center gap-3 px-5">
+        <div
+          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg"
+          style={{
+            background: "rgba(34,211,238,0.08)",
+            border: "1px solid rgba(34,211,238,0.18)",
+          }}
+        >
+          <TorqaLogoMark size={18} />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold tracking-tight">Torqa</p>
-          <p className="truncate text-[11px] text-sidebar-foreground/60">{orgName}</p>
+        <div className="min-w-0">
+          <p className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--fg-1)]">Torqa</p>
+          {orgName !== "Personal" && (
+            <p className="truncate text-[11px] text-[var(--fg-3)]">{orgName}</p>
+          )}
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-3 py-4">
-        {mainNavItems.map((item) => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/overview" && pathname.startsWith(item.href + "/")) ||
-            (item.href === "/overview" && pathname === "/overview");
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden />
-              <span className="flex-1">{item.title}</span>
-              {item.badge ? (
-                <span className="rounded border border-primary/30 bg-primary/10 px-1 py-0.5 text-[10px] uppercase tracking-wide text-primary">
-                  {item.badge}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-2">
+        <div className="space-y-[2px]">
+          {mainNavItems.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/overview" && pathname.startsWith(item.href)) ||
+              (item.href === "/overview" && pathname === "/overview");
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "group flex items-center gap-3 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-all duration-100",
+                  active
+                    ? "text-[var(--fg-1)]"
+                    : "text-[var(--fg-3)] hover:text-[var(--fg-2)]"
+                )}
+                style={
+                  active
+                    ? { background: "rgba(255,255,255,0.06)" }
+                    : undefined
+                }
+              >
+                <Icon
+                  className={cn(
+                    "h-[15px] w-[15px] shrink-0 transition-colors",
+                    active ? "text-[var(--cyan)]" : "text-[var(--fg-4)] group-hover:text-[var(--fg-3)]"
+                  )}
+                  aria-hidden
+                />
+                <span className="flex-1 leading-none">{item.title}</span>
+                {item.badge && (
+                  <span
+                    className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide"
+                    style={{
+                      background: "rgba(34,211,238,0.1)",
+                      border: "1px solid rgba(34,211,238,0.2)",
+                      color: "var(--cyan)",
+                    }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
-      <div className="space-y-2 border-t border-sidebar-border px-5 py-3">
-        <p className="text-[11px] text-sidebar-foreground/70 uppercase tracking-wider">Workflow governance</p>
-        <GovernanceModeBadge />
+      {/* Footer */}
+      <div className="px-4 py-4" style={{ borderTop: "1px solid var(--line)" }}>
+        <div className="mb-3">
+          <GovernanceModeBadge />
+        </div>
         <Link
           href="/"
-          className="block text-xs font-medium text-sidebar-foreground/80 transition-colors hover:text-sidebar-foreground"
+          className="flex items-center gap-1.5 text-[12px] text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]"
         >
-          ← Torqa home
+          <span>←</span>
+          <span>Home</span>
         </Link>
       </div>
     </aside>

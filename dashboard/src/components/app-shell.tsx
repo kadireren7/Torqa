@@ -9,9 +9,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   let user: { email: string; displayName: string | null } | null = null;
   if (supabase) {
-    const {
-      data: { user: u },
-    } = await supabase.auth.getUser();
+    const { data: { user: u } } = await supabase.auth.getUser();
     if (u?.email) {
       const meta = u.user_metadata as Record<string, unknown> | undefined;
       const dn =
@@ -23,16 +21,30 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative flex min-h-screen bg-background">
+    <div className="relative flex min-h-screen" style={{ background: "var(--surface-0)" }}>
+      {/* Very subtle ambient glow */}
       <div
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,hsl(var(--primary)/0.08),transparent_50%),radial-gradient(ellipse_80%_50%_at_100%_0%,hsl(var(--chart-2)/0.06),transparent_45%)]"
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 30% at 50% -5%, rgba(34,211,238,0.04) 0%, transparent 60%)," +
+            "radial-gradient(ellipse 40% 20% at 100% 0%, rgba(139,92,246,0.03) 0%, transparent 50%)",
+        }}
         aria-hidden
       />
+
       <AppSidebar orgName={org.name} />
-      <div className="flex min-w-0 flex-1 flex-col">
+
+      <div className="flex min-w-0 flex-1 flex-col" style={{ background: "var(--surface-0)" }}>
         <AppHeader orgName={org.name} user={user} />
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto outline-none">
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 overflow-auto outline-none"
+        >
+          <div className="mx-auto max-w-[1100px] px-6 py-8 sm:px-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

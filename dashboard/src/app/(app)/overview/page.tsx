@@ -7,15 +7,11 @@ import {
   BarChart3,
   FileStack,
   Gauge,
-  HelpCircle,
-  Scale,
   Shield,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RiskTrendChart } from "@/components/risk-trend-chart";
 import { ScanOutcomeBadge } from "@/components/scan-outcome-badge";
 import {
@@ -29,7 +25,6 @@ import {
 import { getHomeDashboardData } from "@/data/home-metrics";
 import { cn } from "@/lib/utils";
 import { OverviewFirstRun } from "@/components/onboarding/overview-first-run";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
 
@@ -39,14 +34,6 @@ export const metadata: Metadata = {
   title: "Home",
   description: "Connect sources, monitor workflows, enforce policies continuously.",
 };
-
-function formatRatio(pass: number, fail: number): string {
-  if (pass === 0 && fail === 0) return "—";
-  if (fail === 0) return `${pass} : 0`;
-  const g = (a: number, b: number): number => (b === 0 ? a : g(b, a % b));
-  const d = g(pass, fail);
-  return `${Math.round(pass / d)} : ${Math.round(fail / d)}`;
-}
 
 type GovernanceDecisionRow = {
   id: string;
@@ -65,117 +52,68 @@ async function getRecentDecisions(): Promise<GovernanceDecisionRow[]> {
     .from("governance_decisions")
     .select("id, decision_type, finding_signature, rationale, mode, created_at")
     .order("created_at", { ascending: false })
-    .limit(10);
+    .limit(8);
   return (data ?? []) as GovernanceDecisionRow[];
 }
 
-function decisionLabel(type: string): { label: string; tone: string } {
-  const map: Record<string, { label: string; tone: string }> = {
-    apply_fix: { label: "Fix applied", tone: "text-emerald-400" },
-    accept_risk: { label: "Risk accepted", tone: "text-amber-400" },
-    revoke_risk: { label: "Risk revoked", tone: "text-muted-foreground" },
-    approve_fix: { label: "Fix approved", tone: "text-emerald-400" },
-    reject_fix: { label: "Fix rejected", tone: "text-red-400" },
-    mode_change: { label: "Mode changed", tone: "text-cyan-400" },
-    interactive_response: { label: "Response recorded", tone: "text-muted-foreground" },
-  };
-  return map[type] ?? { label: type, tone: "text-muted-foreground" };
-}
+const DECISION_META: Record<string, { label: string; dot: string }> = {
+  apply_fix: { label: "Fix applied", dot: "#10b981" },
+  accept_risk: { label: "Risk accepted", dot: "#f59e0b" },
+  revoke_risk: { label: "Risk revoked", dot: "#6b7280" },
+  approve_fix: { label: "Fix approved", dot: "#10b981" },
+  reject_fix: { label: "Fix rejected", dot: "#f43f5e" },
+  mode_change: { label: "Mode changed", dot: "#22d3ee" },
+  interactive_response: { label: "Response recorded", dot: "#8b8b9a" },
+};
 
-function timeAgoShort(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60_000);
-  if (m < 1) return "now";
-  if (m < 60) return `${m}m`;
+function timeAgo(iso: string): string {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 export default async function DashboardOverviewPage() {
-  const [home, recentDecisions] = await Promise.all([
+  const [home, decisions] = await Promise.all([
     getHomeDashboardData(),
     getRecentDecisions(),
   ]);
+
   const totalOutcomes = home.passCount + home.failCount + home.reviewCount;
-  const passRatePct =
-    totalOutcomes > 0 ? Math.round((home.passCount / totalOutcomes) * 100) : null;
+  const passRate = totalOutcomes > 0 ? Math.round((home.passCount / totalOutcomes) * 100) : null;
 
   return (
-    <div className="space-y-10">
-      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.07] p-6 shadow-lg ring-1 ring-black/[0.06] dark:ring-white/[0.06] sm:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/[0.12] blur-3xl" aria-hidden />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-chart-3/15 blur-3xl" aria-hidden />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "border font-semibold tracking-wide",
-                  home.mode === "supabase"
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                    : "border-border/80 bg-muted/60 text-muted-foreground"
-                )}
-              >
-                {home.mode === "supabase" ? (
-                  <>
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                    Live metrics
-                  </>
-                ) : (
-                  <>
-                    <BarChart3 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                    Demo data
-                  </>
-                )}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {home.mode === "supabase"
-                  ? "Pulled from your saved workflow scans."
-                  : "Connect Supabase to replace with your workspace."}
-              </span>
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Workflow governance, automated.</h1>
-            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Connect your automation sources, select workflows, enforce policies, and get notified on every change — continuously.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild size="sm" className="gap-2 shadow-md">
-                <Link href="/sources">
-                  Connect a source
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant="secondary" asChild size="sm">
-                <Link href="/runs">View runs</Link>
-              </Button>
-              <Button variant="outline" asChild size="sm" className="border-border/80 bg-background/50">
-                <Link href="/reports">Reports</Link>
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Prefer manual?{" "}
-              <Link href="/advanced/manual-scan" className="text-primary hover:underline">Advanced: manual scan</Link>
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col lg:items-end">
-            <Button asChild className="gap-2 shadow-md">
-              <Link href="/sources">
-                Connect a source
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="border-border/80 bg-background/50 backdrop-blur">
-              <Link href="/automations">Automations</Link>
-            </Button>
-            <Button variant="outline" asChild className="border-border/80 bg-background/50 backdrop-blur">
-              <Link href="/policies">Policies</Link>
-            </Button>
-            <Button variant="outline" asChild className="border-border/80 bg-background/50 backdrop-blur">
-              <Link href="/runs">Runs</Link>
-            </Button>
-          </div>
+    <div className="space-y-8 animate-fade-in-up">
+
+      {/* ── Hero row ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--fg-3)]">
+            Overview
+          </p>
+          <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.02em] text-[var(--fg-1)]">
+            Governance control
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/sources"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-[var(--fg-2)] transition-all hover:text-[var(--fg-1)]"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--line-2)" }}
+          >
+            Connect source
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+          <Link
+            href="/scan"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-[var(--void)] transition-all"
+            style={{ background: "var(--cyan)", border: "1px solid var(--cyan)" }}
+          >
+            <Shield className="h-3 w-3" />
+            Scan now
+          </Link>
         </div>
       </div>
 
@@ -185,311 +123,318 @@ export default async function DashboardOverviewPage() {
         onboarding={home.onboarding}
       />
 
-      <Card className="border-border/70 bg-card/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick glossary</CardTitle>
-          <CardDescription>Hover to see key governance terms used in Torqa.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <TooltipProvider delayDuration={120}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  Policies
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Rules that define pass/fail and review thresholds for scans.</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  Risk score
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Deterministic 0-100 score indicating workflow risk posture.</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  Trust signals
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Structured reasons behind pass, fail, or needs-review decisions.</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          icon={<Activity className="h-4 w-4" />}
-          label="Total scans"
-          hint="Last 30 days"
+      {/* ── Metric grid ── */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <MetricTile
+          label="Scans (30d)"
           value={home.totalScans30d}
+          icon={<Activity className="h-3.5 w-3.5" />}
+          sub="Total scans last month"
         />
-        <MetricCard
-          icon={<Activity className="h-4 w-4" />}
-          label="Scans this week"
-          hint="Last 7 days"
-          value={home.scansThisWeek}
-        />
-        <MetricCard
-          icon={<FileStack className="h-4 w-4" />}
-          label="Saved reports"
-          hint="All time in your library"
-          value={home.savedReportsAllTime}
-        />
-        <MetricCard
-          icon={<Gauge className="h-4 w-4" />}
+        <MetricTile
           label="Avg trust score"
-          hint="Mean risk score (0–100)"
-          value={home.avgTrustScore === null ? "—" : home.avgTrustScore}
-          valueClassName="text-primary"
+          value={home.avgTrustScore ?? "—"}
+          icon={<Gauge className="h-3.5 w-3.5" />}
+          sub="Mean risk posture 0–100"
+          accent={
+            typeof home.avgTrustScore === "number"
+              ? home.avgTrustScore >= 70
+                ? "var(--emerald)"
+                : home.avgTrustScore >= 45
+                ? "var(--amber)"
+                : "var(--rose)"
+              : undefined
+          }
         />
-        <MetricCard
-          icon={<Shield className="h-4 w-4" />}
+        <MetricTile
           label="Policy failures"
-          hint="Last 30 days"
           value={home.policyFailures30d}
-          valueClassName={home.policyFailures30d > 0 ? "text-rose-500" : undefined}
+          icon={<Shield className="h-3.5 w-3.5" />}
+          sub="Failed governance checks (30d)"
+          accent={home.policyFailures30d > 0 ? "var(--rose)" : undefined}
         />
-        <MetricCard
-          icon={<Gauge className="h-4 w-4" />}
+        <MetricTile
+          label="Pass rate"
+          value={passRate === null ? "—" : `${passRate}%`}
+          icon={<BarChart3 className="h-3.5 w-3.5" />}
+          sub={`${home.passCount} pass · ${home.failCount} fail · ${home.reviewCount} review`}
+          accent={
+            passRate !== null
+              ? passRate >= 75
+                ? "var(--emerald)"
+                : passRate >= 50
+                ? "var(--amber)"
+                : "var(--rose)"
+              : undefined
+          }
+        />
+        <MetricTile
+          label="Scans this week"
+          value={home.scansThisWeek}
+          icon={<Activity className="h-3.5 w-3.5" />}
+          sub="Last 7 days"
+        />
+        <MetricTile
+          label="Saved reports"
+          value={home.savedReportsAllTime}
+          icon={<FileStack className="h-3.5 w-3.5" />}
+          sub="All time in library"
+        />
+        <MetricTile
           label="High-risk scans"
-          hint="Fail or trust<60 (30d)"
           value={home.highRiskScans30d}
-          valueClassName={home.highRiskScans30d > 0 ? "text-amber-500" : undefined}
+          icon={<Zap className="h-3.5 w-3.5" />}
+          sub="Trust < 60 or FAIL (30d)"
+          accent={home.highRiskScans30d > 0 ? "var(--amber)" : undefined}
         />
-        <MetricCard
-          icon={<BarChart3 className="h-4 w-4" />}
+        <MetricTile
           label="Schedule success"
-          hint="Completed run rate (30d)"
           value={home.scheduleSuccessRate30d === null ? "—" : `${home.scheduleSuccessRate30d}%`}
+          icon={<BarChart3 className="h-3.5 w-3.5" />}
+          sub="Completed run rate (30d)"
         />
-        <Card className="relative overflow-hidden border-border/80 bg-card/60 shadow-sm ring-1 ring-black/[0.05] dark:ring-white/[0.06]">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-            <div className="space-y-1">
-              <CardDescription className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <Scale className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                Pass / fail
-              </CardDescription>
-              <CardTitle className="text-3xl font-semibold tabular-nums tracking-tight">
-                {formatRatio(home.passCount, home.failCount)}
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1 text-xs text-muted-foreground">
-            <p>
-              Pass rate{" "}
-              <span className="font-semibold text-foreground">
-                {passRatePct === null ? "—" : `${passRatePct}%`}
-              </span>
-              {totalOutcomes > 0 ? (
-                <>
-                  {" "}
-                  · {home.reviewCount} needs review
-                </>
-              ) : null}
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
-      <Card className="overflow-hidden border-border/80 bg-card/40 shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.06]">
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-2">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Shield className="h-5 w-5 text-primary" aria-hidden />
-              Scan outcome trend
-            </CardTitle>
-            <CardDescription className="max-w-xl">Last 14 days for workflow governance outcomes.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-2">
+      {/* ── Trend chart ── */}
+      <SectionCard
+        title="Scan outcome trend"
+        sub="Last 14 days"
+        action={{ href: "/reports", label: "Reports" }}
+      >
+        <div className="pt-2">
           <RiskTrendChart
             data={home.outcomeTrend}
-            seriesLabels={{ safe: "Pass", needsReview: "Needs review", blocked: "Fail" }}
+            seriesLabels={{ safe: "Pass", needsReview: "Review", blocked: "Fail" }}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
-      <Card className="border-border/80 bg-card/40 shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.06]">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold">Top finding types</CardTitle>
-          <CardDescription>Most common deterministic rule hits in recent scans.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      {/* ── Bottom two-col ── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+
+        {/* Top finding types */}
+        <SectionCard
+          title="Top findings"
+          sub="Most frequent rule hits"
+        >
           {home.topFindingRules.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No findings yet. Run a scan to populate this section.</p>
+            <EmptyState text="No findings yet. Run a scan to populate this section." />
           ) : (
-            home.topFindingRules.map((rule) => (
-              <div key={rule.ruleId} className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-sm">
-                <code className="font-mono text-xs text-muted-foreground">{rule.ruleId}</code>
-                <Badge variant="secondary" className="tabular-nums">
-                  {rule.count}
-                </Badge>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Governance Activity Feed */}
-      {recentDecisions.length > 0 && (
-        <Card className="border-border/80 bg-card/40 shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.06]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Zap className="h-4 w-4 text-cyan-400" aria-hidden />
-                Governance Activity
-              </CardTitle>
-              <CardDescription>Last 10 governance decisions across your workspace.</CardDescription>
+            <div className="space-y-1.5 pt-2">
+              {home.topFindingRules.map((rule) => (
+                <div
+                  key={rule.ruleId}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5"
+                  style={{ border: "1px solid var(--line)", background: "rgba(255,255,255,0.02)" }}
+                >
+                  <code className="font-mono text-[11px] text-[var(--fg-2)]">{rule.ruleId}</code>
+                  <span
+                    className="rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums"
+                    style={{ background: "rgba(255,255,255,0.05)", color: "var(--fg-2)" }}
+                  >
+                    {rule.count}
+                  </span>
+                </div>
+              ))}
             </div>
-            <Button variant="outline" size="sm" asChild className="border-border/80">
-              <Link href="/audit">Full audit log</Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="px-0 pb-2 pt-0">
-            <div className="divide-y divide-border/40">
-              {recentDecisions.map((d) => {
-                const { label, tone } = decisionLabel(d.decision_type);
+          )}
+        </SectionCard>
+
+        {/* Governance activity */}
+        <SectionCard
+          title="Activity"
+          sub="Recent governance decisions"
+          action={{ href: "/audit", label: "Full log" }}
+        >
+          {decisions.length === 0 ? (
+            <EmptyState text="No governance decisions yet." />
+          ) : (
+            <div className="pt-2 space-y-[1px]">
+              {decisions.map((d) => {
+                const meta = DECISION_META[d.decision_type] ?? { label: d.decision_type, dot: "#6b7280" };
                 return (
-                  <div key={d.id} className="flex items-start justify-between gap-4 px-6 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <span className={`text-xs font-medium ${tone}`}>{label}</span>
-                      {d.finding_signature && (
-                        <code className="ml-2 font-mono text-[10px] text-muted-foreground">
-                          {d.finding_signature.length > 40
-                            ? `${d.finding_signature.slice(0, 40)}…`
-                            : d.finding_signature}
-                        </code>
-                      )}
-                      {d.rationale && (
-                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{d.rationale}</p>
-                      )}
+                  <div
+                    key={d.id}
+                    className="flex items-start justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-white/[0.02]"
+                  >
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div
+                        className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: meta.dot }}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[12px] font-medium text-[var(--fg-2)]">{meta.label}</p>
+                        {d.rationale && (
+                          <p className="mt-0.5 truncate text-[11px] text-[var(--fg-3)]">{d.rationale}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2 text-[10px] text-muted-foreground">
-                      {d.mode && (
-                        <span className="rounded-full border border-border/40 bg-muted/20 px-1.5 py-0.5 capitalize">
-                          {d.mode}
-                        </span>
-                      )}
-                      <span>{timeAgoShort(d.created_at)}</span>
-                    </div>
+                    <span className="shrink-0 text-[10px] text-[var(--fg-4)] tabular-nums">
+                      {timeAgo(d.created_at)}
+                    </span>
                   </div>
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </SectionCard>
+      </div>
 
-      <Card className="border-border/80 bg-card/40 shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.06]">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="text-lg font-semibold">Recent scans</CardTitle>
-            <CardDescription>Latest saved analyses</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" asChild className="border-border/80">
-            <Link href="/scan/history">Full history</Link>
-          </Button>
-        </CardHeader>
-        <CardContent className="px-0 pb-2 pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border/60 hover:bg-transparent">
-                <TableHead className="pl-6">Workflow</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Trust</TableHead>
-                <TableHead>Outcome</TableHead>
-                <TableHead className="pr-6 text-right">When</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {home.recentScans.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="px-6 py-10">
-                    <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-center">
-                      <p className="text-sm text-muted-foreground">No saved scans yet.</p>
-                      <Button asChild size="sm" className="gap-1.5">
-                        <Link href="/scan">
-                          Run first scan
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </TableCell>
+      {/* ── Recent scans ── */}
+      <SectionCard
+        title="Recent scans"
+        sub="Latest governance analyses"
+        action={{ href: "/scan/history", label: "View history" }}
+      >
+        <div className="pt-2">
+          {home.recentScans.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <Shield className="h-8 w-8 text-[var(--fg-4)]" />
+              <p className="text-[13px] text-[var(--fg-3)]">No scans yet</p>
+              <Link
+                href="/scan"
+                className="flex h-7 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium"
+                style={{ background: "var(--cyan)", color: "var(--void)" }}
+              >
+                Run first scan <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow style={{ borderColor: "var(--line)" }} className="hover:bg-transparent">
+                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Workflow</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Source</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Trust</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Outcome</TableHead>
+                  <TableHead className="text-right text-[11px] uppercase tracking-wide text-[var(--fg-3)]">When</TableHead>
                 </TableRow>
-              ) : (
-                home.recentScans.map((s) => (
-                  <TableRow key={s.id} className="border-border/60">
-                    <TableCell className="pl-6">
+              </TableHeader>
+              <TableBody>
+                {home.recentScans.map((s) => (
+                  <TableRow key={s.id} style={{ borderColor: "var(--line)" }} className="hover:bg-white/[0.02]">
+                    <TableCell>
                       {home.mode === "mock" ? (
-                        <span className="line-clamp-1 max-w-[220px] text-sm font-medium text-foreground">
-                          {s.workflowName ?? "Untitled workflow"}
+                        <span className="line-clamp-1 max-w-[200px] text-[13px] font-medium text-[var(--fg-1)]">
+                          {s.workflowName ?? "Untitled"}
                         </span>
                       ) : (
                         <Link
                           href={`/scan/${s.id}`}
-                          className="line-clamp-1 max-w-[220px] text-sm font-medium text-foreground hover:text-primary hover:underline"
+                          className="line-clamp-1 max-w-[200px] text-[13px] font-medium text-[var(--fg-1)] transition-colors hover:text-[var(--cyan)]"
                         >
-                          {s.workflowName ?? "Untitled workflow"}
+                          {s.workflowName ?? "Untitled"}
                         </Link>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="font-normal capitalize">
+                      <span
+                        className="rounded-md px-1.5 py-0.5 text-[11px] capitalize"
+                        style={{ background: "rgba(255,255,255,0.05)", color: "var(--fg-2)" }}
+                      >
                         {s.source}
-                      </Badge>
+                      </span>
                     </TableCell>
-                    <TableCell className="tabular-nums text-sm text-muted-foreground">{s.riskScore}</TableCell>
-                    <TableCell>
-                      <ScanOutcomeBadge status={s.status} />
-                    </TableCell>
-                    <TableCell className="pr-6 text-right text-xs text-muted-foreground">
-                      {new Date(s.createdAt).toLocaleString()}
+                    <TableCell className="tabular-nums text-[13px] text-[var(--fg-2)]">{s.riskScore}</TableCell>
+                    <TableCell><ScanOutcomeBadge status={s.status} /></TableCell>
+                    <TableCell className="text-right text-[11px] text-[var(--fg-3)]">
+                      {new Date(s.createdAt).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </SectionCard>
+
     </div>
   );
 }
 
-function MetricCard({
-  icon,
+/* ── Sub-components ── */
+
+function MetricTile({
   label,
-  hint,
   value,
-  valueClassName,
+  icon,
+  sub,
+  accent,
 }: {
-  icon: ReactNode;
   label: string;
-  hint: string;
   value: number | string;
-  valueClassName?: string;
+  icon: ReactNode;
+  sub: string;
+  accent?: string;
 }) {
   return (
-    <Card className="relative overflow-hidden border-border/80 bg-card/60 shadow-sm ring-1 ring-black/[0.05] dark:ring-white/[0.06]">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <div className="space-y-1">
-          <CardDescription className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {icon}
-            {label}
-          </CardDescription>
-          <CardTitle className={cn("text-3xl font-semibold tabular-nums tracking-tight", valueClassName)}>
-            {value}
-          </CardTitle>
+    <div
+      className="group rounded-xl p-4 transition-all hover:border-white/10"
+      style={{
+        background: "var(--surface-1)",
+        border: "1px solid var(--line)",
+      }}
+    >
+      <div className="mb-3 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--fg-3)]">
+        <span style={{ color: "var(--fg-4)" }}>{icon}</span>
+        {label}
+      </div>
+      <div
+        className={cn("text-[28px] font-semibold tabular-nums tracking-tight leading-none")}
+        style={{ color: accent ?? "var(--fg-1)" }}
+      >
+        {value}
+      </div>
+      <p className="mt-1.5 text-[11px] text-[var(--fg-3)] leading-snug">{sub}</p>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  sub,
+  action,
+  children,
+}: {
+  title: string;
+  sub: string;
+  action?: { href: string; label: string };
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-xl"
+      style={{
+        background: "var(--surface-1)",
+        border: "1px solid var(--line)",
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-5 pt-5 pb-0"
+      >
+        <div>
+          <p className="text-[14px] font-semibold text-[var(--fg-1)]">{title}</p>
+          <p className="mt-0.5 text-[12px] text-[var(--fg-3)]">{sub}</p>
         </div>
-      </CardHeader>
-      <CardContent className="text-xs text-muted-foreground">{hint}</CardContent>
-    </Card>
+        {action && (
+          <Link
+            href={action.href}
+            className="flex items-center gap-1 text-[12px] text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]"
+          >
+            {action.label}
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        )}
+      </div>
+      <div className="px-5 pb-5">{children}</div>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="py-8 text-center">
+      <p className="text-[13px] text-[var(--fg-3)]">{text}</p>
+    </div>
   );
 }
