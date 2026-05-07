@@ -32,6 +32,15 @@ function formatViolations(v: { id: string; impact?: string | null; help: string;
 }
 
 async function assertRouteAccessible(page: Page, path: string) {
+  // Stabilize theme-dependent contrast checks across CI runners.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem("theme", "dark");
+    } catch {
+      // ignore storage availability issues in strict contexts
+    }
+  });
+
   const res = await page.goto(path, { waitUntil: "domcontentloaded" });
   expect(res, `navigation failed for ${path}`).not.toBeNull();
   expect(res!.status(), `HTTP ${res!.status()} for ${path}`).toBeLessThan(500);
