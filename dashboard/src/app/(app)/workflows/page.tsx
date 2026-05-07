@@ -77,9 +77,10 @@ function DecisionBadge({ decision }: { decision: "approve" | "review" | "block" 
   );
 }
 
-function DriftBadge({ lastScannedAt }: { lastScannedAt: string | null }) {
+function DriftBadge({ lastScannedAt, nowMs }: { lastScannedAt: string | null; nowMs: number | null }) {
   if (!lastScannedAt) return null;
-  const days = Math.floor((Date.now() - new Date(lastScannedAt).getTime()) / 86_400_000);
+  if (nowMs === null) return null;
+  const days = Math.floor((nowMs - new Date(lastScannedAt).getTime()) / 86_400_000);
   if (days <= 7) return null;
   return (
     <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
@@ -94,9 +95,10 @@ function RiskBadge({ score }: { score: number | null }) {
   return <span className={`text-xs font-mono font-semibold ${color}`}>{score}</span>;
 }
 
-function timeAgo(iso: string | null): string {
+function timeAgo(iso: string | null, nowMs: number | null): string {
   if (!iso) return "—";
-  const diff = Date.now() - new Date(iso).getTime();
+  if (nowMs === null) return "just now";
+  const diff = nowMs - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
@@ -114,6 +116,11 @@ export default function WorkflowsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [nowMs, setNowMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNowMs(Date.now());
+  }, []);
 
   const loadAll = useCallback(async () => {
     if (!useCloud) { setLoading(false); return; }
@@ -259,7 +266,7 @@ export default function WorkflowsPage() {
                       {sourceWorkflows.length} workflow{sourceWorkflows.length !== 1 ? "s" : ""}
                     </span>
                     {lastSync && (
-                      <span className="text-xs text-muted-foreground">· synced {timeAgo(lastSync)}</span>
+                      <span className="text-xs text-muted-foreground">· synced {timeAgo(lastSync, nowMs)}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -314,10 +321,10 @@ export default function WorkflowsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <DriftBadge lastScannedAt={wf.last_scanned_at} />
+                          <DriftBadge lastScannedAt={wf.last_scanned_at} nowMs={nowMs} />
                           <RiskBadge score={wf.risk_score} />
                           <DecisionBadge decision={wf.last_scan_decision} />
-                          <span className="text-xs text-muted-foreground">{timeAgo(wf.last_synced_at)}</span>
+                          <span className="text-xs text-muted-foreground">{timeAgo(wf.last_synced_at, nowMs)}</span>
                         </div>
                       </div>
                     ))}
@@ -352,7 +359,7 @@ export default function WorkflowsPage() {
                       </Link>
                     </div>
                     <div className="flex items-center gap-3">
-                      <DriftBadge lastScannedAt={wf.last_scanned_at} />
+                      <DriftBadge lastScannedAt={wf.last_scanned_at} nowMs={nowMs} />
                       <RiskBadge score={wf.risk_score} />
                       <DecisionBadge decision={wf.last_scan_decision} />
                     </div>

@@ -85,23 +85,6 @@ export default function SourcesPage() {
   const [makePanelOpen, setMakePanelOpen] = useState(false);
   const [pipedreamPanelOpen, setPipedreamPanelOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!useCloud) { setLoading(false); return; }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/integrations", { credentials: "include" });
-      const j = (await res.json()) as { integrations?: IntegrationRow[]; error?: string };
-      if (!res.ok) { setError(j.error ?? "Could not load sources"); setItems([]); return; }
-      const connectedItems = (j.integrations ?? []).filter((i) => i.status === "connected");
-      setItems(j.integrations ?? []);
-      void loadHealth(connectedItems);
-    } catch { setError("Network error"); setItems([]); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
-
   const loadHealth = useCallback(async (connectedItems: IntegrationRow[]) => {
     if (!useCloud || connectedItems.length === 0) return;
     const results = await Promise.allSettled(
@@ -120,6 +103,23 @@ export default function SourcesPage() {
     }
     setHealth(map);
   }, []);
+
+  const load = useCallback(async () => {
+    if (!useCloud) { setLoading(false); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/integrations", { credentials: "include" });
+      const j = (await res.json()) as { integrations?: IntegrationRow[]; error?: string };
+      if (!res.ok) { setError(j.error ?? "Could not load sources"); setItems([]); return; }
+      const connectedItems = (j.integrations ?? []).filter((i) => i.status === "connected");
+      setItems(j.integrations ?? []);
+      void loadHealth(connectedItems);
+    } catch { setError("Network error"); setItems([]); }
+    finally { setLoading(false); }
+  }, [loadHealth]);
+
+  useEffect(() => { void load(); }, [load]);
 
   const openConnect = (id: string) => {
     const connector = connectorRegistry.find((c) => c.id === id);
