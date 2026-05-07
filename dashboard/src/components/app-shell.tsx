@@ -27,8 +27,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         className="pointer-events-none fixed inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 60% 30% at 50% -5%, rgba(34,211,238,0.04) 0%, transparent 60%)," +
-            "radial-gradient(ellipse 40% 20% at 100% 0%, rgba(139,92,246,0.03) 0%, transparent 50%)",
+            "radial-gradient(ellipse 60% 30% at 50% -5%, rgba(249,115,22,0.04) 0%, transparent 60%)," +
+            "radial-gradient(ellipse 40% 20% at 100% 0%, rgba(249,115,22,0.02) 0%, transparent 50%)",
         }}
         aria-hidden
       />

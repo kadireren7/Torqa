@@ -13,6 +13,7 @@ import {
   Radar,
   ShieldAlert,
 } from "lucide-react";
+import { TorqaLogoScanning } from "@/components/torqa-logo";
 import { ScanReportView } from "@/components/scan-report-view";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -631,10 +632,20 @@ export function ScanPageClient() {
       {(isScanning || result) && (
         <section className="space-y-6 sm:space-y-8" aria-live="polite">
           {isScanning && (
-            <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/10 via-background to-background px-4 py-3 sm:px-5 sm:py-4">
-              <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden />
-                <p className="text-center text-sm font-medium text-foreground">Analyzing workflow JSON on the server…</p>
+            <div
+              className="rounded-xl px-4 py-5 sm:px-6"
+              style={{ background: "var(--surface-1)", border: "1px solid rgba(249,115,22,0.18)" }}
+            >
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+                <TorqaLogoScanning size={32} />
+                <div className="text-center sm:text-left">
+                  <p className="text-[13px] font-semibold" style={{ color: "var(--fg-1)" }}>
+                    Scanning workflow…
+                  </p>
+                  <p className="text-[12px]" style={{ color: "var(--fg-3)" }}>
+                    Applying governance rules and policy pack
+                  </p>
+                </div>
               </div>
             </div>
           )}

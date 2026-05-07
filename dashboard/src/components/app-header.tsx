@@ -96,9 +96,9 @@ export function AppHeader({ orgName: _orgName, user }: AppHeaderProps) {
             <button
               className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-all hover:ring-2 hover:ring-white/10 focus:outline-none"
               style={{
-                background: "rgba(34,211,238,0.12)",
-                color: "var(--cyan)",
-                border: "1px solid rgba(34,211,238,0.2)",
+                background: "rgba(249,115,22,0.12)",
+                color: "var(--accent)",
+                border: "1px solid rgba(249,115,22,0.2)",
               }}
             >
               {initials}

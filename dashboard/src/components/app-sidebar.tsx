@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { mainNavItems } from "@/lib/nav";
-import { TorqaLogoMark } from "@/components/torqa-logo";
+import { TorqaLogoAnimated } from "@/components/torqa-logo";
 import { GovernanceModeBadge } from "@/components/governance/mode-badge";
 
 type AppSidebarProps = {
@@ -16,34 +16,41 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
 
   return (
     <aside
-      className="hidden lg:flex w-[220px] shrink-0 flex-col"
+      className="hidden lg:flex w-[216px] shrink-0 flex-col"
       style={{
         background: "var(--surface-0)",
         borderRight: "1px solid var(--line)",
       }}
     >
       {/* Logo */}
-      <div className="flex h-[56px] shrink-0 items-center gap-3 px-5">
+      <div className="flex h-[56px] shrink-0 items-center gap-2.5 px-4">
         <div
-          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg"
+          className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-lg"
           style={{
-            background: "rgba(34,211,238,0.08)",
-            border: "1px solid rgba(34,211,238,0.18)",
+            background: "var(--accent-soft)",
+            border: "1px solid rgba(249,115,22,0.18)",
           }}
         >
-          <TorqaLogoMark size={18} />
+          <TorqaLogoAnimated size={20} />
         </div>
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--fg-1)]">Torqa</p>
-          {orgName !== "Personal" && (
-            <p className="truncate text-[11px] text-[var(--fg-3)]">{orgName}</p>
+          <p
+            className="text-[14px] font-semibold leading-none"
+            style={{ color: "var(--fg-1)", letterSpacing: "-0.01em" }}
+          >
+            Torqa
+          </p>
+          {orgName && orgName !== "Personal" && (
+            <p className="mt-0.5 truncate text-[11px]" style={{ color: "var(--fg-4)" }}>
+              {orgName}
+            </p>
           )}
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2">
-        <div className="space-y-[2px]">
+        <div className="space-y-[1px]">
           {mainNavItems.map((item) => {
             const active =
               pathname === item.href ||
@@ -56,32 +63,32 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-all duration-100",
-                  active
-                    ? "text-[var(--fg-1)]"
-                    : "text-[var(--fg-3)] hover:text-[var(--fg-2)]"
+                  "group flex items-center gap-2.5 rounded-md px-2.5 py-[6px] text-[13px] font-medium transition-all duration-100"
                 )}
-                style={
-                  active
-                    ? { background: "rgba(255,255,255,0.06)" }
-                    : undefined
-                }
+                style={{
+                  color: active ? "var(--fg-1)" : "var(--fg-3)",
+                  background: active ? "rgba(255,255,255,0.05)" : "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = "var(--fg-2)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = "var(--fg-3)";
+                }}
               >
                 <Icon
-                  className={cn(
-                    "h-[15px] w-[15px] shrink-0 transition-colors",
-                    active ? "text-[var(--cyan)]" : "text-[var(--fg-4)] group-hover:text-[var(--fg-3)]"
-                  )}
+                  className="h-[15px] w-[15px] shrink-0"
+                  style={{ color: active ? "var(--accent)" : "inherit" }}
                   aria-hidden
                 />
                 <span className="flex-1 leading-none">{item.title}</span>
                 {item.badge && (
                   <span
-                    className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide"
+                    className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide"
                     style={{
-                      background: "rgba(34,211,238,0.1)",
-                      border: "1px solid rgba(34,211,238,0.2)",
-                      color: "var(--cyan)",
+                      background: "var(--accent-soft)",
+                      border: "1px solid rgba(249,115,22,0.2)",
+                      color: "var(--accent)",
                     }}
                   >
                     {item.badge}
@@ -100,10 +107,12 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
         </div>
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-[12px] text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]"
+          className="flex items-center gap-1.5 text-[12px] transition-colors"
+          style={{ color: "var(--fg-4)" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-3)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-4)"; }}
         >
-          <span>←</span>
-          <span>Home</span>
+          ← Home
         </Link>
       </div>
     </aside>

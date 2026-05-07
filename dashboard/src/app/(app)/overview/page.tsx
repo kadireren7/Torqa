@@ -109,7 +109,7 @@ export default async function DashboardOverviewPage() {
           <Link
             href="/scan"
             className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-[var(--void)] transition-all"
-            style={{ background: "var(--cyan)", border: "1px solid var(--cyan)" }}
+            style={{ background: "var(--accent)", border: "1px solid var(--accent)" }}
           >
             <Shield className="h-3 w-3" />
             Scan now
