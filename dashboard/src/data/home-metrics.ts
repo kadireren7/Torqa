@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrganizationId } from "@/lib/workspace-scope";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HomeDashboardData, HomeOnboardingCounts, HomeRecentScan, RiskTrendPoint } from "./types";
-import { MOCK_HOME_DASHBOARD } from "./home-mock";
 
 type ScanHistoryRow = {
   id: string;
@@ -208,24 +207,42 @@ async function resolvedWorkspaceScope(
   return { value: null };
 }
 
+const EMPTY_HOME: HomeDashboardData = {
+  mode: "supabase",
+  totalScans30d: 0,
+  savedReportsAllTime: 0,
+  avgTrustScore: null,
+  passCount: 0,
+  failCount: 0,
+  reviewCount: 0,
+  scansThisWeek: 0,
+  policyFailures30d: 0,
+  highRiskScans30d: 0,
+  scheduleSuccessRate30d: null,
+  topFindingRules: [],
+  recentScans: [],
+  outcomeTrend: [],
+  onboarding: null,
+};
+
 /**
- * Homepage metrics: live from `scan_history` when Supabase + session exist; otherwise demo mock.
+ * Homepage metrics: live from `scan_history` when Supabase + session exist; otherwise empty state.
  */
 export async function getHomeDashboardData(): Promise<HomeDashboardData> {
   if (!isSupabaseConfigured()) {
-    return MOCK_HOME_DASHBOARD;
+    return EMPTY_HOME;
   }
 
   const supabase = await createClient();
   if (!supabase) {
-    return MOCK_HOME_DASHBOARD;
+    return EMPTY_HOME;
   }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return MOCK_HOME_DASHBOARD;
+    return EMPTY_HOME;
   }
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
@@ -265,7 +282,7 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
   ]);
 
   if (allCountRes.error || d30CountRes.error || rowsRes.error) {
-    return { ...MOCK_HOME_DASHBOARD, mode: "mock" };
+    return EMPTY_HOME;
   }
 
   const rows = (rowsRes.data ?? []) as ScanHistoryRow[];

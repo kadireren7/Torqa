@@ -245,10 +245,19 @@ export function OverviewClient({
           </Link>
         </div>
         <div className="px-5 pb-5 pt-2">
-          <RiskTrendChart
-            data={home.outcomeTrend}
-            seriesLabels={{ safe: "Pass", needsReview: "Review", blocked: "Fail" }}
-          />
+          {home.outcomeTrend.length === 0 ? (
+            <div className="flex h-[160px] items-center justify-center text-center">
+              <div>
+                <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>No scan data yet</p>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--fg-4)" }}>Run your first scan to populate this chart</p>
+              </div>
+            </div>
+          ) : (
+            <RiskTrendChart
+              data={home.outcomeTrend}
+              seriesLabels={{ safe: "Pass", needsReview: "Review", blocked: "Fail" }}
+            />
+          )}
         </div>
       </motion.div>
 
@@ -440,19 +449,13 @@ export function OverviewClient({
                     style={{ borderColor: "var(--line)" }}
                   >
                     <TableCell>
-                      {home.mode === "mock" ? (
-                        <span className="line-clamp-1 max-w-[200px] text-[13px] font-medium" style={{ color: "var(--fg-1)" }}>
-                          {s.workflowName ?? "Untitled"}
-                        </span>
-                      ) : (
-                        <Link
-                          href={`/scan/${s.id}`}
-                          className="line-clamp-1 max-w-[200px] text-[13px] font-medium transition-colors duration-150 hover:opacity-70"
-                          style={{ color: "var(--fg-1)" }}
-                        >
-                          {s.workflowName ?? "Untitled"}
-                        </Link>
-                      )}
+                      <Link
+                        href={`/scan/${s.id}`}
+                        className="line-clamp-1 max-w-[200px] text-[13px] font-medium transition-colors duration-150 hover:opacity-70"
+                        style={{ color: "var(--fg-1)" }}
+                      >
+                        {s.workflowName ?? "Untitled"}
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <span

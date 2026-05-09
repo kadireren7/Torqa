@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { aggregateInsights, type RawScanHistoryRow } from "@/lib/insights-aggregate";
-import { getDemoInsightsPayload } from "@/lib/insights-mock";
+
 import type { InsightsDays, InsightsScanStatus, InsightsScope } from "@/lib/insights-types";
 import { getActiveOrganizationId, resolveListOrganizationId } from "@/lib/workspace-scope";
 import { createClient } from "@/lib/supabase/server";
@@ -33,34 +33,38 @@ export async function GET(request: Request) {
   const policyNameRaw = url.searchParams.get("policyName");
   const policyName = policyNameRaw && policyNameRaw.trim() && policyNameRaw !== "all" ? policyNameRaw.trim() : null;
 
-  const demo = () =>
+  const sinceIso = new Date(Date.now() - days * 86_400_000).toISOString();
+
+  const emptyPayload = () =>
     NextResponse.json(
-      getDemoInsightsPayload({
+      aggregateInsights([], {
         scope,
         days,
         status,
         policyGate,
         policyName,
+        sinceIso,
+        mode: "live",
+        workspaceRequired: false,
+        emailByUserId: {},
       })
     );
 
   if (!isSupabaseConfigured()) {
-    return demo();
+    return emptyPayload();
   }
 
   const supabase = await createClient();
   if (!supabase) {
-    return demo();
+    return emptyPayload();
   }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return demo();
+    return emptyPayload();
   }
-
-  const sinceIso = new Date(Date.now() - days * 86_400_000).toISOString();
 
   if (scope === "workspace") {
     const orgId = await resolveListOrganizationId(supabase, user.id);
