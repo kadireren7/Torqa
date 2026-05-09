@@ -11,6 +11,7 @@ import {
   Code2,
   Store,
   Bot,
+  Cpu,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ export const mainNavItems: NavItem[] = [
   { title: "Reports", href: "/reports", icon: BarChart3 },
   { title: "Marketplace", href: "/marketplace", icon: Store, badge: "new" },
   { title: "Agent Runtime", href: "/agent-runtime", icon: Bot, badge: "new" },
+  { title: "MCP Server", href: "/mcp", icon: Cpu, badge: "new" },
   { title: "Developer", href: "/developer", icon: Code2 },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
@@ -72,5 +74,6 @@ export function titleForPath(pathname: string): string {
   if (pathname.startsWith("/developer")) return "Developer";
   if (pathname.startsWith("/marketplace")) return "Marketplace";
   if (pathname.startsWith("/agent-runtime")) return "Agent Runtime";
+  if (pathname.startsWith("/mcp")) return "MCP Server";
   return "Torqa";
 }

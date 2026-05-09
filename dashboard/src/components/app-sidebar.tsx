@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { mainNavItems } from "@/lib/nav";
 import { TorqaLogoAnimated } from "@/components/torqa-logo";
@@ -15,8 +16,11 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside
-      className="hidden lg:flex w-[220px] shrink-0 flex-col animate-fade-in"
+    <motion.aside
+      initial={{ x: -12, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="hidden lg:flex w-[220px] shrink-0 flex-col"
       style={{
         background: "var(--sidebar-bg)",
         borderRight: "1px solid var(--line)",
@@ -51,7 +55,7 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <div className="space-y-[2px]">
-          {mainNavItems.map((item) => {
+          {mainNavItems.map((item, i) => {
             const active =
               pathname === item.href ||
               (item.href !== "/overview" && pathname.startsWith(item.href)) ||
@@ -59,42 +63,48 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
             const Icon = item.icon;
 
             return (
-              <Link
+              <motion.div
                 key={item.href}
-                href={item.href}
-                className={cn(
-                  "group relative flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-all duration-150"
-                )}
-                style={{
-                  color: active ? "var(--fg-1)" : "var(--fg-3)",
-                  background: active ? "var(--overlay-md)" : "transparent",
-                }}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
-                {/* Active indicator */}
-                {active && (
-                  <span
-                    className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full"
-                    style={{ background: "var(--accent)" }}
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "group relative flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-all duration-150",
+                    !active && "hover:opacity-80"
+                  )}
+                  style={{
+                    color: active ? "var(--fg-1)" : "var(--fg-3)",
+                    background: active ? "var(--overlay-md)" : "transparent",
+                  }}
+                >
+                  {active && (
+                    <span
+                      className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full"
+                      style={{ background: "var(--accent)" }}
+                    />
+                  )}
+                  <Icon
+                    className="h-[15px] w-[15px] shrink-0 transition-colors duration-150"
+                    style={{ color: active ? "var(--accent)" : "var(--fg-4)" }}
+                    aria-hidden
                   />
-                )}
-                <Icon
-                  className="h-[15px] w-[15px] shrink-0 transition-colors duration-150"
-                  style={{ color: active ? "var(--accent)" : "var(--fg-4)" }}
-                  aria-hidden
-                />
-                <span className="flex-1 leading-none">{item.title}</span>
-                {item.badge && (
-                  <span
-                    className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide"
-                    style={{
-                      background: "var(--accent-soft)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
+                  <span className="flex-1 leading-none">{item.title}</span>
+                  {item.badge && (
+                    <span
+                      className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide"
+                      style={{
+                        background: "var(--accent-soft)",
+                        color: "var(--accent)",
+                      }}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              </motion.div>
             );
           })}
         </div>
@@ -107,14 +117,12 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
         </div>
         <Link
           href="/"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[12px] transition-colors duration-150"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[12px] transition-opacity duration-150 hover:opacity-60"
           style={{ color: "var(--fg-4)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-2)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-4)"; }}
         >
           ← Home
         </Link>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
