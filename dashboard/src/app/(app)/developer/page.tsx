@@ -29,6 +29,7 @@ function CodeBlock({ code, language = "bash" }: { code: string; language?: strin
 
 const endpoints = [
   { method: "POST", path: "/api/public/scan", desc: "Scan a workflow JSON and get governance results", auth: true },
+  { method: "POST", path: "/api/public/ci/gate", desc: "CI gate — returns exit_code 0/1 for pipeline pass/fail decisions", auth: true },
   { method: "POST", path: "/api/public/policy/evaluate", desc: "Evaluate a scan result against a policy pack", auth: true },
   { method: "POST", path: "/api/public/policy/simulate", desc: "Simulate policy pack evaluation on findings", auth: true },
   { method: "GET", path: "/api/public/policy-packs", desc: "List available policy packs", auth: true },
@@ -268,26 +269,62 @@ export default function DeveloperPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">CI / CD</p>
           <div className="h-px flex-1 bg-border/40" />
         </div>
-        <Card className="border-border/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <BookOpen className="h-4 w-4" />
-              GitHub Actions
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Add the Torqa GitHub Action to your workflow to gate PRs on governance scan results.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CodeBlock code={`- uses: torqa/scan-action@v2
-  with:
-    api-key: \${{ secrets.TORQA_API_KEY }}
-    source: github
-    workflow-file: .github/workflows/deploy.yml
-    policy-pack-id: \${{ vars.TORQA_POLICY_PACK_ID }}
-    fail-on: FAIL`} language="yaml" />
-          </CardContent>
-        </Card>
+        <p className="text-xs text-muted-foreground max-w-xl">
+          Use <code className="font-mono text-[10px]">/api/public/ci/gate</code> to block pipelines on governance failures. Returns <code className="font-mono text-[10px]">exit_code: 0</code> (pass) or <code className="font-mono text-[10px]">1</code> (fail).
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <BookOpen className="h-4 w-4" />
+                GitHub Actions
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Gate PRs directly in your workflow using the CI gate endpoint.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock code={`- name: Torqa governance gate
+  run: |
+    RESULT=$(curl -sf -X POST \\
+      https://app.torqa.dev/api/public/ci/gate \\
+      -H "Authorization: Bearer \${{ secrets.TORQA_API_KEY }}" \\
+      -H "Content-Type: application/json" \\
+      -d '{
+        "workflow": '"$(cat .github/workflows/deploy.yml | jq -Rs .)"',
+        "source": "github",
+        "workflow_name": "deploy",
+        "fail_on": "fail",
+        "ref": "'"$GITHUB_SHA"'"
+      }')
+    EXIT=$(echo $RESULT | jq -r .exit_code)
+    echo "Decision: $(echo $RESULT | jq -r .decision)"
+    exit $EXIT`} language="yaml" />
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">CI Gate Response</CardTitle>
+              <CardDescription className="text-xs">
+                The response includes decision, trust score, findings count, and the exit code to use.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock code={`{
+  "exit_code": 0,
+  "decision": "PASS",
+  "trust_score": 87,
+  "findings": 2,
+  "high_severity": 0,
+  "policy": "torqa-baseline",
+  "fail_on": "fail",
+  "workflow_name": "deploy",
+  "source": "github",
+  "ref": "abc1234"
+}`} language="json" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

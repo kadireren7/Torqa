@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       const { data: keyRow } = await supabase
         .from("api_keys")
         .select("user_id, organization_id")
-        .eq("key_hash", hashApiKey(apiKey))
+        .eq("key_hash", await hashApiKey(apiKey))
         .eq("revoked", false)
         .maybeSingle();
       if (keyRow) {
@@ -111,12 +111,8 @@ function ciResponse(status: number, body: Record<string, unknown>) {
   return NextResponse.json(body, { status });
 }
 
-function hashApiKey(key: string): string {
-  // Simple hash for lookup — in production use crypto.subtle
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = ((hash << 5) - hash) + key.charCodeAt(i);
-    hash |= 0;
-  }
-  return hash.toString(16);
+async function hashApiKey(key: string): Promise<string> {
+  const enc = new TextEncoder().encode(key);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
