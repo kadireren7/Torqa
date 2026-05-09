@@ -224,6 +224,93 @@ const SPEC = {
         },
       },
     },
+    "/ci/gate": {
+      post: {
+        summary: "CI governance gate",
+        description: "Submit a workflow for governance evaluation. Returns exit_code 0 (pass) or 1 (fail) for use in CI pipelines.",
+        operationId: "ciGate",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["workflow"],
+                properties: {
+                  workflow: { type: "object", description: "Workflow JSON to evaluate" },
+                  source: { type: "string", enum: ["n8n", "github", "zapier", "make", "pipedream", "generic"], default: "generic" },
+                  workflow_name: { type: "string" },
+                  policy: { type: "string", description: "Policy slug", default: "torqa-baseline" },
+                  fail_on: { type: "string", enum: ["pass", "review", "fail"], default: "fail" },
+                  ref: { type: "string", description: "Git commit SHA or PR ref for traceability" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Gate result",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    exit_code: { type: "integer", enum: [0, 1] },
+                    decision: { type: "string", enum: ["PASS", "NEEDS REVIEW", "FAIL"] },
+                    trust_score: { type: "integer", minimum: 0, maximum: 100 },
+                    findings: { type: "integer" },
+                    high_severity: { type: "integer" },
+                    policy: { type: "string" },
+                    fail_on: { type: "string" },
+                    ref: { type: "string", nullable: true },
+                  },
+                },
+              },
+            },
+          },
+          "400": { description: "Bad request" },
+          "401": { description: "Unauthorized" },
+        },
+      },
+    },
+    "/config-run": {
+      post: {
+        summary: "Config-run (Compliance as Code)",
+        description: "Run a governance scan using a torqa.config.json configuration object.",
+        operationId: "configRun",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["config", "workflow"],
+                properties: {
+                  config: { type: "object", description: "torqa.config.json object (version, policy, fail_on, rules, report)" },
+                  workflow: { type: "object", description: "Workflow JSON to scan" },
+                  source: { type: "string", default: "generic" },
+                  workflow_name: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Governance result with exit_code, decision, trust_score, and findings" },
+          "400": { description: "Invalid config" },
+        },
+      },
+      get: {
+        summary: "Get config-run template",
+        description: "Returns the torqa.config.json template and schema documentation.",
+        operationId: "getConfigTemplate",
+        security: [],
+        responses: {
+          "200": { description: "Config template and docs" },
+        },
+      },
+    },
     "/audit/export": {
       post: {
         summary: "Export audit log",
