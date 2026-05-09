@@ -13,6 +13,7 @@ import { attachRequestIdHeader, jsonErrorResponse } from "@/lib/api-json-error";
 import { getOrCreateRequestId } from "@/lib/api-request-id";
 import { isLikelyUuid, isReasonablePolicyTemplateSlug } from "@/lib/policy-input-limits";
 import { enrichScanWithGovernance } from "@/lib/governance/enrich-scan";
+import { dispatchPlaybooksForScan } from "@/lib/playbook-dispatch";
 import { resolvePolicyPack } from "@/lib/governance/policy-v2/resolver";
 import { evaluatePolicyRules } from "@/lib/governance/policy-v2/evaluator";
 import { detectSource, listSourceIds } from "@/lib/scan/source-registry";
@@ -177,6 +178,17 @@ export async function POST(request: Request) {
       if (user) {
         const organizationId = await resolveScopedOrganizationId(supabase, user.id);
         void dispatchScanNotificationsForUser(user.id, responsePayload, source, organizationId).catch(() => {});
+        const _rp = responsePayload as unknown as Record<string, unknown>;
+        const _ct = content as Record<string, unknown>;
+        void dispatchPlaybooksForScan(supabase, {
+          scan_id:        typeof _rp.id === "string" ? _rp.id : "unknown",
+          user_id:        user.id,
+          workflow_name:  typeof _ct.name === "string" ? _ct.name : source,
+          trust_score:    typeof responsePayload.riskScore === "number" ? responsePayload.riskScore : undefined,
+          decision:       typeof _rp.decision === "string" ? _rp.decision : undefined,
+          source:         source,
+          findings_count: Array.isArray(responsePayload.findings) ? responsePayload.findings.length : undefined,
+        }).catch(() => {});
       }
     }
     return attachRequestIdHeader(NextResponse.json(responsePayload), requestId);

@@ -11,6 +11,7 @@ import { isPlainObject } from "@/lib/json-guards";
 import { logWorkspaceActivity, notifyWorkspaceMembers } from "@/lib/workspace-activity";
 import { fetchIntegrationWorkflows } from "@/lib/integration-workflow-fetcher";
 import { dispatchEnforcementWebhooks } from "@/lib/enforcement-webhook-dispatch";
+import { dispatchPlaybooksForScan } from "@/lib/playbook-dispatch";
 import type { ResolvedScanPolicy } from "@/lib/resolve-scan-policy";
 import {
   computeNextRunAfterExecution,
@@ -324,6 +325,15 @@ export async function executeManualScheduleRun(
     scanId,
     findings: scanResult.findings.map((f) => ({ severity: f.severity, rule_id: f.rule_id, target: f.target ?? "" })),
   }).catch(() => {});
+  void dispatchPlaybooksForScan(supabase, {
+    scan_id: scanId,
+    user_id: userId,
+    workflow_name: template.name,
+    trust_score: scanResult.riskScore,
+    decision: scanResult.status,
+    source,
+    findings_count: scanResult.findings.length,
+  }).catch(() => {});
 
   const completedAt = new Date().toISOString();
   await supabase
@@ -477,6 +487,15 @@ async function executeIntegrationScheduleRun(
       source,
       scanId,
       findings: scanResult.findings.map((f) => ({ severity: f.severity, rule_id: f.rule_id, target: f.target ?? "" })),
+    }).catch(() => {});
+    void dispatchPlaybooksForScan(supabase, {
+      scan_id: scanId,
+      user_id: userId,
+      workflow_name: wf.name,
+      trust_score: scanResult.riskScore,
+      decision: scanResult.status,
+      source,
+      findings_count: scanResult.findings.length,
     }).catch(() => {});
   }
 
