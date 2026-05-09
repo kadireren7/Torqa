@@ -22,13 +22,13 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex min-h-screen" style={{ background: "var(--surface-0)" }}>
-      {/* Very subtle ambient glow */}
+      {/* Ambient glow — dark mode only */}
       <div
-        className="pointer-events-none fixed inset-0 -z-10"
+        className="pointer-events-none fixed inset-0 -z-10 dark:block hidden"
         style={{
           background:
-            "radial-gradient(ellipse 60% 30% at 50% -5%, rgba(249,115,22,0.04) 0%, transparent 60%)," +
-            "radial-gradient(ellipse 40% 20% at 100% 0%, rgba(249,115,22,0.02) 0%, transparent 50%)",
+            "radial-gradient(ellipse 50% 25% at 50% -2%, rgba(34,211,238,0.05) 0%, transparent 60%)," +
+            "radial-gradient(ellipse 30% 15% at 100% 0%, rgba(34,211,238,0.03) 0%, transparent 50%)",
         }}
         aria-hidden
       />
@@ -42,7 +42,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           tabIndex={-1}
           className="flex-1 overflow-auto outline-none"
         >
-          <div className="mx-auto max-w-[1100px] px-6 py-8 sm:px-8">
+          <div className="mx-auto max-w-[1120px] px-6 py-8 sm:px-8">
             {children}
           </div>
         </main>

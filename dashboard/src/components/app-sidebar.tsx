@@ -16,27 +16,27 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
 
   return (
     <aside
-      className="hidden lg:flex w-[216px] shrink-0 flex-col"
+      className="hidden lg:flex w-[220px] shrink-0 flex-col animate-fade-in"
       style={{
-        background: "var(--surface-0)",
+        background: "var(--sidebar-bg)",
         borderRight: "1px solid var(--line)",
       }}
     >
       {/* Logo */}
-      <div className="flex h-[56px] shrink-0 items-center gap-2.5 px-4">
+      <div className="flex h-[56px] shrink-0 items-center gap-3 px-4">
         <div
-          className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-lg"
+          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg"
           style={{
             background: "var(--accent-soft)",
-            border: "1px solid rgba(249,115,22,0.18)",
+            border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)",
           }}
         >
-          <TorqaLogoAnimated size={20} />
+          <TorqaLogoAnimated size={18} />
         </div>
         <div className="min-w-0">
           <p
-            className="text-[14px] font-semibold leading-none"
-            style={{ color: "var(--fg-1)", letterSpacing: "-0.01em" }}
+            className="text-[14px] font-semibold leading-none tracking-[-0.02em]"
+            style={{ color: "var(--fg-1)" }}
           >
             Torqa
           </p>
@@ -49,8 +49,8 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-2">
-        <div className="space-y-[1px]">
+      <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="space-y-[2px]">
           {mainNavItems.map((item) => {
             const active =
               pathname === item.href ||
@@ -63,31 +63,31 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group flex items-center gap-2.5 rounded-md px-2.5 py-[6px] text-[13px] font-medium transition-all duration-100"
+                  "group relative flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-all duration-150"
                 )}
                 style={{
                   color: active ? "var(--fg-1)" : "var(--fg-3)",
-                  background: active ? "rgba(255,255,255,0.05)" : "transparent",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) (e.currentTarget as HTMLElement).style.color = "var(--fg-2)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) (e.currentTarget as HTMLElement).style.color = "var(--fg-3)";
+                  background: active ? "var(--overlay-md)" : "transparent",
                 }}
               >
+                {/* Active indicator */}
+                {active && (
+                  <span
+                    className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full"
+                    style={{ background: "var(--accent)" }}
+                  />
+                )}
                 <Icon
-                  className="h-[15px] w-[15px] shrink-0"
-                  style={{ color: active ? "var(--accent)" : "inherit" }}
+                  className="h-[15px] w-[15px] shrink-0 transition-colors duration-150"
+                  style={{ color: active ? "var(--accent)" : "var(--fg-4)" }}
                   aria-hidden
                 />
                 <span className="flex-1 leading-none">{item.title}</span>
                 {item.badge && (
                   <span
-                    className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide"
+                    className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide"
                     style={{
                       background: "var(--accent-soft)",
-                      border: "1px solid rgba(249,115,22,0.2)",
                       color: "var(--accent)",
                     }}
                   >
@@ -101,15 +101,15 @@ export function AppSidebar({ orgName }: AppSidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-4" style={{ borderTop: "1px solid var(--line)" }}>
+      <div className="px-3 py-4" style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mb-3">
           <GovernanceModeBadge />
         </div>
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-[12px] transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[12px] transition-colors duration-150"
           style={{ color: "var(--fg-4)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-3)"; }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-2)"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-4)"; }}
         >
           ← Home

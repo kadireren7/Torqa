@@ -54,14 +54,14 @@ async function getRecentDecisions(): Promise<GovernanceDecisionRow[]> {
   return (data ?? []) as GovernanceDecisionRow[];
 }
 
-const DECISION_META: Record<string, { label: string; dot: string }> = {
-  apply_fix: { label: "Fix applied", dot: "#10b981" },
-  accept_risk: { label: "Risk accepted", dot: "#f59e0b" },
-  revoke_risk: { label: "Risk revoked", dot: "#6b7280" },
-  approve_fix: { label: "Fix approved", dot: "#10b981" },
-  reject_fix: { label: "Fix rejected", dot: "#f43f5e" },
-  mode_change: { label: "Mode changed", dot: "#22d3ee" },
-  interactive_response: { label: "Response recorded", dot: "#8b8b9a" },
+const DECISION_META: Record<string, { label: string; color: string }> = {
+  apply_fix:            { label: "Fix applied",       color: "var(--emerald)" },
+  accept_risk:          { label: "Risk accepted",     color: "var(--amber)" },
+  revoke_risk:          { label: "Risk revoked",      color: "var(--fg-3)" },
+  approve_fix:          { label: "Fix approved",      color: "var(--emerald)" },
+  reject_fix:           { label: "Fix rejected",      color: "var(--rose)" },
+  mode_change:          { label: "Mode changed",      color: "var(--accent)" },
+  interactive_response: { label: "Response recorded", color: "var(--fg-3)" },
 };
 
 function timeAgo(iso: string): string {
@@ -83,31 +83,38 @@ export default async function DashboardOverviewPage() {
   const passRate = totalOutcomes > 0 ? Math.round((home.passCount / totalOutcomes) * 100) : null;
 
   return (
-    <div className="space-y-8 animate-fade-in-up">
+    <div className="space-y-6 animate-fade-in-up">
 
-      {/* ── Hero row ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* ── Hero ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--fg-3)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--fg-4)" }}>
             Overview
           </p>
-          <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.02em] text-[var(--fg-1)]">
+          <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.03em]" style={{ color: "var(--fg-1)" }}>
             Governance control
           </h1>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/sources"
-            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-[var(--fg-2)] transition-all hover:text-[var(--fg-1)]"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--line-2)" }}
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-150 hover:opacity-80"
+            style={{
+              background: "var(--overlay-md)",
+              border: "1px solid var(--line-2)",
+              color: "var(--fg-2)",
+            }}
           >
             Connect source
             <ArrowUpRight className="h-3 w-3" />
           </Link>
           <Link
             href="/scan"
-            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-[var(--void)] transition-all"
-            style={{ background: "var(--accent)", border: "1px solid var(--accent)" }}
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-150 hover:opacity-90"
+            style={{
+              background: "var(--accent)",
+              color: "var(--surface-0)",
+            }}
           >
             <Shield className="h-3 w-3" />
             Scan now
@@ -122,25 +129,21 @@ export default async function DashboardOverviewPage() {
       />
 
       {/* ── Metric grid ── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 stagger-children">
         <MetricTile
           label="Scans (30d)"
           value={home.totalScans30d}
           icon={<Activity className="h-3.5 w-3.5" />}
-          sub="Total scans last month"
+          sub="Total last month"
         />
         <MetricTile
           label="Avg trust score"
           value={home.avgTrustScore ?? "—"}
           icon={<Gauge className="h-3.5 w-3.5" />}
-          sub="Mean risk posture 0–100"
+          sub="Mean posture 0–100"
           accent={
             typeof home.avgTrustScore === "number"
-              ? home.avgTrustScore >= 70
-                ? "var(--emerald)"
-                : home.avgTrustScore >= 45
-                ? "var(--amber)"
-                : "var(--rose)"
+              ? home.avgTrustScore >= 70 ? "var(--emerald)" : home.avgTrustScore >= 45 ? "var(--amber)" : "var(--rose)"
               : undefined
           }
         />
@@ -148,7 +151,7 @@ export default async function DashboardOverviewPage() {
           label="Policy failures"
           value={home.policyFailures30d}
           icon={<Shield className="h-3.5 w-3.5" />}
-          sub="Failed governance checks (30d)"
+          sub="Failed checks (30d)"
           accent={home.policyFailures30d > 0 ? "var(--rose)" : undefined}
         />
         <MetricTile
@@ -158,11 +161,7 @@ export default async function DashboardOverviewPage() {
           sub={`${home.passCount} pass · ${home.failCount} fail · ${home.reviewCount} review`}
           accent={
             passRate !== null
-              ? passRate >= 75
-                ? "var(--emerald)"
-                : passRate >= 50
-                ? "var(--amber)"
-                : "var(--rose)"
+              ? passRate >= 75 ? "var(--emerald)" : passRate >= 50 ? "var(--amber)" : "var(--rose)"
               : undefined
           }
         />
@@ -189,7 +188,7 @@ export default async function DashboardOverviewPage() {
           label="Schedule success"
           value={home.scheduleSuccessRate30d === null ? "—" : `${home.scheduleSuccessRate30d}%`}
           icon={<BarChart3 className="h-3.5 w-3.5" />}
-          sub="Completed run rate (30d)"
+          sub="Completed rate (30d)"
         />
       </div>
 
@@ -207,28 +206,33 @@ export default async function DashboardOverviewPage() {
         </div>
       </SectionCard>
 
-      {/* ── Bottom two-col ── */}
+      {/* ── Two-col ── */}
       <div className="grid gap-4 lg:grid-cols-2">
-
-        {/* Top finding types */}
-        <SectionCard
-          title="Top findings"
-          sub="Most frequent rule hits"
-        >
+        {/* Top findings */}
+        <SectionCard title="Top findings" sub="Most frequent rule hits">
           {home.topFindingRules.length === 0 ? (
-            <EmptyState text="No findings yet. Run a scan to populate this section." />
+            <EmptyState text="No findings yet. Run a scan to populate." />
           ) : (
-            <div className="space-y-1.5 pt-2">
-              {home.topFindingRules.map((rule) => (
+            <div className="space-y-1 pt-2">
+              {home.topFindingRules.map((rule, i) => (
                 <div
                   key={rule.ruleId}
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5"
-                  style={{ border: "1px solid var(--line)", background: "rgba(255,255,255,0.02)" }}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150"
+                  style={{
+                    border: "1px solid var(--line)",
+                    background: "var(--overlay-sm)",
+                    animationDelay: `${i * 30}ms`,
+                  }}
                 >
-                  <code className="font-mono text-[11px] text-[var(--fg-2)]">{rule.ruleId}</code>
+                  <code className="font-mono text-[11px]" style={{ color: "var(--fg-2)" }}>
+                    {rule.ruleId}
+                  </code>
                   <span
                     className="rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-                    style={{ background: "rgba(255,255,255,0.05)", color: "var(--fg-2)" }}
+                    style={{
+                      background: "var(--overlay-md)",
+                      color: "var(--fg-2)",
+                    }}
                   >
                     {rule.count}
                   </span>
@@ -238,7 +242,7 @@ export default async function DashboardOverviewPage() {
           )}
         </SectionCard>
 
-        {/* Governance activity */}
+        {/* Activity */}
         <SectionCard
           title="Activity"
           sub="Recent governance decisions"
@@ -249,25 +253,32 @@ export default async function DashboardOverviewPage() {
           ) : (
             <div className="pt-2 space-y-[1px]">
               {decisions.map((d) => {
-                const meta = DECISION_META[d.decision_type] ?? { label: d.decision_type, dot: "#6b7280" };
+                const meta = DECISION_META[d.decision_type] ?? { label: d.decision_type, color: "var(--fg-3)" };
                 return (
                   <div
                     key={d.id}
-                    className="flex items-start justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-white/[0.02]"
+                    className="flex items-start justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150"
+                    style={{ ["--hover-bg" as string]: "var(--overlay-hover)" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--overlay-hover)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                   >
                     <div className="flex items-start gap-2.5 min-w-0">
                       <div
                         className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ background: meta.dot }}
+                        style={{ background: meta.color }}
                       />
                       <div className="min-w-0">
-                        <p className="text-[12px] font-medium text-[var(--fg-2)]">{meta.label}</p>
+                        <p className="text-[12px] font-medium" style={{ color: "var(--fg-2)" }}>
+                          {meta.label}
+                        </p>
                         {d.rationale && (
-                          <p className="mt-0.5 truncate text-[11px] text-[var(--fg-3)]">{d.rationale}</p>
+                          <p className="mt-0.5 truncate text-[11px]" style={{ color: "var(--fg-3)" }}>
+                            {d.rationale}
+                          </p>
                         )}
                       </div>
                     </div>
-                    <span className="shrink-0 text-[10px] text-[var(--fg-4)] tabular-nums">
+                    <span className="shrink-0 text-[10px] tabular-nums" style={{ color: "var(--fg-4)" }}>
                       {timeAgo(d.created_at)}
                     </span>
                   </div>
@@ -286,13 +297,21 @@ export default async function DashboardOverviewPage() {
       >
         <div className="pt-2">
           {home.recentScans.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <Shield className="h-8 w-8 text-[var(--fg-4)]" />
-              <p className="text-[13px] text-[var(--fg-3)]">No scans yet</p>
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ background: "var(--accent-soft)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)" }}
+              >
+                <Shield className="h-5 w-5" style={{ color: "var(--accent)" }} />
+              </div>
+              <div>
+                <p className="text-[14px] font-medium" style={{ color: "var(--fg-1)" }}>No scans yet</p>
+                <p className="mt-1 text-[12px]" style={{ color: "var(--fg-3)" }}>Connect a source to start scanning</p>
+              </div>
               <Link
                 href="/scan"
-                className="flex h-7 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium"
-                style={{ background: "var(--cyan)", color: "var(--void)" }}
+                className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-150 hover:opacity-90"
+                style={{ background: "var(--accent)", color: "var(--surface-0)" }}
               >
                 Run first scan <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -301,25 +320,34 @@ export default async function DashboardOverviewPage() {
             <Table>
               <TableHeader>
                 <TableRow style={{ borderColor: "var(--line)" }} className="hover:bg-transparent">
-                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Workflow</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Source</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Trust</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wide text-[var(--fg-3)]">Outcome</TableHead>
-                  <TableHead className="text-right text-[11px] uppercase tracking-wide text-[var(--fg-3)]">When</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-4)" }}>Workflow</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-4)" }}>Source</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-4)" }}>Trust</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-4)" }}>Outcome</TableHead>
+                  <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-4)" }}>When</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {home.recentScans.map((s) => (
-                  <TableRow key={s.id} style={{ borderColor: "var(--line)" }} className="hover:bg-white/[0.02]">
+                  <TableRow
+                    key={s.id}
+                    style={{ borderColor: "var(--line)" }}
+                    className="transition-colors duration-100"
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--overlay-hover)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
                     <TableCell>
                       {home.mode === "mock" ? (
-                        <span className="line-clamp-1 max-w-[200px] text-[13px] font-medium text-[var(--fg-1)]">
+                        <span className="line-clamp-1 max-w-[200px] text-[13px] font-medium" style={{ color: "var(--fg-1)" }}>
                           {s.workflowName ?? "Untitled"}
                         </span>
                       ) : (
                         <Link
                           href={`/scan/${s.id}`}
-                          className="line-clamp-1 max-w-[200px] text-[13px] font-medium text-[var(--fg-1)] transition-colors hover:text-[var(--cyan)]"
+                          className="line-clamp-1 max-w-[200px] text-[13px] font-medium transition-colors duration-150"
+                          style={{ color: "var(--fg-1)" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-1)"; }}
                         >
                           {s.workflowName ?? "Untitled"}
                         </Link>
@@ -327,15 +355,17 @@ export default async function DashboardOverviewPage() {
                     </TableCell>
                     <TableCell>
                       <span
-                        className="rounded-md px-1.5 py-0.5 text-[11px] capitalize"
-                        style={{ background: "rgba(255,255,255,0.05)", color: "var(--fg-2)" }}
+                        className="rounded-md px-1.5 py-0.5 text-[11px] capitalize font-medium"
+                        style={{ background: "var(--overlay-md)", color: "var(--fg-2)" }}
                       >
                         {s.source}
                       </span>
                     </TableCell>
-                    <TableCell className="tabular-nums text-[13px] text-[var(--fg-2)]">{s.riskScore}</TableCell>
+                    <TableCell className="tabular-nums text-[13px]" style={{ color: "var(--fg-2)" }}>
+                      {s.riskScore}
+                    </TableCell>
                     <TableCell><ScanOutcomeBadge status={s.status} /></TableCell>
-                    <TableCell className="text-right text-[11px] text-[var(--fg-3)]">
+                    <TableCell className="text-right text-[11px]" style={{ color: "var(--fg-3)" }}>
                       {new Date(s.createdAt).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
@@ -367,13 +397,16 @@ function MetricTile({
 }) {
   return (
     <div
-      className="group rounded-xl p-4 transition-all hover:border-white/10"
+      className="animate-fade-in-up card-lift rounded-xl p-4"
       style={{
         background: "var(--surface-1)",
         border: "1px solid var(--line)",
       }}
     >
-      <div className="mb-3 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--fg-3)]">
+      <div
+        className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]"
+        style={{ color: "var(--fg-4)" }}
+      >
         <span style={{ color: "var(--fg-4)" }}>{icon}</span>
         {label}
       </div>
@@ -383,7 +416,9 @@ function MetricTile({
       >
         {value}
       </div>
-      <p className="mt-1.5 text-[11px] text-[var(--fg-3)] leading-snug">{sub}</p>
+      <p className="mt-1.5 text-[11px] leading-snug" style={{ color: "var(--fg-3)" }}>
+        {sub}
+      </p>
     </div>
   );
 }
@@ -401,23 +436,24 @@ function SectionCard({
 }) {
   return (
     <div
-      className="rounded-xl"
+      className="animate-fade-in-up rounded-xl"
       style={{
         background: "var(--surface-1)",
         border: "1px solid var(--line)",
       }}
     >
-      <div
-        className="flex items-center justify-between px-5 pt-5 pb-0"
-      >
+      <div className="flex items-center justify-between px-5 pt-5 pb-0">
         <div>
-          <p className="text-[14px] font-semibold text-[var(--fg-1)]">{title}</p>
-          <p className="mt-0.5 text-[12px] text-[var(--fg-3)]">{sub}</p>
+          <p className="text-[14px] font-semibold" style={{ color: "var(--fg-1)" }}>{title}</p>
+          <p className="mt-0.5 text-[12px]" style={{ color: "var(--fg-3)" }}>{sub}</p>
         </div>
         {action && (
           <Link
             href={action.href}
-            className="flex items-center gap-1 text-[12px] text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]"
+            className="flex items-center gap-1 text-[12px] transition-colors duration-150"
+            style={{ color: "var(--fg-3)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-3)"; }}
           >
             {action.label}
             <ArrowUpRight className="h-3 w-3" />
@@ -432,7 +468,7 @@ function SectionCard({
 function EmptyState({ text }: { text: string }) {
   return (
     <div className="py-8 text-center">
-      <p className="text-[13px] text-[var(--fg-3)]">{text}</p>
+      <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>{text}</p>
     </div>
   );
 }

@@ -55,34 +55,36 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
   }
 
   const pageLabel = scanDetailId ? "Scan report" : title;
-
   const initials = user ? initialsFrom(user.email, user.displayName) : "?";
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Guest";
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-[56px] shrink-0 items-center gap-4 px-5"
-      style={{
-        background: "rgba(9,9,13,0.85)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--line)",
-      }}
+      className="sticky top-0 z-30 flex h-[56px] shrink-0 items-center gap-4 px-5 torqa-glass"
+      style={{ borderBottom: "1px solid var(--line)" }}
     >
       <AppMobileNav orgName={orgName} />
 
-      {/* Page title */}
+      {/* Breadcrumb / page title */}
       <div className="flex min-w-0 flex-1 items-center gap-2">
         {scanDetailId ? (
           <div className="flex items-center gap-2 text-[13px]">
-            <Link href="/scan" className="text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]">
+            <Link
+              href="/scan"
+              className="transition-colors duration-150"
+              style={{ color: "var(--fg-3)" }}
+            >
               Scan
             </Link>
-            <span className="text-[var(--fg-4)]">/</span>
-            <span className="font-mono text-[11px] text-[var(--fg-2)] opacity-70">{scanDetailId.slice(0, 8)}…</span>
+            <span style={{ color: "var(--fg-4)" }}>/</span>
+            <span className="font-mono text-[11px]" style={{ color: "var(--fg-2)" }}>
+              {scanDetailId.slice(0, 8)}…
+            </span>
           </div>
         ) : (
-          <h1 className="text-[13px] font-medium text-[var(--fg-2)]">{pageLabel}</h1>
+          <h1 className="text-[13px] font-medium" style={{ color: "var(--fg-2)" }}>
+            {pageLabel}
+          </h1>
         )}
       </div>
 
@@ -94,11 +96,11 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-all hover:ring-2 hover:ring-white/10 focus:outline-none"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-all duration-150 hover:opacity-80 focus:outline-none"
               style={{
-                background: "rgba(249,115,22,0.12)",
+                background: "var(--accent-soft)",
                 color: "var(--accent)",
-                border: "1px solid rgba(249,115,22,0.2)",
+                border: "1px solid color-mix(in srgb, var(--accent) 24%, transparent)",
               }}
             >
               {initials}
@@ -106,18 +108,29 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-52 border-[var(--line)]"
-            style={{ background: "var(--surface-1)" }}
+            className="w-52"
+            style={{
+              background: "var(--surface-1)",
+              border: "1px solid var(--line-2)",
+            }}
           >
             <div className="px-3 py-2">
-              <p className="text-[13px] font-medium text-[var(--fg-1)]">{displayName}</p>
+              <p className="text-[13px] font-medium" style={{ color: "var(--fg-1)" }}>
+                {displayName}
+              </p>
               {user?.email && (
-                <p className="truncate text-[11px] text-[var(--fg-3)]">{user.email}</p>
+                <p className="truncate text-[11px]" style={{ color: "var(--fg-3)" }}>
+                  {user.email}
+                </p>
               )}
             </div>
             <DropdownMenuSeparator style={{ background: "var(--line)" }} />
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="cursor-pointer text-[13px] text-[var(--fg-2)]">
+              <Link
+                href="/settings"
+                className="cursor-pointer text-[13px]"
+                style={{ color: "var(--fg-2)" }}
+              >
                 Settings
               </Link>
             </DropdownMenuItem>
@@ -125,7 +138,8 @@ export function AppHeader({ orgName, user }: AppHeaderProps) {
             {user ? (
               <DropdownMenuItem
                 onClick={() => void signOut()}
-                className="cursor-pointer text-[13px] text-[var(--fg-3)]"
+                className="cursor-pointer text-[13px]"
+                style={{ color: "var(--fg-3)" }}
               >
                 Sign out
               </DropdownMenuItem>

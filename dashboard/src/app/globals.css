@@ -2,79 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════
+   Torqa Design System — Unified palette across landing,
+   login, and dashboard. Violet-tinted dark + light mode.
+   ═══════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
-    /* Light mode */
-    --background: 30 20% 97%;
-    --foreground: 20 10% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 10% 8%;
+    /* shadcn tokens — LIGHT */
+    --background: 248 100% 99%;
+    --foreground: 252 25% 12%;
+    --card: 248 60% 97%;
+    --card-foreground: 252 25% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 10% 8%;
-    --primary: 24 95% 50%;
+    --popover-foreground: 252 25% 12%;
+    --primary: 263 70% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 10% 93%;
-    --secondary-foreground: 20 10% 8%;
-    --muted: 30 10% 93%;
-    --muted-foreground: 20 6% 44%;
-    --accent: 30 10% 91%;
-    --accent-foreground: 20 10% 8%;
-    --destructive: 0 75% 52%;
+    --secondary: 252 20% 94%;
+    --secondary-foreground: 252 25% 12%;
+    --muted: 252 20% 94%;
+    --muted-foreground: 252 10% 48%;
+    --accent: 252 20% 91%;
+    --accent-foreground: 252 25% 12%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 8% 86%;
-    --input: 30 8% 86%;
-    --ring: 24 95% 50%;
-    --radius: 0.625rem;
-    --sidebar: 30 12% 95%;
-    --sidebar-foreground: 20 10% 8%;
-    --sidebar-primary: 24 95% 50%;
+    --border: 252 15% 88%;
+    --input: 252 15% 88%;
+    --ring: 263 70% 48%;
+    --radius: 0.5rem;
+    --sidebar: 252 30% 96%;
+    --sidebar-foreground: 252 25% 12%;
+    --sidebar-primary: 263 70% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 10% 91%;
-    --sidebar-accent-foreground: 20 10% 8%;
-    --sidebar-border: 30 8% 86%;
-    --sidebar-ring: 24 95% 50%;
-    --chart-1: 24 95% 50%;
-    --chart-2: 270 60% 52%;
-    --chart-3: 155 65% 40%;
-    --chart-4: 38 88% 46%;
-    --chart-5: 0 75% 52%;
+    --sidebar-accent: 252 20% 93%;
+    --sidebar-accent-foreground: 252 25% 12%;
+    --sidebar-border: 252 15% 88%;
+    --sidebar-ring: 263 70% 48%;
+    --chart-1: 263 70% 52%;
+    --chart-2: 196 80% 48%;
+    --chart-3: 158 64% 40%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 84% 60%;
   }
 
   .dark {
-    /* Warm ultra-dark — Claude DNA */
-    --background: 24 10% 5%;
-    --foreground: 30 12% 95%;
-    --card: 24 8% 8%;
-    --card-foreground: 30 12% 95%;
-    --popover: 24 10% 7%;
-    --popover-foreground: 30 12% 95%;
-    --primary: 24 95% 53%;
-    --primary-foreground: 24 10% 5%;
-    --secondary: 24 6% 15%;
-    --secondary-foreground: 30 12% 95%;
-    --muted: 24 6% 13%;
-    --muted-foreground: 24 5% 50%;
-    --accent: 24 6% 15%;
-    --accent-foreground: 30 12% 95%;
-    --destructive: 0 72% 52%;
+    /* shadcn tokens — DARK */
+    --background: 252 22% 6%;
+    --foreground: 252 20% 94%;
+    --card: 252 18% 9%;
+    --card-foreground: 252 20% 94%;
+    --popover: 252 22% 7%;
+    --popover-foreground: 252 20% 94%;
+    --primary: 263 80% 68%;
+    --primary-foreground: 252 22% 6%;
+    --secondary: 252 14% 15%;
+    --secondary-foreground: 252 20% 94%;
+    --muted: 252 14% 13%;
+    --muted-foreground: 252 10% 50%;
+    --accent: 252 14% 15%;
+    --accent-foreground: 252 20% 94%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 24 6% 14%;
-    --input: 24 6% 14%;
-    --ring: 24 95% 53%;
-    --radius: 0.625rem;
-    --sidebar: 24 10% 4%;
-    --sidebar-foreground: 30 12% 95%;
-    --sidebar-primary: 24 95% 53%;
-    --sidebar-primary-foreground: 24 10% 5%;
-    --sidebar-accent: 24 6% 12%;
-    --sidebar-accent-foreground: 30 12% 95%;
-    --sidebar-border: 24 5% 11%;
-    --sidebar-ring: 24 95% 53%;
-    --chart-1: 24 95% 58%;
-    --chart-2: 270 60% 62%;
-    --chart-3: 155 65% 48%;
-    --chart-4: 38 88% 55%;
-    --chart-5: 0 72% 58%;
+    --border: 252 12% 15%;
+    --input: 252 12% 15%;
+    --ring: 263 80% 68%;
+    --radius: 0.5rem;
+    --sidebar: 252 22% 5%;
+    --sidebar-foreground: 252 20% 94%;
+    --sidebar-primary: 263 80% 68%;
+    --sidebar-primary-foreground: 252 22% 6%;
+    --sidebar-accent: 252 14% 12%;
+    --sidebar-accent-foreground: 252 20% 94%;
+    --sidebar-border: 252 12% 13%;
+    --sidebar-ring: 263 80% 68%;
+    --chart-1: 263 80% 68%;
+    --chart-2: 196 80% 58%;
+    --chart-3: 158 64% 52%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 0 84% 65%;
   }
 }
 
@@ -85,123 +90,175 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   body { @apply bg-background text-foreground; }
   ::selection {
-    background: rgba(249,115,22,0.2);
-    color: #FED7AA;
+    background: rgba(139,92,246,0.25);
+    color: inherit;
   }
 }
 
-/* ── Design tokens ── */
+/* ── Torqa design tokens — LIGHT ── */
 :root {
-  --void:       #0A0805;
-  --surface-0:  #0D0A07;
-  --surface-1:  #131008;
-  --surface-2:  #1A1610;
-  --surface-3:  #221E15;
-  --line:       rgba(255,255,255,0.06);
-  --line-2:     rgba(255,255,255,0.10);
-  --line-3:     rgba(255,255,255,0.18);
-  --fg-1:       #F5F0EB;
-  --fg-2:       #A09690;
-  --fg-3:       #65615C;
-  --fg-4:       #3D3935;
-  --accent:     #F97316;
-  --accent-dim: #C2410C;
-  --accent-glow: rgba(249,115,22,0.14);
-  --accent-soft: rgba(249,115,22,0.08);
-  /* Kept for backward compat with components referencing --cyan */
-  --cyan:       #F97316;
-  --cyan-dim:   #C2410C;
-  --cyan-glow:  rgba(249,115,22,0.14);
-  --rose:       #F43F5E;
-  --amber:      #F59E0B;
-  --emerald:    #10B981;
+  --void:           #F7F6FF;
+  --surface-0:      #F7F6FF;
+  --surface-1:      #F0EEFF;
+  --surface-2:      #E8E4F8;
+  --surface-3:      #DDD8F0;
+  --line:           rgba(100,80,200,0.10);
+  --line-2:         rgba(100,80,200,0.16);
+  --line-3:         rgba(100,80,200,0.24);
+  --fg-1:           #1A1830;
+  --fg-2:           #4A4760;
+  --fg-3:           #706D88;
+  --fg-4:           #A09DBB;
+  --accent:         #6D28D9;
+  --accent-dim:     #5B21B6;
+  --accent-glow:    rgba(109,40,217,0.14);
+  --accent-soft:    rgba(109,40,217,0.09);
+  --cyan:           #0891B2;
+  --cyan-dim:       #0E7490;
+  --cyan-glow:      rgba(8,145,178,0.12);
+  --rose:           #E11D48;
+  --amber:          #B45309;
+  --emerald:        #047857;
+  --overlay-sm:     rgba(100,80,200,0.04);
+  --overlay-md:     rgba(100,80,200,0.07);
+  --overlay-hover:  rgba(100,80,200,0.05);
+  --sidebar-bg:     #EDE9FF;
+  --header-bg:      rgba(247,246,255,0.88);
+}
+
+/* ── Torqa design tokens — DARK ── */
+.dark {
+  --void:           #0A090F;
+  --surface-0:      #0A090F;
+  --surface-1:      #111018;
+  --surface-2:      #191726;
+  --surface-3:      #242133;
+  --line:           rgba(255,255,255,0.07);
+  --line-2:         rgba(255,255,255,0.11);
+  --line-3:         rgba(255,255,255,0.18);
+  --fg-1:           #F0EEFF;
+  --fg-2:           #9E9AB8;
+  --fg-3:           #6B677F;
+  --fg-4:           #3E3B52;
+  --accent:         #8B5CF6;
+  --accent-dim:     #7C3AED;
+  --accent-glow:    rgba(139,92,246,0.18);
+  --accent-soft:    rgba(139,92,246,0.10);
+  --cyan:           #22D3EE;
+  --cyan-dim:       #06B6D4;
+  --cyan-glow:      rgba(34,211,238,0.14);
+  --rose:           #FB7185;
+  --amber:          #FBBF24;
+  --emerald:        #34D399;
+  --overlay-sm:     rgba(255,255,255,0.03);
+  --overlay-md:     rgba(255,255,255,0.05);
+  --overlay-hover:  rgba(255,255,255,0.03);
+  --sidebar-bg:     #09080E;
+  --header-bg:      rgba(10,9,15,0.88);
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
 
-/* ── Torqa logo animations ── */
-@keyframes tq-shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
-}
-@keyframes tq-pulse {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50%       { opacity: 1;    transform: scale(1.18); }
-}
-@keyframes tq-pulse-ring {
-  0%, 100% { opacity: 0; transform: scale(1); }
-  40%       { opacity: 0.35; }
-  70%       { opacity: 0; transform: scale(1.6); }
-}
-@keyframes tq-scan-sweep {
-  0%       { top: -4px;  opacity: 0; }
-  10%, 88% { opacity: 1; }
-  100%     { top: 110%;  opacity: 0; }
-}
-@keyframes tq-bar-glow {
-  0%, 100% { opacity: 0.75; }
-  50%       { opacity: 1; }
-}
+/* ── Logo animations ── */
+@keyframes tq-shimmer  { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+@keyframes tq-pulse    { 0%,100% { opacity:.55; transform:scale(1); } 50% { opacity:1; transform:scale(1.18); } }
+@keyframes tq-pulse-ring { 0%,100% { opacity:0; transform:scale(1); } 40% { opacity:.35; } 70% { opacity:0; transform:scale(1.6); } }
+@keyframes tq-scan-sweep { 0% { top:-4px; opacity:0; } 10%,88% { opacity:1; } 100% { top:110%; opacity:0; } }
+@keyframes tq-bar-glow { 0%,100% { opacity:.75; } 50% { opacity:1; } }
 
-/* ── Page transitions ── */
+/* ── Page/element transitions ── */
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
 @keyframes shimmer {
   0%   { background-position: -400% 0; }
   100% { background-position: 400% 0; }
 }
 
-.animate-fade-in-up { animation: fade-in-up 0.35s ease forwards; }
-.animate-fade-in    { animation: fade-in 0.25s ease forwards; }
+.animate-fade-in-up { animation: fade-in-up 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fade-in    { animation: fade-in    0.25s ease forwards; }
+.animate-scale-in   { animation: scale-in   0.3s  cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* Stagger grid */
+.stagger-children > *:nth-child(1)  { animation-delay:   0ms; }
+.stagger-children > *:nth-child(2)  { animation-delay:  45ms; }
+.stagger-children > *:nth-child(3)  { animation-delay:  90ms; }
+.stagger-children > *:nth-child(4)  { animation-delay: 135ms; }
+.stagger-children > *:nth-child(5)  { animation-delay: 180ms; }
+.stagger-children > *:nth-child(6)  { animation-delay: 225ms; }
+.stagger-children > *:nth-child(7)  { animation-delay: 270ms; }
+.stagger-children > *:nth-child(8)  { animation-delay: 315ms; }
 
 /* ── Skeleton ── */
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0.03) 25%,
-    rgba(255,255,255,0.07) 50%,
-    rgba(255,255,255,0.03) 75%
-  );
+  background: linear-gradient(90deg, var(--overlay-sm) 25%, var(--overlay-md) 50%, var(--overlay-sm) 75%);
   background-size: 400% 100%;
   animation: shimmer 1.8s ease infinite;
 }
 
-/* ── Ambient glow behind accent elements ── */
+/* ── Glow ── */
 .glow-accent {
-  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(249,115,22,0.06);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+/* ── Card hover lift ── */
+.card-lift {
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.2s cubic-bezier(0.16,1,0.3,1),
+              border-color 0.2s;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(100,80,200,0.12), 0 2px 8px rgba(100,80,200,0.06);
+}
+.dark .card-lift:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.12);
 }
 
 /* ── Utilities ── */
 @layer utilities {
   .torqa-card {
-    @apply rounded-xl border border-border/50 bg-card/60;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius) + 2px);
   }
   .torqa-surface {
     background: var(--surface-1);
     border: 1px solid var(--line);
     border-radius: calc(var(--radius) + 2px);
   }
-  .torqa-premium-surface {
-    @apply rounded-2xl border border-border/40 bg-card/50 shadow-2xl shadow-black/40;
+  .torqa-glass {
+    background: var(--header-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 }
 
 /* ── Focus ── */
 :focus-visible {
-  outline: 2px solid rgba(249,115,22,0.6);
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
   outline-offset: 2px;
   border-radius: 4px;
 }
