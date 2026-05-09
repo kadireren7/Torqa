@@ -140,6 +140,19 @@ export function OverviewClient({
       icon: BarChart3,
       sub: "Completed rate (30d)",
     },
+    {
+      label: "Active playbooks",
+      value: home.playbooksActive,
+      icon: Zap,
+      sub: "Automation rules enabled",
+      accent: home.playbooksActive > 0 ? "var(--accent)" : undefined,
+    },
+    {
+      label: "Playbook runs",
+      value: home.playbookRuns24h,
+      icon: Activity,
+      sub: "Triggered last 24h",
+    },
   ];
 
   return (

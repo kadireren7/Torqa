@@ -83,4 +83,6 @@ export const MOCK_HOME_DASHBOARD: HomeDashboardData = {
   recentScans: MOCK_RECENT,
   outcomeTrend: MOCK_OUTCOME_TREND,
   onboarding: null,
+  playbooksActive: 3,
+  playbookRuns24h: 7,
 };

@@ -130,4 +130,7 @@ export type HomeDashboardData = {
   outcomeTrend: RiskTrendPoint[];
   /** Populated in cloud mode for onboarding checklist; null in demo / offline. */
   onboarding: HomeOnboardingCounts | null;
+  /** Governance playbook automation stats. */
+  playbooksActive: number;
+  playbookRuns24h: number;
 };

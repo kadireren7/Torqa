@@ -223,6 +223,8 @@ const EMPTY_HOME: HomeDashboardData = {
   recentScans: [],
   outcomeTrend: [],
   onboarding: null,
+  playbooksActive: 0,
+  playbookRuns24h: 0,
 };
 
 /**
@@ -274,11 +276,14 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       ? rowsBase.is("organization_id", null).order("created_at", { ascending: false }).limit(2000)
       : rowsBase.eq("organization_id", scope.value).order("created_at", { ascending: false }).limit(2000);
 
-  const [allCountRes, d30CountRes, rowsRes, onboarding] = await Promise.all([
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+  const [allCountRes, d30CountRes, rowsRes, onboarding, pbActiveRes, pbRunsRes] = await Promise.all([
     headAll,
     head30,
     rowsQuery,
     fetchOnboardingCounts(supabase, user.id, scope.value),
+    supabase.from("playbooks").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("enabled", true),
+    supabase.from("playbook_runs").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("started_at", yesterday),
   ]);
 
   if (allCountRes.error || d30CountRes.error || rowsRes.error) {
@@ -288,6 +293,8 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
   const rows = (rowsRes.data ?? []) as ScanHistoryRow[];
   const savedReportsAllTime = allCountRes.count ?? 0;
   const totalScans30d = d30CountRes.count ?? 0;
+  const playbooksActive = pbActiveRes.count ?? 0;
+  const playbookRuns24h = pbRunsRes.count ?? 0;
 
   if (rows.length === 0) {
     return {
@@ -306,6 +313,8 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       recentScans: [],
       outcomeTrend: emptyTrend14(),
       onboarding,
+      playbooksActive,
+      playbookRuns24h,
     };
   }
 
@@ -370,5 +379,7 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
     recentScans,
     outcomeTrend,
     onboarding,
+    playbooksActive,
+    playbookRuns24h,
   };
 }
