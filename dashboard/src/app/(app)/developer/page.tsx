@@ -326,6 +326,68 @@ export default function DeveloperPage() {
           </Card>
         </div>
       </div>
+
+      {/* Compliance as Code */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Compliance as Code</p>
+          <div className="h-px flex-1 bg-border/40" />
+        </div>
+        <p className="text-xs text-muted-foreground max-w-xl">
+          Place a <code className="font-mono text-[10px]">torqa.config.json</code> in your repo root. The <code className="font-mono text-[10px]">/api/public/config-run</code> endpoint reads it to configure policy, fail-on threshold, and rule overrides.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">torqa.config.json</CardTitle>
+              <CardDescription className="text-xs">Full schema with all options.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock code={`{
+  "version": "1",
+  "policy": "torqa-baseline",
+  "fail_on": "fail",
+  "rules": [
+    { "id": "v1.http.tls_verification_disabled", "severity": "critical" },
+    { "id": "v1.internal.test_mode_active", "disabled": true }
+  ],
+  "report": {
+    "recipients": ["security@company.com"],
+    "format": "pdf",
+    "schedule": "0 9 * * 1"
+  },
+  "tags": ["production", "team-platform"]
+}`} language="json" />
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Config-run API call</CardTitle>
+              <CardDescription className="text-xs">Submit config + workflow to get governance result.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock code={`curl -X POST https://app.torqa.dev/api/public/config-run \\
+  -H "x-api-key: torqa_live_<key>" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "config": { ...torqa.config.json... },
+    "source": "n8n",
+    "workflow": { ...workflow_json... }
+  }'
+
+# Response:
+{
+  "exit_code": 0,
+  "decision": "PASS",
+  "trust_score": 91,
+  "findings": [],
+  "policy": "torqa-baseline",
+  "config_version": "1"
+}`} language="bash" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
