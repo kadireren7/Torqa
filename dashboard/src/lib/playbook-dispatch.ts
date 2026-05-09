@@ -117,6 +117,22 @@ async function runPlaybook(
       run_count: (pb.run_count ?? 0) + 1,
     })
     .eq("id", pb.id);
+
+  // In-app notification for failed or partial playbook runs
+  if (finalStatus === "failed" || finalStatus === "partial") {
+    void (async () => {
+      try {
+        await supabase.from("in_app_notifications").insert({
+          user_id: userId,
+          type: "playbook_run",
+          title: `Playbook "${pb.name}" ${finalStatus === "failed" ? "failed" : "partially failed"}`,
+          body: `${actionsOk}/${pb.actions.length} actions succeeded for scan ${ctx.scan_id ?? "manual"}.`,
+          severity: finalStatus === "failed" ? "error" : "warning",
+          metadata: { playbook_id: pb.id, run_id: runId, scan_id: ctx.scan_id ?? null },
+        });
+      } catch { /* best-effort notification */ }
+    })();
+  }
 }
 
 async function executeAction(action: PlaybookAction, ctx: PlaybookRunContext): Promise<string> {
