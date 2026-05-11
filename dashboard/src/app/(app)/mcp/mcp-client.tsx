@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, Check, Copy, Cpu, Key, Plug, Shield, Terminal, Workflow, Zap } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check, Copy, Cpu, Key, Shield, Terminal, Workflow, Zap } from "lucide-react";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const fadeUp = {
@@ -162,7 +161,7 @@ export function McpClient() {
             MCP Server
           </h1>
           <p className="mt-1 text-[14px] leading-relaxed" style={{ color: "var(--fg-3)" }}>
-            Connect Claude and any MCP-compatible AI tool to Torqa's governance engine.
+            Connect Claude and any MCP-compatible AI tool to Torqa&apos;s governance engine.
             Scan workflows, check policies, and accept risks — directly from your AI assistant.
           </p>
         </div>

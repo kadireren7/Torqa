@@ -78,6 +78,7 @@ function removeAt(obj: unknown, path: string[]): unknown {
   if (obj !== null && typeof obj === "object") {
     const record = obj as Record<string, unknown>;
     if (tail.length === 0) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [key]: _, ...rest } = record;
       return rest;
     }

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell, CalendarClock, CheckCircle2, ChevronDown, ChevronRight,
-  Clock, GitPullRequest, Hash, History, Loader2, Play, Plus,
+  Bell, CalendarClock, ChevronDown, ChevronRight,
+  GitPullRequest, Hash, History, Loader2, Play, Plus,
   RefreshCw, Settings2, Shield, Trash2,
   ToggleLeft, ToggleRight, Webhook, X, Zap, Mail,
 } from "lucide-react";
@@ -73,12 +73,6 @@ function defaultAction(type: ActionType): PlaybookAction {
     case "governance.accept_risk":return { type, config: { rationale: "Auto-accepted by playbook" } };
     case "governance.block":      return { type, config: { reason: "Blocked by governance policy" } };
   }
-}
-
-function defaultTrigger(type: TriggerType): PlaybookTrigger {
-  if (type === "trust_score.below") return { type, config: { threshold: 60 } };
-  if (type === "policy.violation")  return { type, config: { rule_id: "" } };
-  return { type } as PlaybookTrigger;
 }
 
 // ── Playbook Editor Modal ────────────────────────────────────────────────────
