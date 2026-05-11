@@ -7,7 +7,7 @@ const LINKS = [
   { label: "Docs",      href: docsUrl,    external: true  },
   { label: "GitHub",    href: githubUrl,  external: true  },
   { label: "Dashboard", href: "/overview",external: false },
-  { label: "Privacy",   href: "/policy",  external: false },
+  { label: "Changelog", href: "https://github.com/kadireren7/Torqa/blob/main/CHANGELOG.md", external: true },
 ] as const;
 
 export function LandingFooter() {

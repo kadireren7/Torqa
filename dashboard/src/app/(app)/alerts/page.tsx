@@ -536,7 +536,7 @@ export default function AlertsPage() {
               <option value="discord">Discord webhook</option>
               <option value="teams">Microsoft Teams webhook</option>
               <option value="webhook">HTTPS webhook (Torqa-signed JSON)</option>
-              <option value="email">Email (placeholder)</option>
+              <option value="email">Email</option>
               <option value="in_app">In-app (workspace fanout)</option>
             </select>
           </div>

@@ -7,11 +7,6 @@ import {
   Zap,
   BarChart3,
   Settings,
-  ScrollText,
-  Code2,
-  Store,
-  Bot,
-  Cpu,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,19 +22,14 @@ export type NavSection = {
 };
 
 export const mainNavItems: NavItem[] = [
-  { title: "Home", href: "/overview", icon: Home },
-  { title: "Sources", href: "/sources", icon: GitBranch },
-  { title: "Workflows", href: "/workflows", icon: Workflow },
-  { title: "Runs", href: "/runs", icon: Play },
-  { title: "Policies", href: "/policies", icon: Shield },
-  { title: "Audit", href: "/audit", icon: ScrollText, badge: "new" },
+  { title: "Home",        href: "/overview",    icon: Home },
+  { title: "Sources",     href: "/sources",     icon: GitBranch },
+  { title: "Workflows",   href: "/workflows",   icon: Workflow },
+  { title: "Runs",        href: "/runs",        icon: Play },
+  { title: "Policies",    href: "/policies",    icon: Shield },
   { title: "Automations", href: "/automations", icon: Zap },
-  { title: "Reports", href: "/reports", icon: BarChart3 },
-  { title: "Marketplace", href: "/marketplace", icon: Store, badge: "new" },
-  { title: "Agent Runtime", href: "/agent-runtime", icon: Bot, badge: "new" },
-  { title: "MCP Server", href: "/mcp", icon: Cpu, badge: "new" },
-  { title: "Developer", href: "/developer", icon: Code2 },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { title: "Reports",     href: "/reports",     icon: BarChart3 },
+  { title: "Settings",    href: "/settings",    icon: Settings },
 ];
 
 /** @deprecated use mainNavItems */
@@ -57,8 +47,8 @@ export function titleForPath(pathname: string): string {
   if (pathname.startsWith("/automations")) return "Automations";
   if (pathname.startsWith("/reports")) return "Reports";
   if (pathname.startsWith("/settings")) return "Settings";
-  if (pathname.startsWith("/approvals")) return "Approvals";
-  if (pathname.startsWith("/advanced")) return "Advanced";
+  if (pathname.startsWith("/approvals")) return "Settings";
+  if (pathname.startsWith("/advanced")) return "Settings";
   if (pathname.startsWith("/scan/")) return "Scan report";
   if (pathname.startsWith("/scan")) return "Scan";
   if (pathname.startsWith("/insights")) return "Reports";
@@ -69,11 +59,11 @@ export function titleForPath(pathname: string): string {
   if (pathname.startsWith("/workspace")) return "Settings";
   if (pathname.startsWith("/projects")) return "Workflows";
   if (pathname.startsWith("/workflow-library")) return "Workflows";
-  if (pathname.startsWith("/validation")) return "Validation";
+  if (pathname.startsWith("/validation")) return "Workflows";
   if (pathname.startsWith("/notifications")) return "Settings";
-  if (pathname.startsWith("/developer")) return "Developer";
-  if (pathname.startsWith("/marketplace")) return "Marketplace";
-  if (pathname.startsWith("/agent-runtime")) return "Agent Runtime";
-  if (pathname.startsWith("/mcp")) return "MCP Server";
+  if (pathname.startsWith("/developer")) return "Settings";
+  if (pathname.startsWith("/marketplace")) return "Policies";
+  if (pathname.startsWith("/agent-runtime")) return "Settings";
+  if (pathname.startsWith("/mcp")) return "Settings";
   return "Torqa";
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bell, ClipboardList, Gauge, KeyRound, ShieldCheck, Users, Webhook } from "lucide-react";
+import { ArrowRight, Bell, Bot, ClipboardList, Code2, Cpu, Gauge, KeyRound, ScrollText, ShieldCheck, Store, Users, Webhook } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -166,13 +166,121 @@ export default function SettingsPage() {
               SSO / Identity
             </CardTitle>
             <CardDescription>
-              Single sign-on via SAML 2.0 or OIDC. Planned for enterprise tier (v0.3).
+              Single sign-on via OIDC. Configure your IdP connection and domain restrictions.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
               <Link href="/settings/sso">
-                View SSO settings
+                SSO settings
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Advanced / integrations */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Advanced</p>
+        <p className="mt-1 text-sm text-muted-foreground">API, integrations, and developer tools.</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Code2 className="h-4 w-4 text-primary" />
+              Developer
+            </CardTitle>
+            <CardDescription>
+              API reference, MCP server setup, CI gate examples, and webhook verification.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Link href="/developer">
+                API reference
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ScrollText className="h-4 w-4 text-primary" />
+              Audit Log
+            </CardTitle>
+            <CardDescription>
+              Full event trail — governance decisions, API key usage, source connections, policy changes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Link href="/audit">
+                View audit log
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Store className="h-4 w-4 text-primary" />
+              Policy Marketplace
+            </CardTitle>
+            <CardDescription>
+              Browse, install, and publish governance policy packs shared by the community.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Link href="/marketplace">
+                Browse marketplace
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bot className="h-4 w-4 text-primary" />
+              Agent Runtime
+            </CardTitle>
+            <CardDescription>
+              Real-time policy evaluation for AI agent events. Test the governance engine interactively.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Link href="/agent-runtime">
+                Agent runtime
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Cpu className="h-4 w-4 text-primary" />
+              MCP Server
+            </CardTitle>
+            <CardDescription>
+              Connect Claude or any MCP-compatible AI assistant to Torqa&apos;s governance engine via JSON-RPC 2.0.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Link href="/mcp">
+                MCP setup
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
