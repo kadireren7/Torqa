@@ -6,8 +6,11 @@ import {
   Activity,
   ArrowUpRight,
   BarChart3,
+  Building2,
+  Cpu,
   FileStack,
   Gauge,
+  KeyRound,
   Shield,
   Zap,
 } from "lucide-react";
@@ -23,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { OverviewFirstRun } from "@/components/onboarding/overview-first-run";
 import type { HomeDashboardData } from "@/data/types";
+import type { GovernanceModeView } from "@/lib/governance/types";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -66,12 +70,57 @@ const fadeUp = {
 export function OverviewClient({
   home,
   decisions,
+  governance,
 }: {
   home: HomeDashboardData;
   decisions: DecisionRow[];
+  governance: GovernanceModeView;
 }) {
   const totalOutcomes = home.passCount + home.failCount + home.reviewCount;
   const passRate = totalOutcomes > 0 ? Math.round((home.passCount / totalOutcomes) * 100) : null;
+  const governanceLabel =
+    governance.mode.charAt(0).toUpperCase() + governance.mode.slice(1);
+  const settingsCards = [
+    {
+      title: "Governance mode",
+      desc:
+        governance.scope === "org"
+          ? `${governanceLabel} mode is active for the current workspace.`
+          : "Personal scope is read-only. Activate a workspace to control operation mode.",
+      href: governance.scope === "org" ? "/settings/governance" : "/workspace",
+      cta: governance.scope === "org" ? "Open governance" : "Activate workspace",
+      icon: Shield,
+      accent: governance.scope === "org" ? "var(--accent)" : "var(--amber)",
+      meta: `${governance.scope === "org" ? "Workspace" : "Personal"} · ${governanceLabel}`,
+    },
+    {
+      title: "API keys",
+      desc: "Create and revoke tokens for API, CI, MCP, and external automation.",
+      href: "/settings/api",
+      cta: "Manage keys",
+      icon: KeyRound,
+      accent: "var(--emerald)",
+      meta: "Developer access",
+    },
+    {
+      title: "Workspace",
+      desc: "Choose the active workspace, invite teammates, and move out of personal-only mode.",
+      href: "/workspace",
+      cta: "Open workspace",
+      icon: Building2,
+      accent: "var(--amber)",
+      meta: governance.scope === "org" ? "Shared scope active" : "Personal scope active",
+    },
+    {
+      title: "MCP server",
+      desc: "Check the MCP endpoint, setup guide, and API key path for Claude-compatible tools.",
+      href: "/mcp",
+      cta: "Open MCP",
+      icon: Cpu,
+      accent: "var(--accent)",
+      meta: "JSON-RPC endpoint",
+    },
+  ];
 
   const metrics = [
     {
@@ -198,6 +247,72 @@ export function OverviewClient({
         savedReportsAllTime={home.savedReportsAllTime}
         onboarding={home.onboarding}
       />
+
+      <motion.div
+        custom={1}
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+        className="rounded-xl"
+        style={{ background: "var(--surface-1)", border: "1px solid var(--line)" }}
+      >
+        <div className="flex items-center justify-between px-5 pt-5 pb-0">
+          <div>
+            <p className="text-[14px] font-semibold" style={{ color: "var(--fg-1)" }}>Quick controls</p>
+            <p className="mt-0.5 text-[12px]" style={{ color: "var(--fg-3)" }}>
+              Frequently used settings surfaced directly on the dashboard.
+            </p>
+          </div>
+          <Link
+            href="/settings"
+            className="flex items-center gap-1 text-[12px] transition-colors duration-150 hover:opacity-60"
+            style={{ color: "var(--fg-3)" }}
+          >
+            All settings <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="grid gap-3 px-5 pb-5 pt-4 md:grid-cols-2 xl:grid-cols-4">
+          {settingsCards.map((card, i) => (
+            <motion.div
+              key={card.title}
+              custom={i}
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+              className="rounded-xl p-4"
+              style={{ background: "var(--overlay-sm)", border: "1px solid var(--line)" }}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ background: "var(--overlay-md)" }}
+                >
+                  <card.icon className="h-4 w-4" style={{ color: card.accent }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold" style={{ color: "var(--fg-1)" }}>
+                    {card.title}
+                  </p>
+                  <p className="text-[11px]" style={{ color: "var(--fg-4)" }}>
+                    {card.meta}
+                  </p>
+                </div>
+              </div>
+              <p className="min-h-[52px] text-[12px] leading-relaxed" style={{ color: "var(--fg-3)" }}>
+                {card.desc}
+              </p>
+              <Link
+                href={card.href}
+                className="mt-4 inline-flex items-center gap-1 text-[12px] font-medium transition-colors duration-150 hover:opacity-70"
+                style={{ color: card.accent }}
+              >
+                {card.cta}
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Metric grid */}
       <motion.div

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getHomeDashboardData } from "@/data/home-metrics";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { asGovernanceModeView, resolveGovernanceScope } from "@/lib/governance/scope";
 import { OverviewClient } from "./overview-client";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +34,20 @@ async function getRecentDecisions(): Promise<DecisionRow[]> {
 }
 
 export default async function DashboardOverviewPage() {
-  const [home, decisions] = await Promise.all([
+  const [home, decisions, governanceScope] = await Promise.all([
     getHomeDashboardData(),
     getRecentDecisions(),
+    (async () => {
+      const supabase = await createClient();
+      return resolveGovernanceScope(supabase);
+    })(),
   ]);
 
-  return <OverviewClient home={home} decisions={decisions} />;
+  return (
+    <OverviewClient
+      home={home}
+      decisions={decisions}
+      governance={asGovernanceModeView(governanceScope)}
+    />
+  );
 }

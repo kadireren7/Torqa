@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Eye, Loader2, MessageSquare, Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +132,15 @@ export function GovernanceModeClient() {
         </div>
       ) : null}
 
+      {view?.scope === "personal" ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+          <span>Governance mode changes require an active workspace.</span>
+          <Button asChild size="sm" variant="secondary">
+            <Link href="/workspace">Open workspace</Link>
+          </Button>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-3">
         {MODES.map((m) => {
           const active = activeMode === m.value;
@@ -161,7 +171,7 @@ export function GovernanceModeClient() {
                   className="gap-1.5"
                 >
                   {saving === m.value ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  {active ? "Active" : "Set as active"}
+                  {active ? "Active" : view?.canChange ? "Set as active" : "Workspace required"}
                 </Button>
               </CardContent>
             </Card>

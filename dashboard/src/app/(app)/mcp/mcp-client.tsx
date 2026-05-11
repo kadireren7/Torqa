@@ -54,25 +54,25 @@ const MCP_TOOLS = [
     name: "torqa_scan",
     icon: Shield,
     desc: "Scan a workflow JSON against Torqa's policy engine. Returns trust score, findings, and governance decision.",
-    params: `{ "workflow": {...}, "source": "n8n|github|generic", "policy": "torqa-baseline" }`,
+    params: `{ "source": "n8n|github|zapier|make", "content": {...}, "policy_pack_id": "optional-pack-id" }`,
   },
   {
-    name: "torqa_policy_check",
+    name: "torqa_findings",
     icon: Zap,
-    desc: "Evaluate a single agent event against runtime policies in real time. Returns allow/block/review decision.",
-    params: `{ "agent_id": "my-agent", "event_type": "tool_call", "payload": {...} }`,
+    desc: "Retrieve findings from recent scan history and filter by severity or source.",
+    params: `{ "limit": 20, "severity": "high|critical", "source": "n8n|github" }`,
   },
   {
-    name: "torqa_get_findings",
+    name: "torqa_policy_list",
     icon: Terminal,
-    desc: "Retrieve findings from a previous scan by scan ID. Filter by severity, rule, or source.",
-    params: `{ "scan_id": "uuid", "severity": "high|critical" }`,
+    desc: "List policy packs available to the current account.",
+    params: `{}`,
   },
   {
-    name: "torqa_accept_risk",
+    name: "torqa_audit",
     icon: Workflow,
-    desc: "Accept a risk finding with a justification note, creating an audit record.",
-    params: `{ "scan_id": "uuid", "finding_signature": "...", "rationale": "..." }`,
+    desc: "Query recent governance decisions from the audit trail.",
+    params: `{ "limit": 10, "decision_type": "apply_fix|accept_risk|mode_change" }`,
   },
 ];
 
@@ -96,7 +96,7 @@ const CLAUDE_DESKTOP_CONFIG = `// ~/.claude/settings.json  (Claude Desktop)
       "command": "npx",
       "args": ["-y", "@torqa/mcp-server@latest"],
       "env": {
-        "TORQA_API_KEY": "tq_live_xxxxxxxxxxxx",
+        "TORQA_API_KEY": "torqa_live_xxxxxxxxxxxx",
         "TORQA_BASE_URL": "https://your-torqa-instance.com"
       }
     }
@@ -110,7 +110,7 @@ const CLAUDE_CODE_CONFIG = `# .claude/mcp.json  (Claude Code project-level)
       "command": "npx",
       "args": ["-y", "@torqa/mcp-server@latest"],
       "env": {
-        "TORQA_API_KEY": "tq_live_xxxxxxxxxxxx"
+        "TORQA_API_KEY": "torqa_live_xxxxxxxxxxxx"
       }
     }
   }
@@ -134,7 +134,7 @@ npm install -g @torqa/mcp-server
 torqa-mcp-server
 
 # Environment variables:
-TORQA_API_KEY=tq_live_...
+TORQA_API_KEY=torqa_live_...
 TORQA_BASE_URL=https://your-torqa-instance.com  # optional`;
 
 export function McpClient() {
@@ -327,7 +327,7 @@ export function McpClient() {
               . Set it as <code className="font-mono">TORQA_API_KEY</code> in the MCP server config.
             </p>
             <p style={{ color: "var(--fg-3)" }}>
-              Keys are prefixed <code className="font-mono">tq_live_</code> and have read+write scope by default.
+              Keys are prefixed <code className="font-mono">torqa_live_</code> and have read+write scope by default.
               Create scoped keys for CI or read-only contexts.
             </p>
           </div>
