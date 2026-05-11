@@ -34,7 +34,7 @@ function rpcError(id: string | number | null | undefined, code: number, message:
 
 const SERVER_INFO = {
   name: "torqa",
-  version: "0.2.2",
+  version: "0.4.1",
   description: "Torqa governance engine — scan workflows, evaluate policies, query audit findings",
 };
 
