@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, Cpu, Scan, Sparkles } from "lucide-react";
+import { ArrowRight, Cpu, Plug, Scan, Sparkles } from "lucide-react";
+import { githubUrl } from "@/lib/marketing-content";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   generateWorkflowPlan,
@@ -124,28 +125,64 @@ export default function McpWorkflowBuilderPage() {
             }}
           >
             <Sparkles className="h-3 w-3" />
-            MCP Workflow Console · Demo
+            MCP Workflow Console · Web demo
           </div>
           <h1
             className="text-[32px] font-bold tracking-[-0.04em] leading-tight sm:text-[40px]"
             style={{ color: "var(--fg-1)" }}
           >
-            Turn prompts into MCP-powered workflows.
+            Build MCP workflows from Claude.
           </h1>
           <p
             className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed"
             style={{ color: "var(--fg-3)" }}
           >
-            Describe a task in plain English. Torqa turns it into a structured workflow
-            plan — tools, steps, conditions, approvals, and execution strategy.
+            This is the same planning engine exposed through the Torqa MCP server. Describe a
+            task in plain English and get tools, steps, conditions, approvals, and exportable JSON.
           </p>
           <p
             className="mt-2 text-[12px]"
             style={{ color: "var(--fg-4)" }}
           >
-            All generation is deterministic and simulated. No external APIs. No live MCP execution.
+            Planning only — deterministic, no live Gmail/Slack execution. External execution is planned.
           </p>
         </motion.div>
+
+        <motion.section
+          className="mb-10 rounded-xl p-5"
+          style={{
+            background: "var(--surface-1)",
+            border: "1px solid var(--line)",
+          }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.45, ease: EASE }}
+        >
+          <motion.div className="mb-3 flex items-center gap-2">
+            <Plug className="h-4 w-4" style={{ color: "var(--accent)" }} />
+            <p className="text-[13px] font-semibold" style={{ color: "var(--fg-1)" }}>
+              Use from Claude
+            </p>
+          </motion.div>
+          <ol
+            className="list-decimal space-y-2 pl-5 text-[13px] leading-relaxed"
+            style={{ color: "var(--fg-3)" }}
+          >
+            <li>Connect the Torqa MCP server in Claude Desktop or Claude Code.</li>
+            <li>Ask Claude to create a workflow from your prompt.</li>
+            <li>Claude calls <code className="font-mono text-[12px]">torqa.create_workflow_from_prompt</code>.</li>
+            <li>Validate and export the plan with <code className="font-mono text-[12px]">torqa.export_workflow</code>.</li>
+          </ol>
+          <a
+            href={`${githubUrl}/blob/main/docs/MCP_SERVER.md`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex text-[12px] font-medium hover:opacity-80"
+            style={{ color: "var(--accent)" }}
+          >
+            Read MCP server setup →
+          </a>
+        </motion.section>
 
         {/* Step 1 — Prompt selector */}
         <motion.section

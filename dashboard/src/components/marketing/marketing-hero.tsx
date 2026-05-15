@@ -58,7 +58,7 @@ export function MarketingHero() {
       >
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--emerald)", boxShadow: "0 0 8px var(--emerald)" }} />
         <span className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: "var(--fg-3)" }}>
-          Public alpha · Prompt-to-MCP Workflow Builder
+          Public alpha · MCP Workflow Agent
         </span>
       </motion.div>
 
@@ -70,21 +70,29 @@ export function MarketingHero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.25 }}
       >
-        Turn prompts into{" "}
-        <span style={{ color: "var(--accent)" }}>MCP-powered</span>
+        Build MCP workflows
         <br />
-        workflows.
+        from <span style={{ color: "var(--accent)" }}>Claude</span>.
       </motion.h1>
 
       {/* Sub */}
       <motion.p
-        className="relative mb-10 max-w-[560px] text-center text-[16px] leading-[1.65]"
+        className="relative mb-10 max-w-[620px] text-center text-[16px] leading-[1.65]"
         style={{ color: "var(--fg-3)" }}
         initial={reduce ? false : { opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.4 }}
       >
-        Describe what you want done. Torqa maps the required MCP tools, builds a structured workflow plan, adds approval points, and exports a plan your AI tools can use.
+        Connect Torqa as an MCP server, describe an automation in plain English, and get a structured workflow plan with tools, steps, approvals, and exportable JSON.
+      </motion.p>
+      <motion.p
+        className="relative -mt-6 mb-10 max-w-[560px] text-center text-[13px]"
+        style={{ color: "var(--fg-4)" }}
+        initial={reduce ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.45 }}
+      >
+        Also available in the Torqa web console.
       </motion.p>
 
       {/* CTAs */}
@@ -99,15 +107,17 @@ export function MarketingHero() {
           className="rounded-lg px-6 py-3 text-[14px] font-semibold transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "#fff" }}
         >
-          Build demo workflow
+          Try web workflow builder
         </Link>
-        <Link
-          href="/scan"
+        <a
+          href={`${githubUrl}/blob/main/docs/MCP_SERVER.md`}
+          target="_blank"
+          rel="noreferrer"
           className="rounded-lg border px-6 py-3 text-[14px] font-medium transition-colors hover:opacity-80"
           style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
         >
-          Scan MCP tools
-        </Link>
+          Read MCP server setup
+        </a>
       </motion.div>
 
       <motion.div
