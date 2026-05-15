@@ -2,57 +2,69 @@
 
 ## Goal
 
-Show a first-time user how Torqa gives confidence before workflow release.
+Show an early technical user what Torqa does, help them reach a first meaningful report quickly, and end on the obvious next step: connect a real source.
 
-## Pages to show
+## Recommended pages
 
 1. Landing (`/`)
-2. Demo report (`/demo/report`)
-3. Scan page (`/scan`)
-4. Scan history (`/scan/history`)
-5. Schedules (`/schedules`) or Alerts (`/alerts`)
+2. Overview (`/overview`)
+3. Demo scan (`/scan?sample=customer_support_n8n&source=n8n`)
+4. Optional: Demo report (`/demo/report`)
+5. Sources (`/sources`)
 
 ## 2-minute flow
 
-### 0:00 - 0:20 — Problem framing on landing
-
-"Torqa is a governance gate for automation workflows before production. We do not run your workflows; we analyze them and explain risk and policy outcomes."
-
-### 0:20 - 0:55 — Demo report walkthrough
-
-- Open `/demo/report`
-- Point at risk score + policy status + findings list
-- Open one finding and show recommendation
-- Click **Export PDF** to show stakeholder-friendly output
+### 0:00 - 0:20 ï¿½ Problem framing on landing
 
 Talk track:
-"This is the format teams review before rollout: deterministic score, explainable findings, and clear next actions."
 
-### 0:55 - 1:25 — Run your own workflow
+> Torqa scans automation workflows before they run. It does not execute them. It gives a deterministic report with findings, trust score, and policy outcome so teams can decide before rollout.
 
-- Jump to `/scan`
-- Mention upload/paste JSON input and source selector
-- Trigger scan and show status outcome
+Point to the two public-alpha actions:
 
-Talk track:
-"You can test any n8n or generic workflow JSON. Torqa gives the same result for the same input, so reviews stay stable."
+- **Connect a source**
+- **Try demo**
 
-### 1:25 - 1:45 — Save/share + history
+### 0:20 - 0:40 ï¿½ Overview as the starting point
 
-- Open `/scan/history`
-- Show saved report and reopen behavior
+- Open `/overview`
+- Show the one-sentence explanation
+- Show the start paths: `Connect n8n`, `Connect GitHub Actions`, `Try demo workflow`, `Advanced manual scan`
 
 Talk track:
-"Reports are not throwaway logs. Teams can reopen and share the same snapshot for triage or release review."
 
-### 1:45 - 2:00 — Automate monitoring
+> A first user should understand the product in one screen and choose between a real integration path and a demo path.
 
-- Open `/schedules` (or `/alerts`)
-- Show recurring scan or destination setup CTA
+### 0:40 - 1:20 ï¿½ Demo scan to first report
+
+- Click **Try demo scan**
+- Show the preloaded sample and the notice that tells the user what to do next
+- Click **Run scan**
+- Open one finding and show the recommendation
 
 Talk track:
-"After first scan, teams usually set schedules and alerts so risky changes are caught automatically."
+
+> This is the fastest route to value: load a sample, run the scan, review the report, and see the next action. Same input, same result.
+
+### 1:20 - 1:40 ï¿½ Report output
+
+- Point at trust score, policy result, findings, and recommendation panel
+- If useful, show `/demo/report` as the static public example
+
+Talk track:
+
+> Torqa is trying to be useful, not magical. It shows why a workflow is risky and what to do next.
+
+### 1:40 - 2:00 ï¿½ Move to a real source
+
+- Open `/sources`
+- Show `n8n` and `GitHub Actions` as the main real paths
+- Mention local demo mode honestly if cloud setup is missing
+
+Talk track:
+
+> After the first report, the next step is to connect a real source so scans and reports keep updating automatically.
 
 ## Close line
 
-"Torqa helps automation, n8n, and platform teams decide before production — with deterministic analysis and inspectable reasons."
+> Torqa helps automation, platform, and security teams review workflows before production with deterministic findings and clear policy decisions.

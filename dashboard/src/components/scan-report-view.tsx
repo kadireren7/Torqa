@@ -9,6 +9,7 @@ import {
   Download,
   FileCode2,
   Layers,
+  Link2,
   ListTree,
   Radar,
   Shield,
@@ -17,6 +18,8 @@ import {
   Wand2,
   XCircle,
 } from "lucide-react";
+import { saveReport } from "@/lib/local-report";
+import { canUseFeature, incrementUsage as incrementReportUsage } from "@/lib/usage-limits";
 import { ExportPdfButton } from "@/components/export-pdf-button";
 import { ShareScanButton } from "@/components/share-scan-button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +27,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FixProposalDialog } from "@/components/governance/fix-proposal-dialog";
+import { McpBreakdownPanel } from "@/components/mcp/mcp-breakdown-panel";
+import { RemediationWorkspace } from "@/components/mcp/remediation-workspace";
+import { BulkHardeningWorkspace } from "@/components/mcp/bulk-hardening-workspace";
 import type { ScanApiSuccess, ScanDecision, ScanFinding, ScanSource } from "@/lib/scan-engine";
 import type { PolicyEvaluationResult, PolicyGateStatus } from "@/lib/policy-types";
 import type { PolicyV2EvaluationResult } from "@/lib/governance/policy-v2/types";
@@ -195,6 +201,89 @@ function buildPrTemplateMarkdown(result: ScanApiSuccess): string {
   return lines.join("\n");
 }
 
+type LocalShareButtonProps = {
+  result: ScanApiSuccess;
+  source: string;
+};
+
+function LocalShareReportButton({ result, source }: LocalShareButtonProps) {
+  const [savedReportId, setSavedReportId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
+
+  const handleSave = useCallback(() => {
+    if (!canUseFeature("report")) {
+      setLimitReached(true);
+      return;
+    }
+    const id = saveReport({ source, scanResult: result });
+    incrementReportUsage("report");
+    setSavedReportId(id);
+    setLimitReached(false);
+  }, [result, source]);
+
+  const handleCopyLink = useCallback(async () => {
+    if (!savedReportId) return;
+    const url = `${window.location.origin}/report/${savedReportId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  }, [savedReportId]);
+
+  if (limitReached) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2 text-xs text-rose-300">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        Daily report save limit reached (3/day). Come back tomorrow.
+      </div>
+    );
+  }
+
+  if (savedReportId) {
+    const url = `/report/${savedReportId}`;
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2">
+        <span className="text-xs font-medium text-emerald-300">Saved locally:</span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-mono text-xs text-emerald-200 underline underline-offset-2 hover:text-emerald-100"
+        >
+          {url}
+        </a>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 px-2 text-xs text-emerald-300 hover:text-emerald-100"
+          onClick={() => void handleCopyLink()}
+        >
+          <Copy className="h-3 w-3" aria-hidden />
+          {copied ? "Copied!" : "Copy link"}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="h-9 gap-2 border-border/80 bg-background/60 shadow-sm"
+      onClick={handleSave}
+    >
+      <Link2 className="h-3.5 w-3.5" aria-hidden />
+      Share report
+    </Button>
+  );
+}
+
 function ExportToolbar({
   result,
   share,
@@ -270,6 +359,7 @@ function ExportToolbar({
             <span className="hidden text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:inline">—</span>
           </>
         )}
+        <LocalShareReportButton result={result} source={result.source} />
       </div>
 
       {showShare && (
@@ -333,21 +423,25 @@ type FindingCardProps = {
   onFix?: (finding: ScanFinding) => void;
   /** Set when this finding is filtered out by an active accepted-risk row. */
   governance?: { mode: GovernanceMode };
+  /** When true, the "Fix with Torqa" button is always shown (used for MCP findings). */
+  mcpMode?: boolean;
 };
 
-function FindingCard({ f, onFix, governance }: FindingCardProps) {
+function FindingCard({ f, onFix, governance, mcpMode }: FindingCardProps) {
   const styles = severityStyles(f.severity);
   const label = severityLabel(f.severity);
   const accepted = f.accepted_risk;
   const fixType = f.fix?.type;
-  const canActOnFix = Boolean(f.fix && onFix);
-  const fixLabel = !governance
-    ? "Open fix"
-    : fixType === "safe_auto" && governance.mode === "autonomous"
-      ? "Apply fix"
-      : fixType === "manual_required"
-        ? "Manual fix"
-        : "Review fix";
+  const canActOnFix = mcpMode ? Boolean(onFix) : Boolean(f.fix && onFix);
+  const fixLabel = mcpMode
+    ? "Fix with Torqa"
+    : !governance
+      ? "Open fix"
+      : fixType === "safe_auto" && governance.mode === "autonomous"
+        ? "Apply fix"
+        : fixType === "manual_required"
+          ? "Manual fix"
+          : "Review fix";
 
   return (
     <details
@@ -590,6 +684,8 @@ export type ScanReportViewProps = {
       | { kind: "queued"; signature: string }
       | { kind: "accepted"; signature: string }) => void;
   } | null;
+  /** When provided, a "Re-run scan" button appears in the MCP breakdown panel. */
+  onRerunScan?: () => void;
 };
 
 export function ScanReportView({
@@ -601,8 +697,10 @@ export function ScanReportView({
   pdfExportUrl,
   pdfFilename,
   governance,
+  onRerunScan,
 }: ScanReportViewProps) {
   const isShared = variant === "shared";
+  const isMcp = result.source === "mcp";
   const fallbackMeta = result.fallback ?? {
     fallback_used: false,
     fallback_from: null,
@@ -612,11 +710,26 @@ export function ScanReportView({
 
   const activeMode: GovernanceMode = result.governance?.mode ?? DEFAULT_GOVERNANCE_MODE;
   const [activeFix, setActiveFix] = useState<ScanFinding | null>(null);
+  const [mcpRemediationFinding, setMcpRemediationFinding] = useState<ScanFinding | null>(null);
+  const [bulkHardeningOpen, setBulkHardeningOpen] = useState(false);
   const fixDialogOpen = activeFix !== null;
   const findingsRendered: ScanFinding[] = result.findings;
 
   return (
     <div className="space-y-10 sm:space-y-12">
+      {/* Top accent bar */}
+      <div
+        className={cn(
+          "h-1 w-full rounded-full",
+          result.status === "FAIL"
+            ? "bg-gradient-to-r from-rose-600 via-rose-500 to-rose-400"
+            : result.status === "PASS"
+              ? "bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-400"
+              : "bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400"
+        )}
+        aria-hidden
+      />
+
       {/* Top bar: positioning + exports */}
       <div className="flex flex-col gap-4 border-b border-border/50 pb-8 sm:flex-row sm:items-start sm:justify-between sm:pb-10">
         <div className="min-w-0 space-y-2">
@@ -752,7 +865,21 @@ export function ScanReportView({
               variant="secondary"
               className="mt-4 w-fit border-fuchsia-500/30 bg-fuchsia-500/15 font-semibold capitalize text-fuchsia-100"
             >
-              {result.source === "n8n" ? "n8n export" : "Generic JSON"}
+              {result.source === "n8n"
+                ? "n8n workflow"
+                : result.source === "mcp"
+                  ? "MCP server"
+                  : result.source === "ai-agent"
+                    ? "AI agent"
+                    : result.source === "github"
+                      ? "GitHub Actions"
+                      : result.source === "make"
+                        ? "Make.com"
+                        : result.source === "zapier"
+                          ? "Zapier"
+                          : result.source === "lambda"
+                            ? "AWS Lambda"
+                            : result.source}
             </Badge>
             <p className="mt-auto pt-4 text-xs leading-relaxed text-muted-foreground">
               Heuristics keyed to the selected adapter. Switch source on re-scan if misaligned.
@@ -764,14 +891,26 @@ export function ScanReportView({
       {result.policyEvaluation ? <PolicyEvaluationPanel pe={result.policyEvaluation} /> : null}
       {result.policyV2Evaluation ? <PolicyV2EvaluationPanel pe={result.policyV2Evaluation} /> : null}
 
+      {isMcp && (
+        <McpBreakdownPanel
+          result={result}
+          onRerunScan={onRerunScan}
+          onHardenAll={() => setBulkHardeningOpen(true)}
+        />
+      )}
+
       {/* Main + sidebar */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_min(100%,340px)] lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8">
-          <section>
+          <section data-findings-section>
             <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">Security findings</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Tap a row to expand analysis and remediation.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {isMcp
+                    ? "Click a finding to expand. Use Fix with Torqa for guided remediation."
+                    : "Tap a row to expand analysis and remediation."}
+                </p>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Layers className="h-3.5 w-3.5" aria-hidden />
@@ -791,7 +930,14 @@ export function ScanReportView({
                   <FindingCard
                     key={`${f.rule_id}-${f.target}-${i}`}
                     f={f}
-                    onFix={governance ? () => setActiveFix(f) : undefined}
+                    mcpMode={isMcp}
+                    onFix={
+                      isMcp
+                        ? () => setMcpRemediationFinding(f)
+                        : governance
+                          ? () => setActiveFix(f)
+                          : undefined
+                    }
                     governance={governance ? { mode: activeMode } : undefined}
                   />
                 ))}
@@ -827,6 +973,23 @@ export function ScanReportView({
           }}
         />
       ) : null}
+
+      <RemediationWorkspace
+        open={mcpRemediationFinding !== null}
+        onOpenChange={(open) => {
+          if (!open) setMcpRemediationFinding(null);
+        }}
+        finding={mcpRemediationFinding}
+        mcpContent={governance?.content}
+        scanResult={result}
+      />
+
+      <BulkHardeningWorkspace
+        open={bulkHardeningOpen}
+        onOpenChange={setBulkHardeningOpen}
+        scanResult={result}
+        mcpContent={governance?.content}
+      />
     </div>
   );
 }

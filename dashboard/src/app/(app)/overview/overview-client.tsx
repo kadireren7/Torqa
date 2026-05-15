@@ -219,25 +219,31 @@ export function OverviewClient({
             Overview
           </p>
           <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.03em]" style={{ color: "var(--fg-1)" }}>
-            Governance control
+            Start here
           </h1>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Torqa scans workflow definitions before they reach production, then returns findings, trust score, and the next action to take.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/sources"
-            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-80"
-            style={{ background: "var(--overlay-md)", border: "1px solid var(--line-2)", color: "var(--fg-2)" }}
-          >
-            Connect source
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-          <Link
-            href="/scan"
             className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
+            Connect a source
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+          <Link
+            href="/scan?sample=customer_support_n8n&source=n8n"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
+            style={{ background: "var(--overlay-md)", border: "1px solid var(--line-2)", color: "var(--fg-2)" }}
+          >
             <Shield className="h-3 w-3" />
-            Scan now
+            Try demo scan
+          </Link>
+          <Link href="/advanced/manual-scan" className="text-[12px] font-medium text-muted-foreground hover:text-foreground">
+            Advanced manual scan
           </Link>
         </div>
       </motion.div>
@@ -247,6 +253,28 @@ export function OverviewClient({
         savedReportsAllTime={home.savedReportsAllTime}
         onboarding={home.onboarding}
       />
+
+      {home.mode !== "supabase" ? (
+        <motion.div
+          custom={0.5}
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Local demo mode</p>
+              <p className="text-xs text-muted-foreground">
+                Overview metrics and charts below use sample data until Supabase and a shared workspace are connected.
+              </p>
+            </div>
+            <Link href="/workspace" className="text-xs font-medium text-primary hover:underline">
+              Connect cloud
+            </Link>
+          </div>
+        </motion.div>
+      ) : null}
 
       <motion.div
         custom={1}
@@ -539,15 +567,26 @@ export function OverviewClient({
               </div>
               <div>
                 <p className="text-[14px] font-medium" style={{ color: "var(--fg-1)" }}>No scans yet</p>
-                <p className="mt-1 text-[12px]" style={{ color: "var(--fg-3)" }}>Connect a source to start scanning</p>
+                <p className="mt-1 text-[12px]" style={{ color: "var(--fg-3)" }}>
+                  Connect a source for real workflows, or try a demo scan to preview the report flow.
+                </p>
               </div>
-              <Link
-                href="/scan"
-                className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
-                style={{ background: "var(--accent)", color: "#fff" }}
-              >
-                Run first scan <ArrowUpRight className="h-3 w-3" />
-              </Link>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Link
+                  href="/sources"
+                  className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
+                  style={{ background: "var(--accent)", color: "#fff" }}
+                >
+                  Connect a source <ArrowUpRight className="h-3 w-3" />
+                </Link>
+                <Link
+                  href="/scan?sample=customer_support_n8n&source=n8n"
+                  className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
+                  style={{ background: "var(--overlay-md)", border: "1px solid var(--line-2)", color: "var(--fg-2)" }}
+                >
+                  Try demo scan
+                </Link>
+              </div>
             </div>
           ) : (
             <Table>

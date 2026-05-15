@@ -6,16 +6,17 @@ import { LandingPillars } from "@/components/marketing/landing-pillars";
 import { LandingFlow } from "@/components/marketing/landing-flow";
 import { LandingMetricsBand } from "@/components/marketing/landing-metrics-band";
 import { MarketingHero } from "@/components/marketing/marketing-hero";
+import { docsUrl, githubUrl } from "@/lib/marketing-content";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "The governance layer for every automation",
+  title: "Torqa | Security copilot for MCP servers and AI agents",
   description:
-    "Torqa scans, fixes, and governs workflows across n8n, GitHub, agents, and webhooks. Deterministic decisions. One gate.",
+    "Torqa scans MCP server configs and AI agent definitions. Detects risky permissions, exposed secrets, and unsafe capabilities — then guides you through the fix.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Torqa — Scan. Fix. Govern.",
-    description: "Scan every workflow, fix every finding, enforce every policy. One gate.",
+    title: "Torqa | Security copilot for MCP servers and AI agents",
+    description: "Scan MCP tool manifests and AI agent configs. Get deterministic findings and fix guidance.",
     url: "/",
     type: "website",
   },
@@ -52,31 +53,40 @@ export default async function MarketingLandingPage() {
         <section className="border-t border-border px-5 py-28 text-center sm:px-10 sm:py-40" style={{ background: "var(--surface-1)" }}>
           <div className="mx-auto max-w-[700px]">
             <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--fg-4)" }}>
-              Get started
+              Public alpha
             </p>
             <h2 className="mb-5 text-[40px] font-bold leading-[1.06] tracking-[-0.04em] sm:text-[56px]" style={{ color: "var(--fg-1)" }}>
-              Governance for your
+              Start with a scan.
               <br />
-              automation stack.
+              Ship with confidence.
             </h2>
             <p className="mb-10 text-[16px] leading-[1.6]" style={{ color: "var(--fg-3)" }}>
-              Private beta is open. Connect your first source in two minutes.
+              Connect an MCP server or try the unsafe MCP demo to see findings immediately.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
-                href="/login"
+                href="/sources"
                 className="rounded-lg px-7 py-3.5 text-[14px] font-semibold transition-opacity hover:opacity-90"
                 style={{ background: "var(--accent)", color: "#fff" }}
               >
-                Start for free
+                Connect MCP server
               </Link>
               <Link
-                href="/demo/report"
+                href="/scan?sample=unsafe_mcp&source=mcp"
                 className="rounded-lg border px-7 py-3.5 text-[14px] font-medium transition-colors hover:opacity-80"
                 style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
               >
-                View live demo
+                Try unsafe MCP demo
               </Link>
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-4 text-[13px]" style={{ color: "var(--fg-4)" }}>
+              <a href={docsUrl} target="_blank" rel="noreferrer" className="hover:opacity-80">
+                Read docs
+              </a>
+              <span aria-hidden>·</span>
+              <a href={githubUrl} target="_blank" rel="noreferrer" className="hover:opacity-80">
+                GitHub
+              </a>
             </div>
           </div>
         </section>

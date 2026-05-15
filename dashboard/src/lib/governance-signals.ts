@@ -247,7 +247,7 @@ export async function postSignedGovernanceWebhook(opts: {
       headers: {
         "content-type": "application/json",
         accept: "application/json",
-        "user-agent": "torqa-governance-webhook/0.2.1",
+        "user-agent": "torqa-governance-webhook/0.3.0",
         ...headers,
         ...(opts.extraHeaders ?? {}),
       },

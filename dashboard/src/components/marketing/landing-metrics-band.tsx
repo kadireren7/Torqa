@@ -3,10 +3,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 
 const STATS = [
-  { value: "99.97%",  label: "Decision accuracy" },
-  { value: "340ms",   label: "Median gate latency" },
-  { value: "12,400+", label: "Active workflows" },
-  { value: "2.1M",    label: "Decisions per month" },
+  { value: "30+", label: "Security rules checked per scan" },
+  { value: "100%", label: "Deterministic — same input, same output" },
+  { value: "8+", label: "Source types supported (MCP, n8n, GitHub…)" },
+  { value: "0ms", label: "External AI calls in the scan path" },
 ];
 
 export function LandingMetricsBand() {
@@ -34,7 +34,7 @@ export function LandingMetricsBand() {
               transition={{ duration: 0.6, delay: i * 0.08 }}
             >
               <p
-                className="text-[36px] font-bold tracking-[-0.04em] sm:text-[44px]"
+                className="text-[24px] font-bold tracking-[-0.03em] sm:text-[30px]"
                 style={{ color: "var(--fg-1)" }}
               >
                 {s.value}

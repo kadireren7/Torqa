@@ -17,6 +17,7 @@ import type { ScanFinding, ScanSource } from "@/lib/scan-engine";
 import { analyzeMake, isLikelyMake } from "@/lib/scan/adapters/make";
 import { analyzeZapier, isLikelyZapier } from "@/lib/scan/adapters/zapier";
 import { analyzeLambda, isLikelyLambda } from "@/lib/scan/adapters/lambda";
+import { analyzeMcp, isLikelyMcp } from "@/lib/scan/adapters/mcp";
 
 export type SourceRegistryEntry = {
   id: ScanSource;
@@ -80,6 +81,10 @@ function detectLambda(content: unknown): number {
   return isLikelyLambda(content) ? 0.9 : 0;
 }
 
+function detectMcp(content: unknown): number {
+  return isLikelyMcp(content) ? 0.95 : 0;
+}
+
 export const SOURCE_REGISTRY: SourceRegistryEntry[] = [
   {
     id: "n8n",
@@ -128,6 +133,14 @@ export const SOURCE_REGISTRY: SourceRegistryEntry[] = [
     analyze: analyzeLambda,
     sample: "/scan-samples/lambda_function.json",
     since: "0.2.1",
+  },
+  {
+    id: "mcp",
+    label: "MCP server config / tool manifest",
+    detect: detectMcp,
+    analyze: analyzeMcp,
+    sample: "/scan-samples/unsafe_mcp.json",
+    since: "0.4.2",
   },
   {
     id: "generic",

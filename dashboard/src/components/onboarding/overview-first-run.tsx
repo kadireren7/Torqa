@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Circle } from "lucide-react";
+import { ArrowRight, GitBranch, Link2, Play, Workflow } from "lucide-react";
 import type { HomeDashboardMode, HomeOnboardingCounts } from "@/data/types";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { GovernanceJourneyStrip } from "./governance-journey-strip";
 
 type Props = {
   mode: HomeDashboardMode;
@@ -13,127 +12,110 @@ type Props = {
   onboarding: HomeOnboardingCounts | null;
 };
 
-type Step = { id: string; label: string; href: string; done: boolean; optional?: boolean; hint: string };
+type StartPath = {
+  id: string;
+  label: string;
+  href: string;
+  desc: string;
+  Icon: typeof Workflow;
+  advanced?: boolean;
+};
 
 export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Props) {
   const cloud = mode === "supabase" && onboarding !== null;
-  const o = onboarding;
-
-  const scanDone = savedReportsAllTime > 0;
-  const steps: Step[] = [
+  const firstScanDone = savedReportsAllTime > 0;
+  const startPaths: StartPath[] = [
     {
-      id: "workflow",
-      label: "Upload n8n workflow",
-      href: "/workflow-library",
-      done: cloud ? (o!.workflowTemplates > 0) : false,
-      hint: "Save an export to the library so scans and schedules can reuse it.",
+      id: "n8n",
+      label: "Connect n8n",
+      href: "/sources#n8n",
+      desc: "Best for real workflow exports and recurring governance scans.",
+      Icon: Workflow,
     },
     {
-      id: "scan",
-      label: "Run scan",
-      href: "/scan",
-      done: scanDone,
-      hint: "Paste JSON or upload a file; Torqa returns deterministic findings and trust score.",
+      id: "github",
+      label: "Connect GitHub Actions",
+      href: "/sources#github",
+      desc: "Review workflow YAML before risky changes land in your repos.",
+      Icon: GitBranch,
     },
     {
-      id: "report",
-      label: "Review report",
-      href: "/scan/history",
-      done: scanDone,
-      hint: "Open a saved run, share a read-only link, or copy a PR remediation template from the report.",
+      id: "demo",
+      label: "Try demo workflow",
+      href: "/scan?sample=customer_support_n8n&source=n8n",
+      desc: "Loads a sample n8n workflow so you can reach a first report fast.",
+      Icon: Play,
     },
     {
-      id: "schedule",
-      label: "Create schedule",
-      href: "/schedules",
-      done: cloud ? (o!.scanSchedules > 0) : false,
-      hint: "Re-scan a template on a cadence; wire cron/tick in production for hands-off runs.",
-    },
-    {
-      id: "policy",
-      label: "Apply a policy",
-      href: "/policies",
-      done: cloud ? (o!.workspacePolicies > 0) : false,
-      hint: "Attach a template or workspace policy so scans surface governance pass/fail alongside engine status.",
-    },
-    {
-      id: "alert",
-      label: "Set an alert",
-      href: "/alerts",
-      done: cloud ? (o!.alertDestinations > 0) : false,
-      hint: "Route FAIL / high-risk outcomes to Slack, Discord, or in-app destinations for the team.",
-    },
-    {
-      id: "team",
-      label: "Invite a teammate",
-      href: "/team",
-      done: cloud ? o!.organizationMembers > 1 : false,
-      optional: !cloud || o!.organizationMembers <= 1,
-      hint: "Share workspace-scoped history and templates; invites require matching email at sign-in.",
+      id: "manual",
+      label: "Advanced manual scan",
+      href: "/advanced/manual-scan",
+      desc: "Paste or upload JSON directly when you already know the exact payload to test.",
+      Icon: Link2,
+      advanced: true,
     },
   ];
 
-  const doneCount = steps.filter((s) => s.done).length;
-  const allCoreDone = steps.slice(0, 5).every((s) => s.done);
-
   return (
-    <div className="space-y-6">
-      <GovernanceJourneyStrip />
+    <Card className="border-border/70 bg-card/50 shadow-md ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+      <CardHeader className="pb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle className="text-lg font-semibold">
+            {firstScanDone ? "First report complete" : "Get your first report in under 2 minutes"}
+          </CardTitle>
+          <Badge variant="secondary">{cloud ? "Workspace mode" : "Local demo mode"}</Badge>
+        </div>
+        <CardDescription className="max-w-2xl">
+          {firstScanDone
+            ? "You have a report. Next, connect a real source so Torqa can keep scanning workflows without manual uploads."
+            : "Torqa scans workflow definitions before they reach production, then returns findings, trust score, and a clear next action."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {startPaths.map((path) => (
+            <Link
+              key={path.id}
+              href={path.href}
+              className="group rounded-xl border border-border/60 bg-muted/20 p-4 transition-colors hover:border-primary/30 hover:bg-muted/35"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <path.Icon className="h-4 w-4" aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-foreground group-hover:text-primary">{path.label}</span>
+                    {path.advanced ? <Badge variant="outline">Advanced</Badge> : null}
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{path.desc}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                    Open path <ArrowRight className="h-3 w-3" />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
 
-      <Card className="border-border/70 bg-card/50 shadow-md ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <CardTitle className="text-lg font-semibold">Get started</CardTitle>
-              <CardDescription className="mt-1 max-w-xl">
-                {cloud
-                  ? `${doneCount}/${steps.length} complete · finish the n8n governance loop.`
-                  : "Start local: upload an n8n export, run a scan, review the report, then add a schedule when cloud is enabled."}
-              </CardDescription>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/40 px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            {cloud
+              ? "Primary action: connect a source. Demo scan is still available if you want to preview the report shape first."
+              : "In local demo mode, overview data is sample data and source connections are not saved until cloud mode is enabled."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/sources" className="text-xs font-medium text-primary hover:underline">
+              Connect a source
+            </Link>
             {!cloud ? (
-              <Link
-                href="/workspace"
-                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Cloud setup →
+              <Link href="/workspace" className="text-xs font-medium text-primary hover:underline">
+                Connect cloud
               </Link>
             ) : null}
           </div>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
-          {steps.map((s) => (
-            <Link
-              key={s.id}
-              href={s.href}
-              title={s.hint}
-              className={cn(
-                "group flex items-start gap-3 rounded-xl border px-3 py-3 transition-colors",
-                s.done
-                  ? "border-emerald-500/25 bg-emerald-500/[0.06]"
-                  : "border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/35"
-              )}
-            >
-              <span className="mt-0.5 shrink-0 text-primary" aria-hidden>
-                {s.done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Circle className="h-4 w-4" />}
-              </span>
-              <span className="min-w-0 text-left">
-                <span className="block text-sm font-medium text-foreground group-hover:text-primary">{s.label}</span>
-                {s.optional && !s.done ? (
-                  <span className="mt-0.5 block text-[11px] text-muted-foreground">Optional in personal workspace</span>
-                ) : null}
-              </span>
-            </Link>
-          ))}
-        </CardContent>
-        {cloud && allCoreDone ? (
-          <CardContent className="border-t border-border/50 pt-0">
-            <p className="text-center text-xs text-muted-foreground">
-              Core setup complete. Tune policies and alerts anytime.
-            </p>
-          </CardContent>
-        ) : null}
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

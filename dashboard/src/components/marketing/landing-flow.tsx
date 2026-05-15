@@ -5,21 +5,45 @@ import { motion, useReducedMotion } from "framer-motion";
 const STEPS = [
   {
     num: "01",
-    title: "Connect a source",
-    desc: "Link your n8n instance, GitHub repo, or drop a webhook. Torqa starts pulling workflows immediately — no agents to install.",
-    tag: "2 min setup",
+    title: "Connect",
+    desc: "Paste an MCP server config, upload a tool manifest, or link an AI agent definition. No agent execution — read-only inspection.",
+    tag: "Source input",
+    planned: false,
   },
   {
     num: "02",
-    title: "Scan & get fix proposals",
-    desc: "Every workflow is scanned against your policy pack. Violations surface with trust scores, severity levels, and one-click fix proposals.",
-    tag: "Deterministic",
+    title: "Scan",
+    desc: "Torqa parses tools, permissions, secrets, and risky capabilities deterministically. Same input always yields same findings.",
+    tag: "Risk analysis",
+    planned: false,
   },
   {
     num: "03",
-    title: "Enforce & audit",
-    desc: "Approve fixes, block risky deploys, and export compliance reports. Every decision is signed and queryable via API.",
-    tag: "SOC 2 ready",
+    title: "Ask",
+    desc: "Click a finding. Torqa asks guided questions about your intended behavior to understand the context before suggesting a fix.",
+    tag: "Guided triage",
+    planned: true,
+  },
+  {
+    num: "04",
+    title: "Fix",
+    desc: "Torqa generates a safe policy and fix plan based on your answers. You stay in control — nothing is applied automatically.",
+    tag: "Fix planning",
+    planned: true,
+  },
+  {
+    num: "05",
+    title: "Patch",
+    desc: "Get a concrete diff or config patch you can apply immediately to your MCP server or agent definition.",
+    tag: "Patch generation",
+    planned: true,
+  },
+  {
+    num: "06",
+    title: "Verify",
+    desc: "Re-scan after applying the fix. Torqa confirms your risk score improved and no new findings were introduced.",
+    tag: "Re-scan",
+    planned: false,
   },
 ];
 
@@ -45,55 +69,65 @@ export function LandingFlow() {
             How it works
           </p>
           <h2 className="text-[36px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[44px]" style={{ color: "var(--fg-1)" }}>
-            Live in minutes.
+            Connect → Scan → Ask
             <br />
-            Governing in hours.
+            <span style={{ color: "var(--accent)" }}>Fix → Patch → Verify.</span>
           </h2>
+          <p className="mt-4 text-[15px] leading-[1.6]" style={{ color: "var(--fg-3)" }}>
+            Steps 3–5 are in active development. Steps 1, 2, and 6 work today.
+          </p>
         </motion.div>
 
-        {/* Steps */}
-        <div className="relative grid gap-10 md:grid-cols-3 md:gap-14">
-          {/* Connector */}
-          <div
-            className="absolute left-0 right-0 top-[22px] hidden h-px md:block"
-            style={{ background: "linear-gradient(90deg, transparent, var(--line-2) 20%, var(--line-2) 80%, transparent)" }}
-            aria-hidden
-          />
-
+        {/* Steps — 3-col, 2-row grid */}
+        <div className="grid gap-px overflow-hidden rounded-2xl sm:grid-cols-3" style={{ background: "var(--line)" }}>
           {STEPS.map((step, i) => (
             <motion.div
               key={step.num}
-              className="relative"
+              className="relative p-7"
+              style={{ background: "var(--surface-1)" }}
               initial={reduce ? false : { opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.8, ease: [0.16,1,0.3,1], delay: i * 0.1 }}
+              transition={{ duration: 0.8, ease: [0.16,1,0.3,1], delay: i * 0.07 }}
             >
-              <div
-                className="relative mb-6 flex h-11 w-11 items-center justify-center rounded-xl font-mono text-[13px] font-semibold"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--line-2)",
-                  color: "var(--fg-1)",
-                  zIndex: 1,
-                }}
-              >
-                {step.num}
+              <div className="mb-4 flex items-center gap-3">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-lg font-mono text-[13px] font-semibold"
+                  style={{
+                    background: step.planned ? "var(--overlay-sm)" : "var(--accent-soft)",
+                    border: `1px solid ${step.planned ? "var(--line)" : "color-mix(in srgb, var(--accent) 25%, transparent)"}`,
+                    color: step.planned ? "var(--fg-3)" : "var(--accent)",
+                  }}
+                >
+                  {step.num}
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 font-mono text-[10px]"
+                  style={{
+                    border: "1px solid var(--line)",
+                    background: "var(--overlay-sm)",
+                    color: "var(--fg-4)",
+                  }}
+                >
+                  {step.tag}
+                </span>
+                {step.planned && (
+                  <span
+                    className="rounded-full px-2 py-0.5 font-mono text-[10px]"
+                    style={{
+                      border: "1px solid color-mix(in srgb, var(--amber, #f59e0b) 30%, transparent)",
+                      background: "color-mix(in srgb, var(--amber, #f59e0b) 8%, transparent)",
+                      color: "var(--amber, #f59e0b)",
+                    }}
+                  >
+                    planned
+                  </span>
+                )}
               </div>
-              <span
-                className="mb-2 inline-block rounded-full px-2 py-0.5 font-mono text-[10px]"
-                style={{
-                  border: "1px solid var(--line)",
-                  background: "var(--overlay-sm)",
-                  color: "var(--fg-4)",
-                }}
-              >
-                {step.tag}
-              </span>
-              <h3 className="mb-2 text-[18px] font-semibold tracking-[-0.02em]" style={{ color: "var(--fg-1)" }}>
+              <h3 className="mb-2 text-[20px] font-semibold tracking-[-0.02em]" style={{ color: "var(--fg-1)" }}>
                 {step.title}
               </h3>
-              <p className="text-[14px] leading-[1.65]" style={{ color: "var(--fg-3)" }}>{step.desc}</p>
+              <p className="text-[13px] leading-[1.65]" style={{ color: "var(--fg-3)" }}>{step.desc}</p>
             </motion.div>
           ))}
         </div>

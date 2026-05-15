@@ -1,6 +1,6 @@
 {
   "name": "@torqa/sdk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Programmatic client for the Torqa governance API. Run scans, evaluate policy packs, query the audit log, and accept risks from CI/CD pipelines or external services.",
   "type": "module",
   "license": "AGPL-3.0",

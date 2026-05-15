@@ -1,30 +1,30 @@
 import type { ComponentType } from "react";
 import { FileCheck2, Rocket, Shield, Share2, Users, Workflow } from "lucide-react";
 
-export const githubUrl = "https://github.com/kadireren7/ai-ir-programming-system";
+export const githubUrl = "https://github.com/kadireren7/Torqa";
 
 export const docsUrl = `${githubUrl}/tree/main/docs`;
 
 export const socialProof = [
-  { title: "Built for automation teams", value: "n8n, internal tools, AI ops" },
-  { title: "Fast workflow risk checks", value: "Deterministic server-side analysis" },
-  { title: "Deterministic findings", value: "No black-box randomness" },
-  { title: "Secure by design", value: "Share controls, auth, API keys" },
+  { title: "MCP + AI agent security", value: "Tool manifests, prompts, permissions, secrets" },
+  { title: "Deterministic scanning", value: "Rule-based, no black-box AI scoring" },
+  { title: "Fix guidance included", value: "Ask → Fix → Patch → Verify" },
+  { title: "Developer-first API", value: "HTTP, MCP, CI gate, webhook" },
 ];
 
 export const featureItems: Array<{ title: string; copy: string; icon: ComponentType<{ className?: string }> }> = [
   {
-    title: "Scan workflows instantly",
-    copy: "Upload JSON and run deterministic risk checks in seconds.",
+    title: "Scan MCP server configs",
+    copy: "Parse tool manifests and surface risky permissions, exposed secrets, and unsafe capabilities.",
     icon: Workflow,
   },
   {
-    title: "Detect secrets & insecure webhooks",
-    copy: "Flags hardcoded credentials, public webhook exposure, and transport risks.",
+    title: "Detect over-permissioned tools",
+    copy: "Flags tools with write access where read would suffice, unconstrained exec, and missing scope limits.",
     icon: Shield,
   },
   {
-    title: "Share reports safely",
+    title: "Share scan reports",
     copy: "Create public links for non-sensitive snapshots with clear controls.",
     icon: Share2,
   },
@@ -34,13 +34,13 @@ export const featureItems: Array<{ title: string; copy: string; icon: ComponentT
     icon: Users,
   },
   {
-    title: "API access",
-    copy: "Use API keys with public scan endpoint for automation pipelines.",
+    title: "API-first access",
+    copy: "Use API keys with the public scan endpoint for CI gates and automation pipelines.",
     icon: Rocket,
   },
   {
-    title: "Governance-ready",
-    copy: "Structured findings, remediation steps, and traceable scan history.",
+    title: "Audit trail",
+    copy: "Every scan, decision, and fix is recorded with full export support.",
     icon: FileCheck2,
   },
 ];
@@ -48,28 +48,28 @@ export const featureItems: Array<{ title: string; copy: string; icon: ComponentT
 export const trustItems = [
   {
     title: "Deterministic engine",
-    copy: "Same workflow input always yields the same findings and score.",
+    copy: "Same MCP config input always yields the same findings and risk score.",
   },
   {
     title: "No black-box scoring",
-    copy: "Weighted deduction model is explicit, inspectable, and predictable.",
+    copy: "Weighted deduction model is explicit, inspectable, and rule-traceable.",
   },
   {
     title: "Explainable findings",
-    copy: "Each rule includes clear rationale and actionable remediation guidance.",
+    copy: "Each finding includes the rule ID, affected tool, and concrete remediation guidance.",
   },
   {
-    title: "Modern automation stacks",
-    copy: "Built to analyze n8n-style and generic workflow JSON payloads.",
+    title: "MCP-native analysis",
+    copy: "Built to parse MCP tool manifests, agent definitions, and JSON-based configs.",
   },
 ];
 
 export const useCases = [
-  "n8n teams shipping multi-step automations faster",
-  "Internal ops teams reviewing workflow risk before rollout",
-  "Agencies managing many client automations safely",
-  "Security review teams enforcing baseline controls",
-  "AI workflow builders needing trustworthy guardrails",
+  "Teams building MCP servers who need to catch risks before deployment",
+  "AI agent developers who want to know which tools are over-permissioned",
+  "Platform engineers who want a CI gate on agent config changes",
+  "Security teams reviewing MCP manifests for secrets and unsafe capabilities",
+  "Developers who want to verify fixes did not introduce new risks",
 ];
 
 export const heroStats = [
@@ -78,11 +78,11 @@ export const heroStats = [
   { label: "Deterministic", value: 100, suffix: "%" },
 ];
 
-export const trustBadges = ["Explainable AI", "Workspace RLS", "API-first", "Share controls"];
+export const trustBadges = ["MCP-native", "Deterministic", "API-first", "Audit trail"];
 
 export const demoFindings = [
-  { label: "Hardcoded secret in HTTP node", severity: "critical" as const },
-  { label: "Webhook trigger has no auth", severity: "review" as const },
-  { label: "TLS verification disabled", severity: "critical" as const },
-  { label: "Disconnected node detected", severity: "info" as const },
+  { label: "Tool has unrestricted filesystem write access", severity: "critical" as const },
+  { label: "Hardcoded API key in tool env config", severity: "critical" as const },
+  { label: "No input validation on shell exec tool", severity: "critical" as const },
+  { label: "Tool scope broader than declared intent", severity: "review" as const },
 ];

@@ -9,6 +9,10 @@ import { defineConfig, devices } from "@playwright/test";
  * and PLAYWRIGHT_A11Y_BUILT env var. Running it here would double-execute it under
  * the wrong config and cause flaky 120 s webServer timeout failures.
  */
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const parsedBaseUrl = new URL(baseURL);
+const webServerCommand = `npm run start -- --hostname ${parsedBaseUrl.hostname} --port ${parsedBaseUrl.port || "3000"}`;
+
 export default defineConfig({
   testDir: "./e2e",
   testIgnore: ["**/a11y-axe.spec.ts"],
@@ -18,13 +22,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run start",
-    url: "http://127.0.0.1:3000/api/health",
+    command: webServerCommand,
+    url: new URL("/api/health", baseURL).toString(),
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

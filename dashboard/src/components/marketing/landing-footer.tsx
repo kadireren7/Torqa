@@ -6,6 +6,7 @@ import { docsUrl, githubUrl } from "@/lib/marketing-content";
 const LINKS = [
   { label: "Docs",      href: docsUrl,    external: true  },
   { label: "GitHub",    href: githubUrl,  external: true  },
+  { label: "Pricing",   href: "/pricing", external: false },
   { label: "Dashboard", href: "/overview",external: false },
   { label: "Changelog", href: "https://github.com/kadireren7/Torqa/blob/main/CHANGELOG.md", external: true },
 ] as const;
@@ -22,7 +23,7 @@ export function LandingFooter() {
             Torqa
           </p>
           <p className="mt-1 text-[12px]" style={{ color: "var(--fg-4)" }}>
-            Continuous governance for automation workflows.
+            Security copilot for MCP servers and AI agents.
           </p>
         </div>
 

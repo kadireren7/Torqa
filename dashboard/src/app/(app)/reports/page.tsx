@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { EmptyStateCta } from "@/components/onboarding/empty-state-cta";
 import { hasPublicSupabaseUrl } from "@/lib/env";
 
 const useCloud = hasPublicSupabaseUrl();
@@ -110,6 +111,27 @@ export default function ReportsPage() {
         </p>
       </div>
 
+      {!useCloud ? (
+        <Card className="border-amber-500/30 bg-amber-500/[0.06]">
+          <CardContent className="flex flex-col gap-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Local demo mode</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Reports are usable here, but shared history and scheduled delivery stay limited until cloud mode is enabled.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm">
+                <Link href="/scan?sample=customer_support_n8n&source=n8n">Try demo scan</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/demo/report">View demo report</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Core report cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
@@ -173,6 +195,16 @@ export default function ReportsPage() {
         </Card>
       </div>
 
+      {!useCloud ? (
+        <EmptyStateCta
+          icon={FileText}
+          title="No saved reports in local demo mode"
+          description="Run a demo scan to see the full report flow, then connect cloud when you want shared history and scheduled delivery."
+          primary={{ href: "/scan?sample=customer_support_n8n&source=n8n", label: "Try demo scan" }}
+          secondary={{ href: "/demo/report", label: "View demo report" }}
+        />
+      ) : null}
+
       {/* Compliance section */}
       {useCloud && (
         <div className="space-y-4">
@@ -231,7 +263,9 @@ export default function ReportsPage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No scan data for compliance analysis.</p>
+            <p className="text-sm text-muted-foreground">
+              No scan data for compliance analysis yet. Run your first scan, then return here for mapped evidence views.
+            </p>
           )}
         </div>
       )}
@@ -297,7 +331,9 @@ export default function ReportsPage() {
           {schedulesLoading ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>
           ) : schedules.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No scheduled reports. Click &quot;New schedule&quot; to set up automated delivery.</p>
+            <p className="text-sm text-muted-foreground">
+              No scheduled reports yet. Run a scan first, then add automated delivery when you are ready to share recurring evidence.
+            </p>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border/50">
               {schedules.map((s, i) => (
