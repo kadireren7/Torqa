@@ -10,13 +10,14 @@ import { docsUrl, githubUrl } from "@/lib/marketing-content";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Torqa | Prompt-to-MCP Workflow Builder",
+  title: "Torqa | Build MCP workflows from Claude",
   description:
-    "Turn prompts into MCP-powered workflows. Torqa maps required MCP tools, builds structured workflow plans with approval points, and exports plans your AI tools can use.",
+    "Connect Torqa as an MCP server, describe an automation in plain English, and get a structured workflow plan with tools, steps, approvals, and exportable JSON.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Torqa | Prompt-to-MCP Workflow Builder",
-    description: "Describe what you want done. Torqa maps MCP tools, builds a workflow plan, and exports it for your AI agents.",
+    title: "Torqa | Build MCP workflows from Claude",
+    description:
+      "Connect Torqa as an MCP server for workflow planning. Also available in the Torqa web console.",
     url: "/",
     type: "website",
   },
@@ -90,7 +91,7 @@ export default async function MarketingLandingPage() {
               Ship with confidence.
             </h2>
             <p className="mb-10 text-[16px] leading-[1.6]" style={{ color: "var(--fg-3)" }}>
-              Try the deterministic demo or scan your MCP tools before using them in generated workflows.
+              Connect Torqa as an MCP server in Claude, or try the same planning engine in the web workflow builder.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
@@ -98,15 +99,17 @@ export default async function MarketingLandingPage() {
                 className="rounded-lg px-7 py-3.5 text-[14px] font-semibold transition-opacity hover:opacity-90"
                 style={{ background: "var(--accent)", color: "#fff" }}
               >
-                Build demo workflow
+                Try web workflow builder
               </Link>
-              <Link
-                href="/scan"
+              <a
+                href={`${githubUrl}/blob/main/docs/MCP_SERVER.md`}
+                target="_blank"
+                rel="noreferrer"
                 className="rounded-lg border px-7 py-3.5 text-[14px] font-medium transition-colors hover:opacity-80"
                 style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
               >
-                Scan MCP tools
-              </Link>
+                Read MCP server setup
+              </a>
             </div>
             <div className="mt-5 flex flex-wrap justify-center gap-4 text-[13px]" style={{ color: "var(--fg-4)" }}>
               <a href={docsUrl} target="_blank" rel="noreferrer" className="hover:opacity-80">

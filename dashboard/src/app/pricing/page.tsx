@@ -361,7 +361,7 @@ export default async function PricingPage() {
 
             <p className="text-center text-[13px]" style={{ color: "var(--fg-4)" }}>
               Daily limits reset at midnight (local time). Paid tiers will remove limits
-              and add cloud-backed features.
+              and add cloud-backed features. Hosted credits are planned for a later release.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
