@@ -1,585 +1,150 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  Cable,
-  Loader2,
-  Pencil,
-  RefreshCw,
-  Trash2,
-  GitBranch,
-  Workflow,
-  Webhook,
-  Plug,
-  Puzzle,
-  Zap,
-  Bot,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  RefreshCcw,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { FileJson2, Shield, GitBranch, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { hasPublicSupabaseUrl } from "@/lib/env";
-import { connectorRegistry } from "@/lib/connectors";
-import { ProviderCard } from "@/components/provider-card";
-import { N8nConnectPanel } from "@/components/n8n-connect-panel";
-import { AiAgentScanPanel } from "@/components/ai-agent-scan-panel";
-import { ZapierConnectPanel } from "@/components/zapier-connect-panel";
-import { MakeConnectPanel } from "@/components/make-connect-panel";
-import { PipedreamConnectPanel } from "@/components/pipedream-connect-panel";
-import type { IntegrationProvider, IntegrationStatus } from "@/lib/integrations";
+import { EmptyStateCta } from "@/components/onboarding/empty-state-cta";
 
 const useCloud = hasPublicSupabaseUrl();
 
-type IntegrationRow = {
-  id: string;
-  userId: string;
-  organizationId: string | null;
-  provider: IntegrationProvider;
-  name: string;
-  status: IntegrationStatus;
-  config: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-};
+const ACTIVE_OPTIONS = [
+  {
+    id: "paste",
+    title: "Upload or paste MCP config",
+    description:
+      "Drop in a .json file or paste your MCP server config. Torqa scans it with the deterministic rule engine — no AI, no black-box scoring.",
+    href: "/scan",
+    cta: "Open scanner",
+    icon: FileJson2,
+    accent: "var(--accent)",
+  },
+  {
+    id: "demo",
+    title: "Try the unsafe MCP demo",
+    description:
+      "Load an intentionally vulnerable MCP server config to see real findings: unrestricted filesystem write, shell exec without validation, hardcoded secrets.",
+    href: "/scan?sample=unsafe_mcp&source=mcp",
+    cta: "Try demo",
+    icon: Shield,
+    accent: "var(--rose, #ef4444)",
+  },
+];
 
-const ROW_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  n8n: Workflow,
-  github: GitBranch,
-  webhook: Webhook,
-  zapier: Zap,
-  make: Puzzle,
-  pipedream: Plug,
-  "ai-agent": Bot,
-};
+const PLANNED_OPTIONS = [
+  {
+    id: "live-mcp",
+    title: "Live MCP connection",
+    description:
+      "Connect a running MCP server directly. Torqa will pull the tool manifest and scan it automatically.",
+    icon: Wifi,
+  },
+  {
+    id: "github",
+    title: "GitHub repo import",
+    description:
+      "Import MCP server configs from a GitHub repository. Scan on every PR or push.",
+    icon: GitBranch,
+  },
+];
 
 export default function SourcesPage() {
-  const searchParams = useSearchParams();
-  const [items, setItems] = useState<IntegrationRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(searchParams.get("error"));
-  const [message, setMessage] = useState<string | null>(() => {
-    const c = searchParams.get("connected");
-    if (c === "github") return "GitHub connected successfully.";
-    if (c === "zapier") return "Zapier connected successfully.";
-    return null;
-  });
-
-  const [syncingId, setSyncingId] = useState<string | null>(null);
-  const [syncingAll, setSyncingAll] = useState(false);
-  const [health, setHealth] = useState<Record<string, { health: string; workflowCount: number; lastSync: { at: string; added: number; updated: number } | null }>>({});
-  const [connectingId, setConnectingId] = useState<string | null>(null);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [formName, setFormName] = useState("");
-  const [n8nPanelOpen, setN8nPanelOpen] = useState(false);
-  const [aiAgentPanelOpen, setAiAgentPanelOpen] = useState(false);
-  const [zapierPanelOpen, setZapierPanelOpen] = useState(false);
-  const [makePanelOpen, setMakePanelOpen] = useState(false);
-  const [pipedreamPanelOpen, setPipedreamPanelOpen] = useState(false);
-
-  const loadHealth = useCallback(async (connectedItems: IntegrationRow[]) => {
-    if (!useCloud || connectedItems.length === 0) return;
-    const results = await Promise.allSettled(
-      connectedItems.map(async (item) => {
-        const res = await fetch(`/api/integrations/${item.id}/health`, { credentials: "include" });
-        if (!res.ok) return null;
-        const j = await res.json() as { health: string; workflowCount: number; lastSync: { at: string; added: number; updated: number } | null };
-        return { id: item.id, data: j };
-      })
-    );
-    const map: typeof health = {};
-    for (const r of results) {
-      if (r.status === "fulfilled" && r.value) {
-        map[r.value.id] = r.value.data;
-      }
-    }
-    setHealth(map);
-  }, []);
-
-  const load = useCallback(async () => {
-    if (!useCloud) { setLoading(false); return; }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/integrations", { credentials: "include" });
-      const j = (await res.json()) as { integrations?: IntegrationRow[]; error?: string };
-      if (!res.ok) { setError(j.error ?? "Could not load sources"); setItems([]); return; }
-      const connectedItems = (j.integrations ?? []).filter((i) => i.status === "connected");
-      setItems(j.integrations ?? []);
-      void loadHealth(connectedItems);
-    } catch { setError("Network error"); setItems([]); }
-    finally { setLoading(false); }
-  }, [loadHealth]);
-
-  useEffect(() => { void load(); }, [load]);
-
-  const openConnect = (id: string) => {
-    const connector = connectorRegistry.find((c) => c.id === id);
-    if (connector?.authType === "oauth") {
-      window.location.assign("/api/integrations/github/oauth/start");
-      return;
-    }
-    if (id === "n8n") {
-      setN8nPanelOpen(true);
-      return;
-    }
-    if (id === "ai-agent") {
-      setAiAgentPanelOpen(true);
-      return;
-    }
-    if (id === "zapier") {
-      setZapierPanelOpen(true);
-      return;
-    }
-    if (id === "make") {
-      setMakePanelOpen(true);
-      return;
-    }
-    if (id === "pipedream") {
-      setPipedreamPanelOpen(true);
-      return;
-    }
-    setConnectingId(id);
-    setFormValues({});
-    setFormName(id + " source");
-    setError(null);
-    setMessage(null);
-  };
-
-  const handleConnect = async () => {
-    if (!connectingId) return;
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/integrations", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: connectingId,
-          name: formName,
-          status: "draft",
-          config: formValues,
-        }),
-      });
-      const j = (await res.json()) as { error?: string };
-      if (!res.ok) { setError(j.error ?? "Could not connect source"); return; }
-      setMessage("Source connected.");
-      setConnectingId(null);
-      await load();
-    } catch { setError("Network error"); }
-    finally { setSaving(false); }
-  };
-
-  const deleteSource = async (id: string) => {
-    if (!confirm("Remove this source?")) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/integrations/${id}`, { method: "DELETE", credentials: "include" });
-      await load();
-    } finally { setSaving(false); }
-  };
-
-  const editSource = async (row: IntegrationRow) => {
-    const nextName = prompt("Source name", row.name);
-    if (!nextName) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/integrations/${row.id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nextName }),
-      });
-      await load();
-    } finally { setSaving(false); }
-  };
-
-  const connectedIds = useMemo(() => new Set(items.map((i) => i.provider)), [items]);
-  const activeConnector = connectorRegistry.find((c) => c.id === connectingId);
-
-  const n8nRow = useMemo(() => items.find((i) => i.provider === "n8n"), [items]);
-  const n8nBaseUrl = typeof n8nRow?.config?.baseUrl === "string" ? n8nRow.config.baseUrl : undefined;
-  const n8nApiKeyMask = typeof n8nRow?.config?.apiKeyMask === "string" ? n8nRow.config.apiKeyMask : undefined;
-
-  const zapierRow = useMemo(() => items.find((i) => i.provider === "zapier"), [items]);
-  const zapierMask = typeof zapierRow?.config?.apiKeyMask === "string" ? zapierRow.config.apiKeyMask : undefined;
-  const zapierAuthMethod = typeof zapierRow?.config?.authMethod === "string" ? zapierRow.config.authMethod : undefined;
-
-  const makeRow = useMemo(() => items.find((i) => i.provider === "make"), [items]);
-  const makeMask = typeof makeRow?.config?.apiKeyMask === "string" ? makeRow.config.apiKeyMask : undefined;
-  const makeZone = typeof makeRow?.config?.zone === "string" ? makeRow.config.zone : undefined;
-
-  const pipedreamRow = useMemo(() => items.find((i) => i.provider === "pipedream"), [items]);
-  const pipedreamMask = typeof pipedreamRow?.config?.apiKeyMask === "string" ? pipedreamRow.config.apiKeyMask : undefined;
-
-  const syncSource = async (id: string) => {
-    setSyncingId(id);
-    try {
-      const res = await fetch(`/api/integrations/${id}/sync`, { method: "POST", credentials: "include" });
-      const j = (await res.json()) as { error?: string; added?: number; updated?: number; unchanged?: number };
-      if (!res.ok) { setError(j.error ?? "Sync failed"); return; }
-      const added = j.added ?? 0;
-      const updated = j.updated ?? 0;
-      setMessage(`Sync complete — ${added} added, ${updated} updated.`);
-    } catch { setError("Network error"); }
-    finally { setSyncingId(null); }
-  };
-
-  const disconnectN8n = async () => {
-    if (!n8nRow) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/integrations/${n8nRow.id}`, { method: "DELETE", credentials: "include" });
-      await load();
-    } finally { setSaving(false); }
-  };
-
-  const disconnectZapier = async () => {
-    if (!zapierRow) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/integrations/${zapierRow.id}`, { method: "DELETE", credentials: "include" });
-      await load();
-    } finally { setSaving(false); }
-  };
-
-  const disconnectMake = async () => {
-    if (!makeRow) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/integrations/${makeRow.id}`, { method: "DELETE", credentials: "include" });
-      await load();
-    } finally { setSaving(false); }
-  };
-
-  const disconnectPipedream = async () => {
-    if (!pipedreamRow) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/integrations/${pipedreamRow.id}`, { method: "DELETE", credentials: "include" });
-      await load();
-    } finally { setSaving(false); }
-  };
-
-  const syncAll = async () => {
-    setSyncingAll(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/integrations/sync/all", { method: "POST", credentials: "include" });
-      const j = (await res.json()) as { ok?: boolean; totalAdded?: number; totalUpdated?: number; succeeded?: number; failed?: number; error?: string };
-      if (!res.ok) { setError(j.error ?? "Sync all failed"); return; }
-      setMessage(`Sync all complete — ${j.totalAdded ?? 0} added, ${j.totalUpdated ?? 0} updated across ${j.succeeded ?? 0} sources.`);
-      await load();
-    } catch { setError("Network error"); }
-    finally { setSyncingAll(false); }
-  };
-
-  const availableConnectors = connectorRegistry.filter((c) => c.status !== "coming_soon");
-  const comingSoonConnectors = connectorRegistry.filter((c) => c.status === "coming_soon");
-
   return (
-    <div className="space-y-10 pb-12">
+    <div className="space-y-10 pb-10">
       {/* Header */}
-      <div className="flex flex-col gap-1">
+      <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Sources</p>
-        <h1 className="text-2xl font-semibold tracking-tight">Integration Center</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          Connect a platform so Torqa can scan real workflows continuously and keep new reports flowing without manual uploads.
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">MCP Configs</h1>
+        <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
+          Bring in MCP server configs to scan. Upload JSON directly, paste a config, or connect a live source when ready.
         </p>
       </div>
 
-      <Card className={useCloud ? "border-border/70 bg-card/40" : "border-amber-500/30 bg-amber-500/[0.06]"}>
-        <CardContent className="flex flex-col gap-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium">{useCloud ? "Start with n8n or GitHub Actions" : "Local demo mode"}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {useCloud
-                ? "Connect a real source first. If you only want to preview the report flow, use the demo scan path instead."
-                : "Saved source connections are unavailable here. Try the demo scan path or advanced manual scan, then connect cloud when you are ready."}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {useCloud ? (
-              <>
-                <Button asChild size="sm">
-                  <Link href="/sources#n8n">Connect n8n</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/sources#github">Connect GitHub Actions</Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button asChild size="sm">
-                  <Link href="/scan?sample=customer_support_n8n&source=n8n">Try demo scan</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/advanced/manual-scan">Advanced manual scan</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Alerts */}
-      {error ? (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>
-      ) : null}
-      {message ? (
-        <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-400">{message}</p>
-      ) : null}
-
-      {/* Connect form */}
-      {connectingId && activeConnector ? (
-        <Card className="border-cyan-500/20 bg-cyan-500/[0.02] shadow-md">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Cable className="h-4 w-4 text-cyan-400" />
-              Connect {activeConnector.name}
-            </CardTitle>
-            {activeConnector.docsUrl ? (
-              <CardDescription>
-                <Link href={activeConnector.docsUrl} className="text-cyan-400 hover:underline" target="_blank">
-                  View docs ↗
-                </Link>
-              </CardDescription>
-            ) : null}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="src-name" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Connection name</Label>
-              <Input id="src-name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Production n8n" className="max-w-sm" />
-            </div>
-            {activeConnector.credentialFields.map((field) => (
-              <div key={field.key} className="space-y-2">
-                <Label htmlFor={`src-${field.key}`} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {field.label}{field.required ? "" : " (optional)"}
-                </Label>
-                {field.hint ? <p className="text-xs text-muted-foreground">{field.hint}</p> : null}
-                <Input
-                  id={`src-${field.key}`}
-                  type={field.type === "password" ? "password" : field.type === "url" ? "url" : "text"}
-                  value={formValues[field.key] ?? ""}
-                  onChange={(e) => setFormValues((v) => ({ ...v, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  autoComplete="off"
-                  className="max-w-sm"
-                />
-              </div>
-            ))}
-            <div className="flex gap-2 pt-2">
-              <Button type="button" disabled={saving} size="sm" onClick={() => void handleConnect()}>
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save connection"}
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setConnectingId(null)}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/* Available providers */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Available</p>
-          <div className="h-px flex-1 bg-border/40" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {availableConnectors.map((connector) => (
-            <ProviderCard
-              key={connector.id}
-              connector={connector}
-              connected={connectedIds.has(connector.id as IntegrationProvider)}
-              canConnect={useCloud}
-              onConnect={() => openConnect(connector.id)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Coming soon */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Coming soon</p>
-          <div className="h-px flex-1 bg-border/40" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {comingSoonConnectors.map((connector) => (
-            <ProviderCard
-              key={connector.id}
-              connector={connector}
-              connected={false}
-              canConnect={false}
-              onConnect={() => {}}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Connected sources list */}
-      {useCloud ? (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Connected</p>
-            <div className="h-px flex-1 bg-border/40" />
-            {items.some((i) => i.status === "connected") && (
-              <Button
-                size="sm" variant="outline" className="h-7 gap-1.5 text-xs"
-                disabled={syncingAll}
-                onClick={() => void syncAll()}
-              >
-                <RefreshCcw className={`h-3 w-3 ${syncingAll ? "animate-spin" : ""}`} />
-                {syncingAll ? "Syncing all…" : "Sync all"}
-              </Button>
-            )}
-          </div>
-          {loading ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-            </p>
-          ) : items.length === 0 ? (
-            <div className="rounded-xl border border-border/40 bg-muted/10 px-6 py-8 text-center">
-              <p className="text-sm text-muted-foreground">No sources connected yet.</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Start with n8n or GitHub Actions above, or use the demo scan path if you want to preview a report first.
+      {!useCloud && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Local demo mode</p>
+              <p className="text-xs text-muted-foreground">
+                Source connections are not saved until cloud mode is enabled. You can still scan any MCP config right now.
               </p>
             </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-border/50">
-              {items.map((row, i) => {
-                const Icon = ROW_ICONS[row.provider] ?? Cable;
-                const h = health[row.id];
-                const HealthIcon = h?.health === "healthy" ? CheckCircle2 : h?.health === "degraded" ? AlertTriangle : XCircle;
-                const healthColor = h?.health === "healthy" ? "text-emerald-400" : h?.health === "degraded" ? "text-amber-400" : "text-muted-foreground";
-                return (
-                  <div
-                    key={row.id}
-                    className={`flex flex-wrap items-center justify-between gap-3 bg-card px-5 py-3.5 ${
-                      i !== items.length - 1 ? "border-b border-border/40" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium leading-tight">{row.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {row.provider}
-                          {typeof row.config.baseUrl === "string" ? ` · ${row.config.baseUrl}` : ""}
-                          {h?.workflowCount != null ? ` · ${h.workflowCount} workflow${h.workflowCount !== 1 ? "s" : ""}` : ""}
-                          {h?.lastSync ? ` · synced ${new Date(h.lastSync.at).toLocaleDateString()}` : ""}
-                        </p>
-                      </div>
-                      {h && row.status === "connected" && (
-                        <span title={h.health}>
-                          <HealthIcon className={`h-3.5 w-3.5 shrink-0 ${healthColor}`} />
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={
-                          row.status === "connected"
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                            : "border-border/50 bg-muted/30 text-muted-foreground"
-                        }
-                      >
-                        {row.status}
-                      </Badge>
-                      {row.status === "connected" && (
-                        <Button
-                          size="sm" variant="ghost" className="h-7 w-7 p-0"
-                          disabled={syncingId === row.id}
-                          onClick={() => void syncSource(row.id)}
-                          title="Sync now"
-                        >
-                          <RefreshCw className={`h-3.5 w-3.5 ${syncingId === row.id ? "animate-spin" : ""}`} />
-                        </Button>
-                      )}
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => void editSource(row)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => void deleteSource(row.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border/50 bg-muted/10 px-6 py-8 text-center">
-          <p className="text-sm font-medium">Local demo mode</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Source connections are not being saved because cloud mode is off. You can still run a demo scan now and connect Supabase later for persistent sources.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button asChild size="sm">
-              <Link href="/scan?sample=customer_support_n8n&source=n8n">Try demo scan</Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/settings">Connect cloud</Link>
-            </Button>
+            <Link href="/scan" className="text-xs font-medium text-primary hover:underline">
+              Try demo scan
+            </Link>
           </div>
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        Need to upload manually?{" "}
-        <Link href="/advanced/manual-scan" className="text-muted-foreground underline underline-offset-2 hover:text-foreground">
-          Advanced → Manual Scan
-        </Link>
-      </p>
+      {/* Active options */}
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Available now</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {ACTIVE_OPTIONS.map((opt) => (
+            <Card
+              key={opt.id}
+              className="border-border/70 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <opt.icon className="h-4 w-4" style={{ color: opt.accent }} aria-hidden />
+                  {opt.title}
+                </CardTitle>
+                <CardDescription className="text-sm">{opt.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  href={opt.href}
+                  className="inline-flex items-center rounded-lg px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-90"
+                  style={{ background: opt.accent, color: "#fff" }}
+                >
+                  {opt.cta}
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
-      <AiAgentScanPanel
-        open={aiAgentPanelOpen}
-        onClose={() => setAiAgentPanelOpen(false)}
-      />
+      {/* Planned options */}
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Coming soon</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {PLANNED_OPTIONS.map((opt) => (
+            <Card
+              key={opt.id}
+              className="border-border/50 bg-muted/10 opacity-75"
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base text-muted-foreground">
+                  <opt.icon className="h-4 w-4" aria-hidden />
+                  {opt.title}
+                  <Badge variant="outline" className="ml-1 text-[10px]">Planned</Badge>
+                </CardTitle>
+                <CardDescription className="text-sm">{opt.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  href="/waitlist"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Join early access →
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
-      <N8nConnectPanel
-        open={n8nPanelOpen}
-        onClose={() => setN8nPanelOpen(false)}
-        existingBaseUrl={n8nBaseUrl}
-        existingApiKeyMask={n8nApiKeyMask}
-        onDisconnect={n8nRow ? disconnectN8n : undefined}
-        onSaved={() => { void load(); setMessage("n8n connected."); }}
-      />
-
-      <ZapierConnectPanel
-        open={zapierPanelOpen}
-        onClose={() => setZapierPanelOpen(false)}
-        existingMask={zapierMask}
-        existingAuthMethod={zapierAuthMethod}
-        onDisconnect={zapierRow ? disconnectZapier : undefined}
-        onSaved={() => { void load(); setMessage("Zapier connected."); }}
-      />
-
-      <MakeConnectPanel
-        open={makePanelOpen}
-        onClose={() => setMakePanelOpen(false)}
-        existingMask={makeMask}
-        existingZone={makeZone}
-        onDisconnect={makeRow ? disconnectMake : undefined}
-        onSaved={() => { void load(); setMessage("Make connected."); }}
-      />
-
-      <PipedreamConnectPanel
-        open={pipedreamPanelOpen}
-        onClose={() => setPipedreamPanelOpen(false)}
-        existingMask={pipedreamMask}
-        onDisconnect={pipedreamRow ? disconnectPipedream : undefined}
-        onSaved={() => { void load(); setMessage("Pipedream connected."); }}
+      {/* If no source-specific empty state, lead to scan */}
+      <EmptyStateCta
+        icon={FileJson2}
+        title="Start with any MCP config"
+        description="Upload a local config, paste JSON, or load the unsafe MCP demo to see Torqa's scanner in action."
+        primary={{ href: "/scan", label: "Scan MCP config" }}
+        secondary={{ href: "/scan?sample=unsafe_mcp&source=mcp", label: "Try unsafe demo" }}
+        className="border-border/60 bg-muted/20"
       />
     </div>
   );

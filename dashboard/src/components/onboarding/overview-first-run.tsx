@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, GitBranch, Link2, Play, Workflow } from "lucide-react";
+import { ArrowRight, FileJson2, Shield, Play, BookOpen } from "lucide-react";
 import type { HomeDashboardMode, HomeOnboardingCounts } from "@/data/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,8 @@ type StartPath = {
   label: string;
   href: string;
   desc: string;
-  Icon: typeof Workflow;
-  advanced?: boolean;
+  Icon: typeof FileJson2;
+  badge?: string;
 };
 
 export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Props) {
@@ -26,33 +26,32 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
   const firstScanDone = savedReportsAllTime > 0;
   const startPaths: StartPath[] = [
     {
-      id: "n8n",
-      label: "Connect n8n",
-      href: "/sources#n8n",
-      desc: "Best for real workflow exports and recurring governance scans.",
-      Icon: Workflow,
-    },
-    {
-      id: "github",
-      label: "Connect GitHub Actions",
-      href: "/sources#github",
-      desc: "Review workflow YAML before risky changes land in your repos.",
-      Icon: GitBranch,
+      id: "scan",
+      label: "Scan MCP config",
+      href: "/scan",
+      desc: "Upload or paste your MCP server config JSON to detect unsafe tools, exposed secrets, and risky permissions.",
+      Icon: FileJson2,
     },
     {
       id: "demo",
-      label: "Try demo workflow",
-      href: "/scan?sample=customer_support_n8n&source=n8n",
-      desc: "Loads a sample n8n workflow so you can reach a first report fast.",
+      label: "Try unsafe MCP demo",
+      href: "/scan?sample=unsafe_mcp&source=mcp",
+      desc: "Loads an intentionally vulnerable MCP config so you can see real findings right away.",
+      Icon: Shield,
+    },
+    {
+      id: "reports",
+      label: "View local reports",
+      href: "/reports",
+      desc: "Browse scan reports saved in your browser. No account needed — all local.",
       Icon: Play,
     },
     {
-      id: "manual",
-      label: "Advanced manual scan",
-      href: "/advanced/manual-scan",
-      desc: "Paste or upload JSON directly when you already know the exact payload to test.",
-      Icon: Link2,
-      advanced: true,
+      id: "policies",
+      label: "Hardening policies",
+      href: "/policies",
+      desc: "Browse built-in policy templates: command allowlists, filesystem boundaries, secret handling.",
+      Icon: BookOpen,
     },
   ];
 
@@ -61,14 +60,14 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
       <CardHeader className="pb-4">
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle className="text-lg font-semibold">
-            {firstScanDone ? "First report complete" : "Get your first report in under 2 minutes"}
+            {firstScanDone ? "First scan complete" : "Scan your first MCP config in under 2 minutes"}
           </CardTitle>
-          <Badge variant="secondary">{cloud ? "Workspace mode" : "Local demo mode"}</Badge>
+          <Badge variant="secondary">{cloud ? "Cloud mode" : "Local demo mode"}</Badge>
         </div>
         <CardDescription className="max-w-2xl">
           {firstScanDone
-            ? "You have a report. Next, connect a real source so Torqa can keep scanning workflows without manual uploads."
-            : "Torqa scans workflow definitions before they reach production, then returns findings, trust score, and a clear next action."}
+            ? "You have a report. Run another scan or browse hardening policies to reduce your MCP attack surface further."
+            : "Torqa scans MCP server configs, detects unsafe tools and exposed secrets, then guides you through hardening before AI agents use them."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -86,7 +85,7 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-foreground group-hover:text-primary">{path.label}</span>
-                    {path.advanced ? <Badge variant="outline">Advanced</Badge> : null}
+                    {path.badge ? <Badge variant="outline">{path.badge}</Badge> : null}
                   </div>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{path.desc}</p>
                   <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
@@ -101,16 +100,16 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/40 px-4 py-3">
           <p className="text-xs text-muted-foreground">
             {cloud
-              ? "Primary action: connect a source. Demo scan is still available if you want to preview the report shape first."
-              : "In local demo mode, overview data is sample data and source connections are not saved until cloud mode is enabled."}
+              ? "Running in cloud mode. Scan history and reports are persisted per workspace."
+              : "Running in local demo mode. Scan history and reports are stored in your browser only."}
           </p>
           <div className="flex flex-wrap gap-2">
-            <Link href="/sources" className="text-xs font-medium text-primary hover:underline">
-              Connect a source
+            <Link href="/scan" className="text-xs font-medium text-primary hover:underline">
+              Scan MCP config
             </Link>
             {!cloud ? (
-              <Link href="/workspace" className="text-xs font-medium text-primary hover:underline">
-                Connect cloud
+              <Link href="/waitlist" className="text-xs font-medium text-primary hover:underline">
+                Join early access
               </Link>
             ) : null}
           </div>

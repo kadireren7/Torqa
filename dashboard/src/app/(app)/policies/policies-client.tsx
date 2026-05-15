@@ -241,10 +241,10 @@ export function PoliciesPageClient() {
     <div className="space-y-10 pb-10">
       <div className="space-y-5 border-b border-border/60 pb-8">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Govern</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Policies</h1>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Harden</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Hardening Policies</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Templates add a <span className="font-medium text-foreground">policyEvaluation</span> layer on top of scan
+            Policy templates enforce safe defaults on MCP configs: command allowlists, filesystem boundaries, secret handling, and network domain rules. Each template adds a <span className="font-medium text-foreground">policyEvaluation</span> layer on top of scan
             results — without changing engine findings.
           </p>
           <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">

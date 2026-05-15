@@ -483,11 +483,11 @@ export function ScanPageClient() {
               {" "}— results include engine mode (real vs preview/fallback). For full validation, use the CLI.
             </p>
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <Link href="/sources" className="font-medium text-primary hover:underline">
-                Connect a source →
+              <Link href="/reports" className="font-medium text-primary hover:underline">
+                View local reports →
               </Link>
-              <Link href="/advanced/manual-scan" className="font-medium text-primary hover:underline">
-                Advanced manual scan →
+              <Link href="/policies" className="font-medium text-primary hover:underline">
+                Hardening policies →
               </Link>
             </p>
           </div>
@@ -576,7 +576,7 @@ export function ScanPageClient() {
               <div>
                 <p className="text-sm font-medium text-foreground">New here?</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Load the demo workflow first, then click <span className="font-medium text-foreground">Run scan</span> to reach a meaningful report in under 2 minutes.
+                  Load the unsafe MCP demo first, then click <span className="font-medium text-foreground">Run scan</span> to see real findings in under 2 minutes.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -594,23 +594,8 @@ export function ScanPageClient() {
                 >
                   Try unsafe MCP demo
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() =>
-                    void loadSample(
-                      "customer_support_n8n",
-                      "n8n",
-                      "Demo workflow loaded. Click Run scan to generate your first report."
-                    )
-                  }
-                >
-                  Try n8n demo
-                </Button>
                 <Button asChild type="button" size="sm" variant="outline">
-                  <Link href="/sources">Connect a source</Link>
+                  <Link href="/reports">View local reports</Link>
                 </Button>
               </div>
             </div>
@@ -999,17 +984,17 @@ export function ScanPageClient() {
                 <CardTitle className="text-base">Next step</CardTitle>
                 <CardDescription>
                   {hasSupabase
-                    ? "Connect a real source so the next scans and reports update automatically."
-                    : "Move from demo/manual scans to real workflow coverage by connecting a source when cloud mode is ready."}
+                    ? "Review findings, apply fixes, and export a hardened config for your agents."
+                    : "Browse hardening policies or scan another MCP config. Local reports are saved in your browser."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 <Button asChild>
-                  <Link href="/sources">Connect a source</Link>
+                  <Link href="/scan">Scan another config</Link>
                 </Button>
                 <Button asChild variant="outline">
                   <Link href={saveNotice ? "/scan/history" : "/reports"}>
-                    {saveNotice ? "Open scan history" : "Open reports"}
+                    {saveNotice ? "Open scan history" : "View local reports"}
                   </Link>
                 </Button>
               </CardContent>

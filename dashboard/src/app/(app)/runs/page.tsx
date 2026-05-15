@@ -36,19 +36,19 @@ export default async function RunsPage() {
       <div className="space-y-8 pb-10">
         <FadeUp>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-foreground/50">Monitor</p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">Runs</h1>
+            <p className="text-xs font-semibold uppercase tracking-widest text-foreground/50">History</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">Scan History</h1>
             <p className="mt-1.5 max-w-xl text-sm text-foreground/60">
-              Every scan run — manual, scheduled, webhook, PR, or API triggered.
+              All MCP config scans — local and cloud-backed. Score, decision, and full findings for every run.
             </p>
           </div>
         </FadeUp>
         <EmptyStateCta
           icon={Play}
           title="Cloud storage not configured"
-          description="Set Supabase env vars to persist run history per user."
-          primary={{ href: "/overview", label: "Overview" }}
-          secondary={{ href: "/advanced/manual-scan", label: "Manual scan" }}
+          description="Set Supabase env vars to persist scan history. Local scans are still visible on the Reports page."
+          primary={{ href: "/overview", label: "Console" }}
+          secondary={{ href: "/scan", label: "Scan MCP config" }}
         />
       </div>
     );
@@ -89,14 +89,14 @@ export default async function RunsPage() {
       <FadeUp>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-foreground/50">Monitor</p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">Runs</h1>
+            <p className="text-xs font-semibold uppercase tracking-widest text-foreground/50">History</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">Scan History</h1>
             <p className="mt-1.5 max-w-xl text-sm text-foreground/60">
-              Every scan run — manual, scheduled, webhook, PR, or API triggered.
+              All MCP config scans — local and cloud-backed. Score, decision, and full findings for every run.
             </p>
           </div>
           <Button asChild size="sm">
-            <Link href="/advanced/manual-scan">Manual scan</Link>
+            <Link href="/scan">Scan MCP config</Link>
           </Button>
         </div>
       </FadeUp>
@@ -105,10 +105,10 @@ export default async function RunsPage() {
         <FadeUp delay={0.1}>
           <EmptyStateCta
             icon={Play}
-            title="No runs yet"
-            description="Connect a source or run a manual scan to start."
-            primary={{ href: "/sources", label: "Connect a source" }}
-            secondary={{ href: "/advanced/manual-scan", label: "Manual scan" }}
+            title="No scan history yet"
+            description="Scan an MCP config to generate your first report. History is saved here for cloud-connected accounts."
+            primary={{ href: "/scan", label: "Scan MCP config" }}
+            secondary={{ href: "/scan?sample=unsafe_mcp&source=mcp", label: "Try unsafe demo" }}
             className="border-border/60 bg-muted/20"
           />
         </FadeUp>
@@ -131,7 +131,7 @@ export default async function RunsPage() {
                     </div>
 
                     <p className="truncate text-sm font-medium">
-                      {row.workflow_name ?? "Untitled workflow"}
+                      {row.workflow_name ?? "Untitled MCP config"}
                     </p>
 
                     <div className="flex items-center justify-between text-xs text-foreground/50">

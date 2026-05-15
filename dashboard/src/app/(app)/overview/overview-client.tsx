@@ -216,34 +216,31 @@ export function OverviewClient({
       >
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--fg-4)" }}>
-            Overview
+            Console
           </p>
           <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.03em]" style={{ color: "var(--fg-1)" }}>
-            Start here
+            MCP Security Console
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Torqa scans workflow definitions before they reach production, then returns findings, trust score, and the next action to take.
+            Scan MCP configs, detect unsafe tools, fix critical issues, and export hardened configs before AI agents use them.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href="/sources"
+            href="/scan"
             className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
-            Connect a source
+            Scan MCP config
             <ArrowUpRight className="h-3 w-3" />
           </Link>
           <Link
-            href="/scan?sample=customer_support_n8n&source=n8n"
+            href="/scan?sample=unsafe_mcp&source=mcp"
             className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all duration-200 hover:opacity-90"
             style={{ background: "var(--overlay-md)", border: "1px solid var(--line-2)", color: "var(--fg-2)" }}
           >
             <Shield className="h-3 w-3" />
-            Try demo scan
-          </Link>
-          <Link href="/advanced/manual-scan" className="text-[12px] font-medium text-muted-foreground hover:text-foreground">
-            Advanced manual scan
+            Try unsafe MCP demo
           </Link>
         </div>
       </motion.div>
@@ -266,7 +263,7 @@ export function OverviewClient({
             <div>
               <p className="text-sm font-medium text-foreground">Local demo mode</p>
               <p className="text-xs text-muted-foreground">
-                Overview metrics and charts below use sample data until Supabase and a shared workspace are connected.
+                Overview metrics use sample data. Run a scan to populate real results — no account needed.
               </p>
             </div>
             <Link href="/workspace" className="text-xs font-medium text-primary hover:underline">
@@ -477,7 +474,7 @@ export function OverviewClient({
           <div className="flex items-center justify-between px-5 pt-5 pb-0">
             <div>
               <p className="text-[14px] font-semibold" style={{ color: "var(--fg-1)" }}>Activity</p>
-              <p className="mt-0.5 text-[12px]" style={{ color: "var(--fg-3)" }}>Recent governance decisions</p>
+              <p className="mt-0.5 text-[12px]" style={{ color: "var(--fg-3)" }}>Recent scan events</p>
             </div>
             <Link
               href="/audit"
@@ -490,7 +487,7 @@ export function OverviewClient({
           <div className="px-5 pb-5">
             {decisions.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>No governance decisions yet.</p>
+                <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>No scan events yet. Run your first MCP scan.</p>
               </div>
             ) : (
               <div className="pt-2 space-y-px">
@@ -546,7 +543,7 @@ export function OverviewClient({
         <div className="flex items-center justify-between px-5 pt-5 pb-0">
           <div>
             <p className="text-[14px] font-semibold" style={{ color: "var(--fg-1)" }}>Recent scans</p>
-            <p className="mt-0.5 text-[12px]" style={{ color: "var(--fg-3)" }}>Latest governance analyses</p>
+            <p className="mt-0.5 text-[12px]" style={{ color: "var(--fg-3)" }}>Latest MCP security analyses</p>
           </div>
           <Link
             href="/scan/history"

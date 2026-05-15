@@ -104,10 +104,10 @@ export default function ReportsPage() {
   return (
     <div className="space-y-10 pb-10">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Observe</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Reports</h1>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Reports</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Local Reports</h1>
         <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-          Risk trends, compliance reports, policy analysis, and scheduled delivery.
+          MCP scan reports saved in your browser. Each report contains findings, risk score, fix guidance, and a hardened config export.
         </p>
       </div>
 
@@ -122,10 +122,10 @@ export default function ReportsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm">
-                <Link href="/scan?sample=customer_support_n8n&source=n8n">Try demo scan</Link>
+                <Link href="/scan?sample=unsafe_mcp&source=mcp">Try MCP demo scan</Link>
               </Button>
               <Button asChild size="sm" variant="outline">
-                <Link href="/demo/report">View demo report</Link>
+                <Link href="/scan">Scan your config</Link>
               </Button>
             </div>
           </CardContent>
@@ -138,10 +138,10 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Insights &amp; Trends
+              MCP Security Insights
             </CardTitle>
             <CardDescription>
-              Risk score trends, policy failure rates, and top finding types over time.
+              Risk score trends, top finding rules, and policy failure rates across your MCP scans.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -158,16 +158,16 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="h-4 w-4 text-primary" />
-              Shared Reports
+              Scan History
             </CardTitle>
             <CardDescription>
-              Public scan report links you&apos;ve created. View, revoke, or create new share links.
+              All MCP config scans. View findings, share reports, or export as PDF.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
               <Link href="/runs">
-                View runs → share
+                View scan history
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
@@ -181,15 +181,15 @@ export default function ReportsPage() {
               PDF Exports
             </CardTitle>
             <CardDescription>
-              Export any scan report or audit log as a formatted PDF.
+              Export any MCP scan report as a formatted PDF for sharing or archiving.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <Button asChild size="sm" variant="outline" className="gap-1.5 w-fit">
-              <Link href="/runs">Scan PDFs <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link href="/runs">Scan reports <ArrowRight className="h-3.5 w-3.5" /></Link>
             </Button>
             <Button asChild size="sm" variant="outline" className="gap-1.5 w-fit">
-              <Link href="/audit">Audit PDF <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link href="/audit">Audit log PDF <ArrowRight className="h-3.5 w-3.5" /></Link>
             </Button>
           </CardContent>
         </Card>
@@ -198,10 +198,10 @@ export default function ReportsPage() {
       {!useCloud ? (
         <EmptyStateCta
           icon={FileText}
-          title="No saved reports in local demo mode"
-          description="Run a demo scan to see the full report flow, then connect cloud when you want shared history and scheduled delivery."
-          primary={{ href: "/scan?sample=customer_support_n8n&source=n8n", label: "Try demo scan" }}
-          secondary={{ href: "/demo/report", label: "View demo report" }}
+          title="No local reports yet"
+          description="Run an MCP config scan to generate your first local report. Reports are stored in your browser — no account needed."
+          primary={{ href: "/scan?sample=unsafe_mcp&source=mcp", label: "Try MCP demo scan" }}
+          secondary={{ href: "/scan", label: "Scan your config" }}
         />
       ) : null}
 
