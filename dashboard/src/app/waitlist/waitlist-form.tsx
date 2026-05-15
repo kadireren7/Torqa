@@ -83,24 +83,24 @@ export function WaitlistForm() {
             className="text-[14px] leading-relaxed"
             style={{ color: "var(--fg-3)" }}
           >
-            We&apos;ll reach out when early access slots open. In the meantime,
-            try the free scanner — no account needed.
+            We&apos;ll reach out when real MCP workflow generation and execution open. In the meantime,
+            try the deterministic demo — no account needed.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Link
-            href="/scan"
+            href="/demo/mcp-workflow-builder"
             className="rounded-lg px-6 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-90"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
-            Scan MCP config
+            Build demo workflow
           </Link>
           <Link
-            href="/scan?sample=unsafe_mcp&source=mcp"
+            href="/scan"
             className="rounded-lg border px-6 py-2.5 text-[14px] font-medium transition-colors hover:opacity-80"
             style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
           >
-            Try unsafe demo
+            Scan MCP tools
           </Link>
         </div>
         <p className="text-[11px]" style={{ color: "var(--fg-4)" }}>

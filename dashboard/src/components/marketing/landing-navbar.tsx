@@ -145,7 +145,7 @@ export function LandingNavbar({ user }: Props) {
                   className="rounded-lg px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-90"
                   style={{ background: "var(--accent)", color: "#fff" }}
                 >
-                  Scan MCP config
+                  Scan MCP tools
                 </Link>
               </>
             )}
@@ -220,7 +220,7 @@ export function LandingNavbar({ user }: Props) {
                 style={{ background: "var(--accent)", color: "#fff" }}
                 onClick={() => setMobileOpen(false)}
               >
-                Scan MCP config
+                Scan MCP tools
               </Link>
               <Link
                 href="/waitlist"

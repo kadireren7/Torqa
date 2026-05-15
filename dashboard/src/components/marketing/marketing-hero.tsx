@@ -58,7 +58,7 @@ export function MarketingHero() {
       >
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--emerald)", boxShadow: "0 0 8px var(--emerald)" }} />
         <span className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: "var(--fg-3)" }}>
-          Public alpha · MCP + AI agent security
+          Public alpha · Prompt-to-MCP Workflow Builder
         </span>
       </motion.div>
 
@@ -70,10 +70,10 @@ export function MarketingHero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.25 }}
       >
-        Secure your{" "}
-        <span style={{ color: "var(--accent)" }}>MCP servers</span>
+        Turn prompts into{" "}
+        <span style={{ color: "var(--accent)" }}>MCP-powered</span>
         <br />
-        before your agents use them.
+        workflows.
       </motion.h1>
 
       {/* Sub */}
@@ -84,7 +84,7 @@ export function MarketingHero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.4 }}
       >
-        Torqa scans MCP tools, detects unsafe permissions, secrets, missing validation, and risky execution paths — then generates hardened configs with deterministic safe defaults.
+        Describe what you want done. Torqa maps the required MCP tools, builds a structured workflow plan, adds approval points, and exports a plan your AI tools can use.
       </motion.p>
 
       {/* CTAs */}
@@ -95,18 +95,18 @@ export function MarketingHero() {
         transition={{ duration: 0.8, delay: 0.55 }}
       >
         <Link
-          href="/scan"
+          href="/demo/mcp-workflow-builder"
           className="rounded-lg px-6 py-3 text-[14px] font-semibold transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "#fff" }}
         >
-          Scan MCP config
+          Build demo workflow
         </Link>
         <Link
-          href="/scan?sample=unsafe_mcp&source=mcp"
+          href="/scan"
           className="rounded-lg border px-6 py-3 text-[14px] font-medium transition-colors hover:opacity-80"
           style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
         >
-          Try unsafe demo
+          Scan MCP tools
         </Link>
       </motion.div>
 

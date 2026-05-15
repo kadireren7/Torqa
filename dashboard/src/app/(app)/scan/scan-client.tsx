@@ -487,7 +487,7 @@ export function ScanPageClient() {
                 View local reports →
               </Link>
               <Link href="/policies" className="font-medium text-primary hover:underline">
-                Hardening policies →
+                Tool safety policies →
               </Link>
             </p>
           </div>
@@ -985,7 +985,7 @@ export function ScanPageClient() {
                 <CardDescription>
                   {hasSupabase
                     ? "Review findings, apply fixes, and export a hardened config for your agents."
-                    : "Browse hardening policies or scan another MCP config. Local reports are saved in your browser."}
+                    : "Browse tool safety policies or scan another MCP tool config. Local reports are saved in your browser."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">

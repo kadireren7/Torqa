@@ -11,12 +11,9 @@ const MINIMAL_N8N = JSON.stringify({
 });
 
 test.describe("scan flow", () => {
-  test("overview demo path reaches a first report", async ({ page }) => {
-    await page.goto("/overview");
+  test("MCP tool preflight demo path reaches a first report", async ({ page }) => {
+    await page.goto("/scan?sample=unsafe_mcp&source=mcp");
 
-    await page.getByRole("link", { name: /try unsafe mcp demo/i }).first().click();
-
-    await page.waitForURL(/\/scan/);
     await expect(page.getByRole("heading", { name: "Scan" }).first()).toBeVisible();
     await expect(page.getByText(/unsafe mcp demo loaded/i)).toBeVisible();
 
