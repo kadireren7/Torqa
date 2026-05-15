@@ -8,8 +8,8 @@ import { OverviewClient } from "./overview-client";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Home",
-  description: "Connect sources, monitor workflows, enforce policies continuously.",
+  title: "Console",
+  description: "Turn prompts into MCP-powered workflows. Scan tools, enforce safety policies, generate execution plans.",
 };
 
 type DecisionRow = {
