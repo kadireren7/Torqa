@@ -3,8 +3,14 @@ import { Suspense } from "react";
 import { ScanPageClient } from "./scan-client";
 
 export const metadata: Metadata = {
-  title: "Scan",
-  description: "Run a workflow security scan and review findings.",
+  title: "Scan MCP Config",
+  description:
+    "Upload or paste your MCP server config. Torqa runs a deterministic security scan and guides you through fixing unsafe tools, exposed secrets, and risky permissions.",
+  openGraph: {
+    title: "Scan MCP Config — Torqa",
+    description:
+      "Deterministic MCP server security scanner. Detect unsafe tools, exposed secrets, and missing validation. Export hardened configs.",
+  },
 };
 
 function ScanFallback() {

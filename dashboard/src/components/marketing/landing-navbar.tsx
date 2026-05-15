@@ -17,6 +17,7 @@ const NAV_LINKS = [
   { label: "Platform",     href: "#features" },
   { label: "How it works", href: "#how" },
   { label: "Metrics",      href: "#metrics" },
+  { label: "Pricing",      href: "/pricing" },
 ];
 
 type Props = { user: LandingNavbarUser };
@@ -133,11 +134,18 @@ export function LandingNavbar({ user }: Props) {
                   Sign in
                 </Link>
                 <Link
-                  href="/login"
+                  href="/waitlist"
+                  className="rounded-lg border px-4 py-2 text-[13px] font-medium transition-colors duration-150 hover:opacity-80"
+                  style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
+                >
+                  Join early access
+                </Link>
+                <Link
+                  href="/scan"
                   className="rounded-lg px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-90"
                   style={{ background: "var(--accent)", color: "#fff" }}
                 >
-                  Get started
+                  Scan MCP config
                 </Link>
               </>
             )}
@@ -207,12 +215,20 @@ export function LandingNavbar({ user }: Props) {
           ) : (
             <>
               <Link
-                href="/login"
+                href="/scan"
                 className="rounded-lg px-3 py-2.5 text-[14px] font-semibold text-center transition-opacity hover:opacity-90"
                 style={{ background: "var(--accent)", color: "#fff" }}
                 onClick={() => setMobileOpen(false)}
               >
-                Get started free
+                Scan MCP config
+              </Link>
+              <Link
+                href="/waitlist"
+                className="rounded-lg border px-3 py-2.5 text-[14px] font-medium text-center transition-colors hover:opacity-80"
+                style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
+                onClick={() => setMobileOpen(false)}
+              >
+                Join early access
               </Link>
               <Link
                 href="/login"
