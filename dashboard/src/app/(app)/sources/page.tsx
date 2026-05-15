@@ -142,7 +142,7 @@ export default function SourcesPage() {
         icon={FileJson2}
         title="Start with any MCP config"
         description="Upload a local config, paste JSON, or load the unsafe MCP demo to see Torqa's scanner in action."
-        primary={{ href: "/scan", label: "Scan MCP config" }}
+        primary={{ href: "/scan", label: "Scan MCP tools" }}
         secondary={{ href: "/scan?sample=unsafe_mcp&source=mcp", label: "Try unsafe demo" }}
         className="border-border/60 bg-muted/20"
       />

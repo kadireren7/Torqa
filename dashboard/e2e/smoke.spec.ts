@@ -35,9 +35,9 @@ test.describe("public smoke", () => {
 test.describe("local mode (no Supabase in CI)", () => {
   test("overview is reachable when middleware skips auth", async ({ page }) => {
     await page.goto("/overview");
-    await expect(page.getByRole("heading", { name: /mcp security console/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /scan mcp config/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /try unsafe mcp demo/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /mcp workflow console/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /scan mcp tools/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /build demo workflow/i }).first()).toBeVisible();
     await expect(page.getByText(/local demo mode/i).first()).toBeVisible();
   });
 });

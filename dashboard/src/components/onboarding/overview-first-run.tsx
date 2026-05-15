@@ -26,31 +26,32 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
   const firstScanDone = savedReportsAllTime > 0;
   const startPaths: StartPath[] = [
     {
+      id: "build",
+      label: "Build workflow",
+      href: "/demo/mcp-workflow-builder",
+      desc: "Describe an automation in plain English and get a structured MCP workflow plan with tool selection, approval points, and exportable JSON.",
+      Icon: Play,
+      badge: "new",
+    },
+    {
       id: "scan",
-      label: "Scan MCP config",
+      label: "Scan MCP tools",
       href: "/scan",
-      desc: "Upload or paste your MCP server config JSON to detect unsafe tools, exposed secrets, and risky permissions.",
+      desc: "Upload or paste your MCP server config JSON to detect unsafe tools, exposed secrets, and risky permissions before using them in workflows.",
       Icon: FileJson2,
     },
     {
-      id: "demo",
-      label: "Try unsafe MCP demo",
-      href: "/scan?sample=unsafe_mcp&source=mcp",
-      desc: "Loads an intentionally vulnerable MCP config so you can see real findings right away.",
+      id: "reports",
+      label: "Workflow reports",
+      href: "/reports",
+      desc: "Browse scan reports and workflow plans saved in your browser. No account needed — all local.",
       Icon: Shield,
     },
     {
-      id: "reports",
-      label: "View local reports",
-      href: "/reports",
-      desc: "Browse scan reports saved in your browser. No account needed — all local.",
-      Icon: Play,
-    },
-    {
       id: "policies",
-      label: "Hardening policies",
+      label: "Tool safety policies",
       href: "/policies",
-      desc: "Browse built-in policy templates: command allowlists, filesystem boundaries, secret handling.",
+      desc: "Browse built-in policy templates: approval gates, risky tools, secret handling, filesystem and network access.",
       Icon: BookOpen,
     },
   ];
@@ -60,14 +61,14 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
       <CardHeader className="pb-4">
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle className="text-lg font-semibold">
-            {firstScanDone ? "First scan complete" : "Scan your first MCP config in under 2 minutes"}
+            {firstScanDone ? "First scan complete" : "Build an MCP workflow or scan tools in under 2 minutes"}
           </CardTitle>
           <Badge variant="secondary">{cloud ? "Cloud mode" : "Local demo mode"}</Badge>
         </div>
         <CardDescription className="max-w-2xl">
           {firstScanDone
-            ? "You have a report. Run another scan or browse hardening policies to reduce your MCP attack surface further."
-            : "Torqa scans MCP server configs, detects unsafe tools and exposed secrets, then guides you through hardening before AI agents use them."}
+            ? "You have a report. Build a workflow, run another scan, or browse tool safety policies."
+            : "Torqa turns plain-English automation requests into structured MCP workflow plans, then scans tool configs to surface unsafe permissions and secrets before execution."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -105,7 +106,7 @@ export function OverviewFirstRun({ mode, savedReportsAllTime, onboarding }: Prop
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/scan" className="text-xs font-medium text-primary hover:underline">
-              Scan MCP config
+              Scan MCP tools
             </Link>
             {!cloud ? (
               <Link href="/waitlist" className="text-xs font-medium text-primary hover:underline">

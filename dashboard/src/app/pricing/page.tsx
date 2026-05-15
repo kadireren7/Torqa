@@ -9,11 +9,11 @@ import { Badge } from "@/components/ui/badge";
 export const metadata: Metadata = {
   title: "Pricing | Torqa",
   description:
-    "Start free with the local MCP scanner. Paid plans coming soon for teams that need more scan quota, cloud history, and continuous governance.",
+    "Start free with the local MCP workflow builder and tool scanner. Paid plans coming soon for teams that need saved history, real MCP discovery, and shared workflow libraries.",
   openGraph: {
     title: "Pricing — Torqa",
     description:
-      "Free local demo. Paid plans coming soon. Scan MCP configs, enforce policies, and export hardened configs.",
+      "Free local demo. Build simulated MCP workflow plans, run MCP tool scans, and export local reports. Paid plans coming soon.",
     url: "/pricing",
     type: "website",
   },
@@ -27,14 +27,14 @@ const TIERS = [
     description:
       "Try Torqa instantly in your browser. No signup, no data leaves your machine.",
     features: [
-      "3 scans per day",
-      "1 hardening session per day",
-      "Local reports only (browser storage)",
-      "MCP + AI agent scanning",
+      "Build simulated MCP workflow plans",
+      "Run limited MCP tool scans",
+      "Export local workflow plan JSON",
+      "Copy Claude/Cursor prompts",
+      "Export local reports",
       "Fix guidance for each finding",
-      "Unsafe MCP demo config included",
     ],
-    cta: { label: "Get started free", href: "/scan", accent: true },
+    cta: { label: "Build demo workflow", href: "/demo/mcp-workflow-builder", accent: true },
     comingSoon: false,
     highlight: true,
   },
@@ -43,11 +43,11 @@ const TIERS = [
     price: "Free",
     priceNote: "Coming soon",
     description:
-      "A free account with more scan quota and cloud-backed report history.",
+      "A free account with saved workflow history and real MCP tool discovery.",
     features: [
-      "25 scans per month",
-      "5 hardening sessions per month",
-      "10 saved reports",
+      "More workflow plans",
+      "Saved workflow history",
+      "Real MCP tool discovery",
       "Cloud report history",
       "Source connections (GitHub, n8n)",
     ],
@@ -60,14 +60,14 @@ const TIERS = [
     price: "$19",
     priceNote: "/ month · coming soon",
     description:
-      "For developers and security teams that run continuous governance on their automation stack.",
+      "For developers who need saved history, export packs, and CI gate integration.",
     features: [
-      "500 scans per month",
-      "100 hardening sessions per month",
-      "Full report history",
-      "Patch export (GitHub PR generator)",
+      "More workflow plans",
+      "Saved workflow history",
+      "Real MCP tool discovery",
+      "Export packs (JSON, Claude prompt)",
       "CI gate integration",
-      "Policy packs",
+      "Tool safety policy packs",
       "Priority support",
     ],
     cta: { label: "Coming soon", href: "#", accent: false },
@@ -79,14 +79,14 @@ const TIERS = [
     price: "Custom",
     priceNote: "Contact us",
     description:
-      "For organizations that need shared workspaces, audit logs, and enterprise policy management.",
+      "For teams that need shared workflow libraries, approval policies, and GitHub/MCP integrations.",
     features: [
-      "Unlimited scans",
-      "Team workspace",
-      "Shared policies and playbooks",
+      "Shared workflow library",
+      "Approval policies",
+      "Team reports",
+      "GitHub/MCP integrations",
       "Audit logs",
       "SSO (OIDC)",
-      "Compliance reports (SOC2, ISO 27001)",
       "Dedicated support",
     ],
     cta: { label: "Coming soon", href: "#", accent: false },
@@ -365,18 +365,18 @@ export default async function PricingPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
-                href="/scan"
+                href="/demo/mcp-workflow-builder"
                 className="rounded-lg px-6 py-3 text-[14px] font-semibold transition-opacity hover:opacity-90"
                 style={{ background: "var(--accent)", color: "#fff" }}
               >
-                Scan MCP config
+                Build demo workflow
               </Link>
               <Link
-                href="/scan?sample=unsafe_mcp&source=mcp"
+                href="/scan"
                 className="rounded-lg border px-6 py-3 text-[14px] font-medium transition-colors hover:opacity-80"
                 style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
               >
-                Try unsafe demo
+                Scan MCP tools
               </Link>
             </div>
           </div>

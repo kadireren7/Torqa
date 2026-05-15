@@ -105,9 +105,9 @@ export default function ReportsPage() {
     <div className="space-y-10 pb-10">
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Reports</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Local Reports</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Workflow Reports</h1>
         <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-          MCP scan reports saved in your browser. Each report contains findings, risk score, fix guidance, and a hardened config export.
+          MCP tool scan reports and workflow plans saved locally. Each report contains findings, risk score, fix guidance, and safety notes.
         </p>
       </div>
 

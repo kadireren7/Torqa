@@ -4,8 +4,8 @@
 
 <h1>Torqa</h1>
 
-<p><strong>Security copilot for MCP servers and AI agents.</strong><br />
-Torqa scans MCP server configs, tool manifests, and agent definitions. Detects risky permissions, exposed secrets, and unsafe capabilities — then guides you through the fix.</p>
+<p><strong>Open-source Prompt-to-MCP Workflow Builder.</strong><br />
+Torqa turns plain-English automation requests into structured MCP workflow plans with tool selection, approval points, safety notes, and exportable JSON. It also scans MCP tool configs to detect unsafe permissions, exposed secrets, and risky capabilities before use.</p>
 
 <br />
 
@@ -26,7 +26,7 @@ Torqa scans MCP server configs, tool manifests, and agent definitions. Detects r
 
 ## What Torqa Is
 
-Torqa is a security copilot for MCP servers and AI agents.
+Torqa is an open-source Prompt-to-MCP Workflow Builder experiment. It turns plain-English automation requests into structured MCP workflow plans with tool selection, approval points, safety notes, and exportable JSON.
 
 It does **not** execute agents or tools. It inspects your MCP server config, tool manifest, or agent definition — before you deploy — and returns deterministic findings:
 

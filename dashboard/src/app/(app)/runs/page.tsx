@@ -48,7 +48,7 @@ export default async function RunsPage() {
           title="Cloud storage not configured"
           description="Set Supabase env vars to persist scan history. Local scans are still visible on the Reports page."
           primary={{ href: "/overview", label: "Console" }}
-          secondary={{ href: "/scan", label: "Scan MCP config" }}
+          secondary={{ href: "/scan", label: "Scan MCP tools" }}
         />
       </div>
     );
@@ -96,7 +96,7 @@ export default async function RunsPage() {
             </p>
           </div>
           <Button asChild size="sm">
-            <Link href="/scan">Scan MCP config</Link>
+            <Link href="/scan">Scan MCP tools</Link>
           </Button>
         </div>
       </FadeUp>
@@ -107,7 +107,7 @@ export default async function RunsPage() {
             icon={Play}
             title="No scan history yet"
             description="Scan an MCP config to generate your first report. History is saved here for cloud-connected accounts."
-            primary={{ href: "/scan", label: "Scan MCP config" }}
+            primary={{ href: "/scan", label: "Scan MCP tools" }}
             secondary={{ href: "/scan?sample=unsafe_mcp&source=mcp", label: "Try unsafe demo" }}
             className="border-border/60 bg-muted/20"
           />
