@@ -127,7 +127,7 @@ export function MarketingProductDemo() {
                     className={cn(
                       f.severity === "critical" && "border-rose-500/40 bg-rose-500/10 text-rose-200",
                       f.severity === "review" && "border-amber-500/40 bg-amber-500/10 text-amber-200",
-                      f.severity === "info" && "border-slate-500/40 bg-slate-500/10 text-slate-200"
+                      !["critical","review"].includes(f.severity) && "border-slate-500/40 bg-slate-500/10 text-slate-200"
                     )}
                   >
                     {f.severity}

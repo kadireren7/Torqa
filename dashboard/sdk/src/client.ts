@@ -255,7 +255,7 @@ export class TorqaClient {
     return {
       "x-api-key": this.apiKey,
       accept: "application/json",
-      "user-agent": this.extraHeaders["user-agent"] ?? "torqa-sdk/0.2.1",
+      "user-agent": this.extraHeaders["user-agent"] ?? "torqa-sdk/0.3.0",
       ...this.extraHeaders,
     };
   }

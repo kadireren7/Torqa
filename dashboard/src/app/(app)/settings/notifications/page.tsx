@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Loader2, Mail, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,12 +102,24 @@ export default function NotificationSettingsPage() {
     <div className="mx-auto max-w-2xl space-y-8 pb-10">
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Settings</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Scan alerts</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Scan alerts</h1>
+          {!useCloud ? <Badge variant="secondary">Local only</Badge> : null}
+        </div>
         <p className="mt-2 text-sm text-muted-foreground">
           Control in-app alerts after a workflow scan. Email and Slack are wired as placeholders until you connect a
           provider.
         </p>
       </div>
+
+      {!useCloud ? (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="pt-5 text-sm text-amber-200/85">
+            Preferences are stored in this browser only until cloud mode is enabled. Email and Slack delivery remain
+            placeholder surfaces here.
+          </CardContent>
+        </Card>
+      ) : null}
 
       {message && (
         <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-sm text-foreground">{message}</p>

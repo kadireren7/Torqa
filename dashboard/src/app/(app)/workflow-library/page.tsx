@@ -257,12 +257,17 @@ export default function WorkflowLibraryPage() {
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Library</p>
-            <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/25">
                 <Library className="h-5 w-5" aria-hidden />
               </span>
-              Workflow library
-            </h1>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Workflow library</h1>
+              {!useCloudLibrary ? (
+                <Badge variant="secondary" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                  Local only
+                </Badge>
+              ) : null}
+            </div>
             <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
               Save exports here, then{" "}
               <Link href="/scan" className="font-medium text-primary underline-offset-4 hover:underline">

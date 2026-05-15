@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Bell, Bot, ClipboardList, Code2, Cpu, Gauge, KeyRound, ScrollText, ShieldCheck, Store, Users, Webhook } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
@@ -86,7 +87,7 @@ export default function SettingsPage() {
               Notifications
             </CardTitle>
             <CardDescription>
-              Personal scan alert preferences — email, in-app thresholds, and mute rules.
+              Personal scan alert preferences. Email and Slack delivery stay partial until provider wiring is configured.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -166,7 +167,7 @@ export default function SettingsPage() {
               SSO / Identity
             </CardTitle>
             <CardDescription>
-              Single sign-on via OIDC. Configure your IdP connection and domain restrictions.
+              OIDC configuration and callback testing for supported identity providers.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -180,10 +181,9 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      {/* Advanced / integrations */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Advanced</p>
-        <p className="mt-1 text-sm text-muted-foreground">API, integrations, and developer tools.</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Developer</p>
+        <p className="mt-1 text-sm text-muted-foreground">API, audit, and integration setup paths used in the public alpha.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -210,31 +210,41 @@ export default function SettingsPage() {
         <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <ScrollText className="h-4 w-4 text-primary" />
-              Audit Log
+              <Cpu className="h-4 w-4 text-primary" />
+              MCP Server
             </CardTitle>
             <CardDescription>
-              Full event trail — governance decisions, API key usage, source connections, policy changes.
+              Connect Claude or any MCP-compatible AI assistant to Torqa&apos;s governance engine via JSON-RPC 2.0.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/audit">
-                View audit log
+              <Link href="/mcp">
+                MCP setup
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
           </CardContent>
         </Card>
+      </div>
 
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Preview</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Functional evaluation surfaces that are still early and not core setup paths for the public alpha.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Store className="h-4 w-4 text-primary" />
               Policy Marketplace
+              <Badge variant="secondary" className="ml-1">Preview</Badge>
             </CardTitle>
             <CardDescription>
-              Browse, install, and publish governance policy packs shared by the community.
+              Pack browsing and installs are available for evaluation; publishing and curation workflows are still early.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -252,9 +262,10 @@ export default function SettingsPage() {
             <CardTitle className="flex items-center gap-2 text-base">
               <Bot className="h-4 w-4 text-primary" />
               Agent Runtime
+              <Badge variant="secondary" className="ml-1">Preview</Badge>
             </CardTitle>
             <CardDescription>
-              Real-time policy evaluation for AI agent events. Test the governance engine interactively.
+              Interactive policy-event evaluator for testing agent governance rules and example payloads.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -270,17 +281,17 @@ export default function SettingsPage() {
         <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Cpu className="h-4 w-4 text-primary" />
-              MCP Server
+              <ScrollText className="h-4 w-4 text-primary" />
+              Audit Explorer
             </CardTitle>
             <CardDescription>
-              Connect Claude or any MCP-compatible AI assistant to Torqa&apos;s governance engine via JSON-RPC 2.0.
+              Broader audit trail view for governance events, source activity, and exportable evidence.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/mcp">
-                MCP setup
+              <Link href="/audit">
+                Open explorer
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>

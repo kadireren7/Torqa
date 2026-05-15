@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrganizationId } from "@/lib/workspace-scope";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { MOCK_HOME_DASHBOARD } from "./home-mock";
 import type { HomeDashboardData, HomeOnboardingCounts, HomeRecentScan, RiskTrendPoint } from "./types";
 
 type ScanHistoryRow = {
@@ -232,12 +233,12 @@ const EMPTY_HOME: HomeDashboardData = {
  */
 export async function getHomeDashboardData(): Promise<HomeDashboardData> {
   if (!isSupabaseConfigured()) {
-    return EMPTY_HOME;
+    return MOCK_HOME_DASHBOARD;
   }
 
   const supabase = await createClient();
   if (!supabase) {
-    return EMPTY_HOME;
+    return MOCK_HOME_DASHBOARD;
   }
 
   const {

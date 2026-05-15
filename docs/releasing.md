@@ -16,7 +16,7 @@ Torqa follows **[Semantic Versioning 2.0.0](https://semver.org/)** with the usua
 | **MINOR** (`y`) | New features, new CLI subcommands or flags (backward-compatible where reasonable), non-breaking trust tuning that stays within documented behavior. |
 | **PATCH** (`z`) | Bug fixes, docs, performance, internal refactors with no intended user-visible behavior change. |
 
-**Pre-releases** (optional): tag `v0.2.0a1` or `v0.2.0rc1` for testers; `pip` orders them correctly before final `v0.2.0`.
+**Pre-releases** (optional): tag `v0.3.0a1` or `v0.3.0rc1` for testers; `pip` orders them correctly before final `v0.3.0`.
 
 **After 1.0.0:** follow strict SemVer — breaking CLI or bundle contract → **MAJOR** bump.
 
@@ -47,9 +47,9 @@ We follow **[Keep a Changelog](https://keepachangelog.com/)** (see `CHANGELOG.md
 1. **Branch hygiene:** merge to `main`, CI green.
 2. **Version bump:** edit `pyproject.toml` `version = "x.y.z"`.
 3. **Changelog:** move `[Unreleased]` → `[x.y.z]`, add new `[Unreleased]`, update compare links.
-4. **Commit:** e.g. `chore: release 0.1.1`.
-5. **Tag:** `git tag -s v0.1.1 -m "Release 0.1.1"` (signing optional but recommended).
-6. **Push:** `git push origin main && git push origin v0.1.1`.
+4. **Commit:** e.g. `chore: release 0.3.0`.
+5. **Tag:** `git tag -s v0.3.0 -m "Release 0.3.0"` (signing optional but recommended).
+6. **Push:** `git push origin main && git push origin v0.3.0`.
 
 The **[Release](../.github/workflows/release.yml)** workflow builds with `python -m build`, uploads **`dist/`** as a GitHub Actions artifact, then publishes to **PyPI** using **OIDC** by default (no long-lived API token if Trusted Publishing is configured).
 
@@ -82,7 +82,7 @@ Documented in the README **Install** section:
 - **`pip install torqa`** — once published on PyPI.
 - **`pipx install torqa`** — isolated CLI on `$PATH`.
 - **`uv tool install torqa`** / **`uv pip install torqa`** — fast resolver paths.
-- **From Git:** `pip install "git+https://github.com/ORG/REPO.git@v0.1.0"`.
+- **From Git:** `pip install "git+https://github.com/ORG/REPO.git@v0.3.0"`.
 
 ---
 

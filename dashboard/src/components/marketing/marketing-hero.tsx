@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { docsUrl, githubUrl } from "@/lib/marketing-content";
 
-const SCAN_ROWS = [
-  { name: "billing_automation",  source: "n8n",     score: 91, status: "APPROVED", ok: true  },
-  { name: "customer_support_v2", source: "n8n",     score: 68, status: "REVIEW",   ok: false },
-  { name: "onboarding_flow",     source: "webhook", score: 88, status: "APPROVED", ok: true  },
-  { name: "data_sync_prod",      source: "github",  score: 94, status: "APPROVED", ok: true  },
+const DEMO_FINDINGS = [
+  { label: "filesystem.write — unrestricted path access", severity: "critical" },
+  { label: "shell.exec — no input validation", severity: "critical" },
+  { label: "Hardcoded API key in tool env", severity: "critical" },
+  { label: "Tool scope broader than declared intent", severity: "review" },
 ];
 
-const FIX_ITEMS = [
-  { rule: "credential_in_env", sev: "HIGH",   fix: "Move to vault reference" },
-  { rule: "no_error_handler",  sev: "MEDIUM", fix: "Wrap node in try-catch" },
-];
+const SEV_COLORS: Record<string, string> = {
+  critical: "var(--red, #ef4444)",
+  review: "var(--amber, #f59e0b)",
+};
 
 export function MarketingHero() {
   const reduce = useReducedMotion();
@@ -34,7 +35,6 @@ export function MarketingHero() {
         }}
         aria-hidden
       />
-      {/* Fade grid edges */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -42,76 +42,118 @@ export function MarketingHero() {
         }}
         aria-hidden
       />
-      {/* Accent glow */}
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 blur-[80px]"
         style={{ background: "radial-gradient(ellipse, var(--accent-glow), transparent 60%)" }}
         aria-hidden
       />
 
-      {/* Live badge */}
+      {/* Badge */}
       <motion.div
         className="relative mb-10 flex items-center gap-2 rounded-full px-3.5 py-1.5"
-        style={{
-          border: "1px solid var(--line-2)",
-          background: "var(--overlay-sm)",
-        }}
+        style={{ border: "1px solid var(--line-2)", background: "var(--overlay-sm)" }}
         initial={reduce ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.1 }}
       >
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--emerald)", boxShadow: "0 0 8px var(--emerald)" }} />
         <span className="font-mono text-[11px] uppercase tracking-[0.1em]" style={{ color: "var(--fg-3)" }}>
-          Governing 12,408 workflows live
+          Public alpha · MCP + AI agent security
         </span>
       </motion.div>
 
       {/* Headline */}
       <motion.h1
         className="relative mb-6 max-w-[900px] text-center font-bold leading-[1.0] tracking-[-0.04em]"
-        style={{ fontSize: "clamp(44px, 7.5vw, 88px)", color: "var(--fg-1)" }}
+        style={{ fontSize: "clamp(40px, 7vw, 84px)", color: "var(--fg-1)" }}
         initial={reduce ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.25 }}
       >
-        Scan. Fix. Govern.
+        Secure your{" "}
+        <span style={{ color: "var(--accent)" }}>MCP servers</span>
         <br />
-        <span style={{ color: "var(--fg-3)" }}>Every automation.</span>
+        before your agents use them.
       </motion.h1>
 
       {/* Sub */}
       <motion.p
-        className="relative mb-10 max-w-[520px] text-center text-[16px] leading-[1.65]"
+        className="relative mb-10 max-w-[560px] text-center text-[16px] leading-[1.65]"
         style={{ color: "var(--fg-3)" }}
         initial={reduce ? false : { opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.4 }}
       >
-        Torqa inspects every workflow, proposes fixes for every finding, and enforces
-        your policies — before anything reaches production.
+        Torqa scans MCP tools, detects unsafe permissions, secrets, missing validation, and risky execution paths — then generates hardened configs with deterministic safe defaults.
       </motion.p>
 
       {/* CTAs */}
       <motion.div
-        className="relative mb-16 flex flex-wrap justify-center gap-3"
+        className="relative mb-4 flex flex-wrap justify-center gap-3"
         initial={reduce ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.55 }}
       >
         <Link
-          href="/login"
+          href="/scan"
           className="rounded-lg px-6 py-3 text-[14px] font-semibold transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "#fff" }}
         >
-          Get started free
+          Scan MCP config
         </Link>
         <Link
-          href="/demo/report"
+          href="/scan?sample=unsafe_mcp&source=mcp"
           className="rounded-lg border px-6 py-3 text-[14px] font-medium transition-colors hover:opacity-80"
           style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
         >
-          View live demo
+          Try unsafe demo
         </Link>
+      </motion.div>
+
+      <motion.div
+        className="relative mb-8 flex justify-center"
+        initial={reduce ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.62 }}
+      >
+        <Link
+          href="/waitlist"
+          className="flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-80"
+          style={{
+            background: "var(--overlay-sm)",
+            border: "1px solid var(--line-2)",
+            color: "var(--fg-3)",
+          }}
+        >
+          <span
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ background: "var(--accent)", boxShadow: "0 0 6px var(--accent)" }}
+            aria-hidden
+          />
+          Join early access — get notified when accounts open
+        </Link>
+      </motion.div>
+
+      <motion.div
+        className="relative mb-14 flex flex-wrap items-center justify-center gap-2 text-[12px]"
+        style={{ color: "var(--fg-4)" }}
+        initial={reduce ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.68 }}
+      >
+        <span
+          className="rounded-full px-3 py-1"
+          style={{ background: "var(--overlay-sm)", border: "1px solid var(--line)" }}
+        >
+          No external AI calls in the scan path. Deterministic. Local-first demo.
+        </span>
+        <a href={docsUrl} target="_blank" rel="noreferrer" className="hover:opacity-80 ml-2">
+          Read docs
+        </a>
+        <span aria-hidden>·</span>
+        <a href={githubUrl} target="_blank" rel="noreferrer" className="hover:opacity-80">
+          GitHub
+        </a>
       </motion.div>
 
       {/* Product preview */}
@@ -121,7 +163,6 @@ export function MarketingHero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.1, delay: 0.7 }}
       >
-        {/* Card glow */}
         <div
           className="pointer-events-none absolute -inset-px rounded-2xl blur-2xl"
           style={{ background: "radial-gradient(ellipse 60% 30% at 50% 0%, var(--accent-glow), transparent)" }}
@@ -144,18 +185,18 @@ export function MarketingHero() {
                 ))}
               </div>
               <span className="font-mono text-[11px]" style={{ color: "var(--fg-4)" }}>
-                torqa · governance console
+                torqa · mcp security scan
               </span>
             </div>
             <div
               className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
               style={{
-                border: "1px solid color-mix(in srgb, var(--emerald) 25%, transparent)",
-                background: "color-mix(in srgb, var(--emerald) 8%, transparent)",
+                border: "1px solid color-mix(in srgb, #ef4444 30%, transparent)",
+                background: "color-mix(in srgb, #ef4444 8%, transparent)",
               }}
             >
-              <span className="h-[5px] w-[5px] rounded-full" style={{ background: "var(--emerald)" }} />
-              <span className="font-mono text-[10px]" style={{ color: "var(--emerald)" }}>LIVE · scanning</span>
+              <span className="h-[5px] w-[5px] rounded-full" style={{ background: "#ef4444" }} />
+              <span className="font-mono text-[10px]" style={{ color: "#ef4444" }}>RISK · 3 critical findings</span>
             </div>
           </div>
 
@@ -164,79 +205,57 @@ export function MarketingHero() {
             className="grid grid-cols-1 gap-px md:grid-cols-[1fr_300px]"
             style={{ background: "var(--line)" }}
           >
-            {/* Left — scans */}
+            {/* Left — findings */}
             <div className="p-5" style={{ background: "var(--surface-1)" }}>
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-[12px] font-medium" style={{ color: "var(--fg-2)" }}>Recent scans</span>
-                <span className="font-mono text-[10px]" style={{ color: "var(--fg-4)" }}>4 workflows · 2 sources</span>
+                <span className="text-[12px] font-medium" style={{ color: "var(--fg-2)" }}>Scan findings</span>
+                <span className="font-mono text-[10px]" style={{ color: "var(--fg-4)" }}>unsafe-mcp-server · 4 issues</span>
               </div>
               <div className="space-y-2">
-                {SCAN_ROWS.map((row) => (
+                {DEMO_FINDINGS.map((f) => (
                   <div
-                    key={row.name}
+                    key={f.label}
                     className="flex items-center justify-between rounded-lg px-3.5 py-2.5"
-                    style={{
-                      border: `1px solid ${row.ok ? "var(--line)" : "color-mix(in srgb, var(--rose) 20%, transparent)"}`,
-                      background: row.ok ? "var(--overlay-sm)" : "color-mix(in srgb, var(--rose) 4%, transparent)",
-                    }}
+                    style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)" }}
                   >
-                    <div className="min-w-0">
-                      <p className="font-mono text-[12px]" style={{ color: "var(--fg-1)" }}>{row.name}</p>
-                      <p className="text-[10px]" style={{ color: "var(--fg-4)" }}>{row.source}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono tabular-nums text-[12px]" style={{ color: "var(--fg-3)" }}>{row.score}</span>
-                      <span
-                        className="rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold uppercase"
-                        style={{
-                          color: row.ok ? "var(--emerald)" : "var(--rose)",
-                          background: row.ok
-                            ? "color-mix(in srgb, var(--emerald) 10%, transparent)"
-                            : "color-mix(in srgb, var(--rose) 10%, transparent)",
-                        }}
-                      >
-                        {row.status}
-                      </span>
-                    </div>
+                    <p className="min-w-0 truncate font-mono text-[11px]" style={{ color: "var(--fg-2)" }}>
+                      {f.label}
+                    </p>
+                    <span
+                      className="ml-3 shrink-0 rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold uppercase"
+                      style={{
+                        color: SEV_COLORS[f.severity],
+                        background: `color-mix(in srgb, ${SEV_COLORS[f.severity]} 10%, transparent)`,
+                      }}
+                    >
+                      {f.severity}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right — fix proposals */}
+            {/* Right — next actions */}
             <div className="p-5" style={{ background: "var(--surface-1)" }}>
               <div className="mb-3">
-                <span className="text-[12px] font-medium" style={{ color: "var(--fg-2)" }}>Fix proposals</span>
-                <p className="mt-0.5 text-[10px]" style={{ color: "var(--fg-4)" }}>customer_support_v2</p>
+                <span className="text-[12px] font-medium" style={{ color: "var(--fg-2)" }}>What you get</span>
+                <p className="mt-0.5 text-[10px]" style={{ color: "var(--fg-4)" }}>Deterministic report + fix guidance</p>
               </div>
               <div className="space-y-2">
-                {FIX_ITEMS.map((f) => (
+                {[
+                  { label: "Risk score with rule-level breakdown", tone: "var(--emerald)" },
+                  { label: "Fix guidance for each finding", tone: "var(--amber)" },
+                  { label: "Re-scan to verify before/after score", tone: "var(--accent)" },
+                ].map((item) => (
                   <div
-                    key={f.rule}
+                    key={item.label}
                     className="rounded-lg p-3"
                     style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)" }}
                   >
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <span
-                        className="rounded px-1.5 py-0.5 font-mono text-[9px] font-bold"
-                        style={{
-                          color: f.sev === "HIGH" ? "var(--rose)" : "var(--amber)",
-                          background: f.sev === "HIGH"
-                            ? "color-mix(in srgb, var(--rose) 10%, transparent)"
-                            : "color-mix(in srgb, var(--amber) 10%, transparent)",
-                        }}
-                      >
-                        {f.sev}
-                      </span>
-                      <code className="font-mono text-[10px]" style={{ color: "var(--fg-3)" }}>{f.rule}</code>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.tone }} />
+                      <p className="text-[11px] leading-relaxed" style={{ color: "var(--fg-3)" }}>{item.label}</p>
                     </div>
-                    <p className="text-[11px]" style={{ color: "var(--fg-3)" }}>{f.fix}</p>
-                    <button
-                      className="mt-2 rounded-md px-2.5 py-1 text-[10px] font-medium transition-colors"
-                      style={{ border: "1px solid var(--line-2)", color: "var(--fg-2)" }}
-                    >
-                      Apply fix →
-                    </button>
                   </div>
                 ))}
               </div>
@@ -244,10 +263,9 @@ export function MarketingHero() {
                 className="mt-3 rounded-lg p-3 text-center"
                 style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)" }}
               >
-                <p className="text-[11px]" style={{ color: "var(--fg-4)" }}>1 more finding</p>
-                <button className="mt-1 text-[11px] transition-colors" style={{ color: "var(--fg-3)" }}>
-                  View all →
-                </button>
+                <p className="text-[11px]" style={{ color: "var(--fg-4)" }}>
+                  Connect a real MCP server or paste a config to start.
+                </p>
               </div>
             </div>
           </div>

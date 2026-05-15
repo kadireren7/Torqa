@@ -473,7 +473,7 @@ export function InsightsPageClient() {
               {data.policyOutcomes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No policy evaluations in this slice. Run scans with a policy from{" "}
-                  <Link href="/scan" className="text-primary underline-offset-2 hover:underline">
+                  <Link href="/scan" className="font-medium text-primary underline decoration-current underline-offset-2">
                     /scan
                   </Link>{" "}
                   or schedules.

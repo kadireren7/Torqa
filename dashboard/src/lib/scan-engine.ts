@@ -13,6 +13,7 @@ import type { PolicyV2EvaluationResult } from "@/lib/governance/policy-v2/types"
 import { analyzeMake } from "@/lib/scan/adapters/make";
 import { analyzeZapier } from "@/lib/scan/adapters/zapier";
 import { analyzeLambda } from "@/lib/scan/adapters/lambda";
+import { analyzeMcp } from "@/lib/scan/adapters/mcp";
 
 export type ScanSeverity = "info" | "review" | "high" | "critical";
 
@@ -52,7 +53,8 @@ export type ScanSource =
   | "ai-agent"
   | "make"
   | "zapier"
-  | "lambda";
+  | "lambda"
+  | "mcp";
 
 export type ScanTotals = {
   high: number;
@@ -892,6 +894,8 @@ export function runScanAnalysis(raw: unknown, source: ScanSource): {
     findings.push(...analyzeZapier(raw));
   } else if (source === "lambda") {
     findings.push(...analyzeLambda(raw));
+  } else if (source === "mcp") {
+    findings.push(...analyzeMcp(raw));
   } else {
     findings.push(...analyzeGeneric(raw));
     if (looksN8n) {

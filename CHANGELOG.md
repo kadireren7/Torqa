@@ -8,6 +8,61 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 _No user-facing changes yet._
 
+## [0.3.0] — 2026-05-11
+
+Release track: **public alpha stabilization, honest product positioning, and version alignment.**
+
+### Changed
+
+- Aligned public version references to **0.3.0** across README, manifests, OpenAPI, and operator packaging references.
+- Tightened README feature claims so partially shipped or preview surfaces are labeled explicitly instead of overclaimed.
+- Updated the roadmap to reflect Torqa's current direction as an automation governance layer across CLI, API, dashboard, and team workflows.
+- Landing-page copy now avoids fake metrics and softer claims around fixes, compliance, and connector depth.
+
+### Fixed
+
+- Added clearer **local demo / local-only** labeling in overview, workflow library, and notification settings so sample/browser-only behavior is visible in product.
+- Reduced settings clutter by moving early surfaces behind a dedicated **Preview** section and clarifying which routes are core for the public alpha.
+
+### Docs
+
+- Added `docs/public-alpha-readiness.md` to summarize what is active, partial, preview, or demo in the current release.
+
+## [0.2.2] — 2026-05-07
+
+Release track: **workflow detail visibility, export polish, and dashboard trust fixes.**
+
+### Added
+
+- Workflow detail view with trust history, recent findings, stale-scan signal, and faster jump-off points into remediation.
+- Compliance evidence export expanded beyond CSV / JSON to include PDF output.
+- Overview quick controls now surface governance mode, API keys, workspace switching, and MCP setup from the dashboard.
+
+### Changed
+
+- MCP setup/docs now match the shipped tool names and API key format.
+- Landing surfaces were de-emphasized from fake/fabricated product stats toward clearer private-beta positioning.
+
+### Fixed
+
+- Hardened webhook destination validation against unsafe outbound URL shapes.
+- Multiple dashboard lint, E2E, and accessibility issues that were blocking CI.
+
+## [0.2.1] — 2026-05-05
+
+Release track: **governance engine rollout, policy-pack expansion, and broader source coverage.**
+
+### Added
+
+- Governance mode metadata and fix-proposal flows across scan results, approvals, and audit records.
+- Policy Pack v2 evaluation path for named pack selection beyond legacy threshold-only checks.
+- Expanded scan surface to include newer adapters and auto-detection paths used by the dashboard/API.
+
+### Changed
+
+- Public and dashboard scan responses now carry richer governance context so clients can distinguish active mode, scope, and policy outcomes.
+- SDK/action examples and remediation surfaces moved closer to the public API contract used by CI and external tools.
+
 ## [0.2.0] — 2026-05-02
 
 Release track: **AI agent adapter, GitHub Actions adapter, SVG logo assets, Next.js 16 proxy layer.**
@@ -228,7 +283,10 @@ First early public release of the Torqa core: canonical IR, validation, referenc
 
 Earlier development history is folded into **0.1.0** for clarity; subsequent versions list incremental changes here.
 
-[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/kadireren7/Torqa/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kadireren7/Torqa/compare/v0.2.2...v0.3.0
+[0.2.2]: https://github.com/kadireren7/Torqa/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/kadireren7/Torqa/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/kadireren7/Torqa/compare/v0.1.9...v0.2.0
 [0.1.9]: https://github.com/kadireren7/Torqa/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/kadireren7/Torqa/compare/v0.1.7...v0.1.8

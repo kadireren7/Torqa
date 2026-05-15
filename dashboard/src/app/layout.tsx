@@ -27,21 +27,21 @@ export const metadata: Metadata = {
     template: "%s · Torqa",
   },
   description:
-    "Continuous governance for automation workflows — connect sources, scan on a schedule, enforce policies, and alert before risky changes ship.",
+    "Security copilot for MCP servers and AI agents — scan tool manifests, detect risky permissions and exposed secrets, then generate hardened configs with deterministic safe defaults.",
   applicationName: "Torqa",
   authors: [{ name: "Torqa" }],
   openGraph: {
     type: "website",
     siteName: "Torqa",
-    title: "Torqa",
+    title: "Torqa — MCP Server Security Copilot",
     description:
-      "Continuous governance for automation workflows — connect sources, scan on a schedule, enforce policies, and alert before risky changes ship.",
+      "Scan MCP servers, detect unsafe tools and secrets, fix critical issues, and export hardened configs.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Torqa",
+    title: "Torqa — MCP Server Security Copilot",
     description:
-      "Continuous governance for automation workflows — connect sources, scan on a schedule, enforce policies, and alert before risky changes ship.",
+      "Scan MCP servers, detect unsafe tools and secrets, fix critical issues, and export hardened configs.",
   },
   robots: { index: true, follow: true },
 };

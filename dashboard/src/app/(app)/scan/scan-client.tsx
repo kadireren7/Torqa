@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,11 +11,13 @@ import {
   Loader2,
   Play,
   Radar,
-  ShieldAlert,
+  RefreshCcw,
+  UploadCloud,
 } from "lucide-react";
 import { TorqaLogoScanning } from "@/components/torqa-logo";
 import { ScanReportView } from "@/components/scan-report-view";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { ScanApiSuccess, ScanSource } from "@/lib/scan-engine";
@@ -24,11 +26,30 @@ import { appendLocalScanNotifications } from "@/lib/notifications-local";
 import { extractWorkflowName } from "@/lib/workflow-json";
 import { localWorkflowGet } from "@/lib/workflow-templates-local";
 import { hasPublicSupabaseUrl } from "@/lib/env";
+import {
+  canUseFeature,
+  getRemainingUsage,
+  incrementUsage,
+  resetUsage,
+  DAILY_LIMITS,
+} from "@/lib/usage-limits";
+import { ScanOnboardingTour } from "@/components/scan-onboarding-tour";
 
 const DOCS_TREE_URL = "https://github.com/kadireren7/Torqa/tree/main/docs";
 const GITHUB_REPO_URL = "https://github.com/kadireren7/Torqa";
 
 const hasSupabase = hasPublicSupabaseUrl();
+
+type JsonDetectionLabel = "MCP server config" | "AI agent config" | "Unknown JSON";
+
+function detectJsonType(obj: Record<string, unknown>): JsonDetectionLabel {
+  const hasTools = Array.isArray(obj.tools);
+  const hasServerInfo = "serverInfo" in obj;
+  const hasMcpVersion = "mcpVersion" in obj;
+  if (hasTools && (hasServerInfo || hasMcpVersion)) return "MCP server config";
+  if (Array.isArray(obj.nodes) || "workflow" in obj) return "AI agent config";
+  return "Unknown JSON";
+}
 
 function SummarySkeleton() {
   return (
@@ -85,9 +106,27 @@ export function ScanPageClient() {
   const [policyPacks, setPolicyPacks] = useState<{ id: string; name: string; level: string; sourceType: string | null }[]>([]);
   const [policyPackSelect, setPolicyPackSelect] = useState("none");
   const [scannedContent, setScannedContent] = useState<unknown>(null);
+  const [entryNotice, setEntryNotice] = useState<string | null>(null);
+  const sampleBootstrapDone = useRef(false);
+
+  // Usage limits
+  const [scansRemaining, setScansRemaining] = useState<number>(DAILY_LIMITS.scan);
+  const [scanLimitReached, setScanLimitReached] = useState(false);
+
+  // Drag-and-drop
+  const [isDragging, setIsDragging] = useState(false);
+  const [detectedJsonType, setDetectedJsonType] = useState<JsonDetectionLabel | null>(null);
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setScansRemaining(getRemainingUsage("scan"));
+    setScanLimitReached(!canUseFeature("scan"));
+  }, []);
 
   const libraryId = searchParams.get("library")?.trim() ?? "";
   const projectSlug = searchParams.get("project")?.trim() ?? "";
+  const sampleParam = searchParams.get("sample")?.trim() ?? "";
+  const sampleSourceParam = searchParams.get("source")?.trim() ?? "";
 
   useEffect(() => {
     let cancelled = false;
@@ -184,6 +223,7 @@ export function ScanPageClient() {
         setError(null);
         setResult(null);
         setSaveNotice(null);
+        setEntryNotice(null);
       } else {
         setError("Could not load that workflow from your library.");
       }
@@ -215,6 +255,12 @@ export function ScanPageClient() {
       return;
     }
     const contentObj = parsed as object;
+
+    // Increment usage for local demo tracking (non-blocking)
+    const newState = incrementUsage("scan");
+    setScansRemaining(Math.max(0, DAILY_LIMITS.scan - newState.scan));
+    setScanLimitReached(!canUseFeature("scan"));
+
     setIsScanning(true);
     try {
       const scanBody: Record<string, unknown> = { source, content: parsed };
@@ -282,48 +328,136 @@ export function ScanPageClient() {
     const file = e.target.files?.[0];
     if (!file) return;
     setError(null);
+    setJsonError(null);
     setResult(null);
     setSaveNotice(null);
+    setEntryNotice(null);
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === "string" ? reader.result : "";
       setJsonText(text);
+      // Try to detect type
+      try {
+        const p = JSON.parse(text);
+        if (p && typeof p === "object" && !Array.isArray(p)) {
+          setDetectedJsonType(detectJsonType(p as Record<string, unknown>));
+        } else {
+          setDetectedJsonType(null);
+        }
+      } catch {
+        setDetectedJsonType(null);
+      }
     };
     reader.onerror = () => setError("Could not read the file.");
     reader.readAsText(file, "utf-8");
     e.target.value = "";
   };
 
-  const loadSample = async (
+  const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith(".json") && file.type !== "application/json") {
+      setJsonError("Only .json files are supported.");
+      return;
+    }
+    setError(null);
+    setJsonError(null);
+    setResult(null);
+    setSaveNotice(null);
+    setEntryNotice(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      setJsonText(text);
+      try {
+        const p = JSON.parse(text);
+        if (p && typeof p === "object" && !Array.isArray(p)) {
+          setDetectedJsonType(detectJsonType(p as Record<string, unknown>));
+          setJsonError(null);
+        } else {
+          setDetectedJsonType(null);
+          setJsonError("Root value must be a JSON object, not an array or primitive.");
+        }
+      } catch {
+        setDetectedJsonType(null);
+        setJsonError("Invalid JSON — file contains a syntax error.");
+      }
+    };
+    reader.onerror = () => setJsonError("Could not read the file.");
+    reader.readAsText(file, "utf-8");
+  }, []);
+
+  const loadSample = useCallback(async (
     name:
       | "minimal_n8n"
       | "customer_support_n8n"
       | "make_scenario"
       | "zapier_zap"
-      | "lambda_function",
-    sourceHint: ScanSource | "auto" = "auto"
+      | "lambda_function"
+      | "unsafe_mcp",
+    sourceHint: ScanSource | "auto" = "auto",
+    notice?: string
   ) => {
     setLoadingSample(name);
     setError(null);
     setResult(null);
     setSaveNotice(null);
+    setEntryNotice(null);
     setSource(sourceHint);
     try {
       const res = await fetch(`/scan-samples/${name}.json`);
       if (!res.ok) throw new Error("fetch failed");
       const text = await res.text();
       setJsonText(text);
+      if (notice) setEntryNotice(notice);
     } catch {
+      setEntryNotice(null);
       setError("Could not load sample JSON.");
     } finally {
       setLoadingSample(null);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!sampleParam || sampleBootstrapDone.current) return;
+    const validSamples = new Set([
+      "minimal_n8n",
+      "customer_support_n8n",
+      "make_scenario",
+      "zapier_zap",
+      "lambda_function",
+      "unsafe_mcp",
+    ]);
+    if (!validSamples.has(sampleParam)) return;
+    sampleBootstrapDone.current = true;
+    const sourceHint: ScanSource | "auto" =
+      sampleSourceParam === "n8n" ||
+      sampleSourceParam === "make" ||
+      sampleSourceParam === "zapier" ||
+      sampleSourceParam === "lambda" ||
+      sampleSourceParam === "github" ||
+      sampleSourceParam === "ai-agent" ||
+      sampleSourceParam === "generic" ||
+      sampleSourceParam === "mcp"
+        ? sampleSourceParam
+        : "auto";
+    const sampleNotice = sampleParam === "unsafe_mcp"
+      ? "Unsafe MCP demo loaded — this config has intentional security violations. Click Run scan to see findings."
+      : "Demo workflow loaded. Click Run scan to generate your first report.";
+    void loadSample(
+      sampleParam as "minimal_n8n" | "customer_support_n8n" | "make_scenario" | "zapier_zap" | "lambda_function" | "unsafe_mcp",
+      sourceHint,
+      sampleNotice
+    );
+  }, [loadSample, sampleParam, sampleSourceParam]);
 
   const busy = isScanning || loadingSample !== null;
 
   return (
     <div className="space-y-10 pb-8 sm:space-y-12 sm:pb-12">
+      <ScanOnboardingTour />
       <div className="space-y-3 border-b border-border/60 pb-8 sm:pb-10">
         {projectSlug ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm">
@@ -338,28 +472,22 @@ export function ScanPageClient() {
         ) : null}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Workflow</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">MCP Security</p>
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Scan
+              MCP Config Scanner
             </h1>
             <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Upload an n8n export (or paste workflow JSON), run a deterministic scan, review the report, then schedule recurring checks.{" "}
-              This page uses{" "}
+              Upload or paste your MCP server config, run a deterministic scan, and review findings with fix guidance.{" "}
+              Uses{" "}
               <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">POST /api/scan</code>
-              . Results include explicit engine mode (real vs preview/fallback). For full Torqa validation, use the CLI.
+              {" "}— results include engine mode (real vs preview/fallback). For full validation, use the CLI.
             </p>
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <Link href="/workflow-library" className="font-medium text-primary hover:underline">
-                Workflow library →
+              <Link href="/sources" className="font-medium text-primary hover:underline">
+                Connect a source →
               </Link>
-              <Link href="/scan/history" className="font-medium text-primary hover:underline">
-                Scan history →
-              </Link>
-              <Link href="/policies" className="font-medium text-primary hover:underline">
-                Policies →
-              </Link>
-              <Link href="/schedules" className="font-medium text-primary hover:underline">
-                Schedules →
+              <Link href="/advanced/manual-scan" className="font-medium text-primary hover:underline">
+                Advanced manual scan →
               </Link>
             </p>
           </div>
@@ -371,7 +499,69 @@ export function ScanPageClient() {
             <span className="leading-snug">Server analysis can be real engine or preview heuristic depending on provider mode.</span>
           </div>
         </div>
+
+        {!hasSupabase ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3">
+            <p className="text-sm font-medium text-foreground">Local demo mode</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Scans still run, but shared history, saved reports, and source connections stay unavailable until cloud mode is enabled.
+            </p>
+          </div>
+        ) : null}
+
+        {/* Usage badge */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-1.5 text-xs">
+            <span className="font-medium text-foreground">Local demo limits</span>
+            <span className="text-muted-foreground">·</span>
+            <span className={scansRemaining === 0 ? "text-rose-400 font-semibold" : "text-muted-foreground"}>
+              Scans today: {DAILY_LIMITS.scan - scansRemaining}/{DAILY_LIMITS.scan}
+            </span>
+          </div>
+          {scanLimitReached && (
+            <Badge variant="outline" className="border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs">
+              Limit reached
+            </Badge>
+          )}
+        </div>
       </div>
+
+      {/* Limit-reached card */}
+      {scanLimitReached ? (
+        <Card className="border-rose-500/30 bg-rose-500/[0.05]">
+          <CardContent className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <p className="flex items-center gap-2 text-sm font-semibold text-rose-300">
+                <AlertTriangle className="h-4 w-4" aria-hidden />
+                Daily scan limit reached
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                You&apos;ve reached today&apos;s free local demo limit (3 scans/day). Come back tomorrow, reset the demo counter, or join early access for more quota.
+              </p>
+              <Link
+                href="/waitlist"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                Join early access for more scans →
+              </Link>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-2 border-rose-500/30 text-rose-300 hover:border-rose-500/50"
+              onClick={() => {
+                resetUsage();
+                setScansRemaining(DAILY_LIMITS.scan);
+                setScanLimitReached(false);
+              }}
+            >
+              <RefreshCcw className="h-3.5 w-3.5" aria-hidden />
+              Reset local demo data
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="overflow-hidden border-border/80 shadow-md ring-1 ring-black/5 dark:ring-white/10">
         <CardHeader className="space-y-1 border-b border-border/60 bg-muted/20 px-5 py-5 sm:px-6 sm:py-6">
@@ -381,10 +571,109 @@ export function ScanPageClient() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 px-5 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+          <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">New here?</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Load the demo workflow first, then click <span className="font-medium text-foreground">Run scan</span> to reach a meaningful report in under 2 minutes.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() =>
+                    void loadSample(
+                      "unsafe_mcp",
+                      "mcp",
+                      "Unsafe MCP demo loaded — this config has intentional security violations. Click Run scan to see findings."
+                    )
+                  }
+                >
+                  Try unsafe MCP demo
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() =>
+                    void loadSample(
+                      "customer_support_n8n",
+                      "n8n",
+                      "Demo workflow loaded. Click Run scan to generate your first report."
+                    )
+                  }
+                >
+                  Try n8n demo
+                </Button>
+                <Button asChild type="button" size="sm" variant="outline">
+                  <Link href="/sources">Connect a source</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {entryNotice ? (
+            <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground">
+              {entryNotice}
+            </div>
+          ) : null}
+
+          {/* Drag-and-drop zone */}
+          <div
+            role="region"
+            aria-label="Drop zone for JSON files"
+            className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40 hover:bg-muted/10"}`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={onDrop}
+            onClick={() => document.getElementById("scan-file-hidden")?.click()}
+          >
+            <UploadCloud className={`h-6 w-6 ${isDragging ? "text-primary" : "text-muted-foreground/60"}`} aria-hidden />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {isDragging ? "Drop the .json file here" : "Drag & drop a .json file"}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">or click to browse</p>
+            </div>
+            {detectedJsonType && (
+              <Badge
+                variant="outline"
+                className={
+                  detectedJsonType === "MCP server config"
+                    ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                    : detectedJsonType === "AI agent config"
+                      ? "border-violet-500/40 bg-violet-500/10 text-violet-300"
+                      : "border-border/60 text-muted-foreground"
+                }
+              >
+                Auto-detected: {detectedJsonType}
+              </Badge>
+            )}
+            {jsonError && (
+              <p className="flex items-center gap-1.5 text-xs text-destructive">
+                <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+                {jsonError}
+              </p>
+            )}
+            <input
+              id="scan-file-hidden"
+              type="file"
+              accept="application/json,.json"
+              onChange={onFile}
+              disabled={busy}
+              className="hidden"
+              aria-hidden
+            />
+          </div>
+
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
             <div className="min-w-0 flex-1 space-y-2">
               <Label htmlFor="scan-file" className="text-sm font-medium">
-                JSON file
+                JSON file (file picker)
               </Label>
               <input
                 id="scan-file"
@@ -402,6 +691,21 @@ export function ScanPageClient() {
                 size="sm"
                 className="h-10 w-full justify-center sm:w-auto"
                 disabled={busy}
+                onClick={() => loadSample("unsafe_mcp", "mcp", "Unsafe MCP demo loaded — intentional violations. Click Run scan to see findings.")}
+              >
+                {loadingSample === "unsafe_mcp" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileJson2 className="mr-2 h-4 w-4" />
+                )}
+                Unsafe MCP demo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full justify-center sm:w-auto"
+                disabled={busy}
                 onClick={() => loadSample("minimal_n8n", "n8n")}
               >
                 {loadingSample === "minimal_n8n" ? (
@@ -410,21 +714,6 @@ export function ScanPageClient() {
                   <FileJson2 className="mr-2 h-4 w-4" />
                 )}
                 Minimal n8n
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-10 w-full justify-center sm:w-auto"
-                disabled={busy}
-                onClick={() => loadSample("customer_support_n8n", "n8n")}
-              >
-                {loadingSample === "customer_support_n8n" ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ShieldAlert className="mr-2 h-4 w-4" />
-                )}
-                Risky n8n
               </Button>
               <Button
                 type="button"
@@ -487,6 +776,7 @@ export function ScanPageClient() {
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="auto">Auto-detect (recommended)</option>
+                <option value="mcp">MCP server config / tool manifest</option>
                 <option value="n8n">n8n workflow export</option>
                 <option value="make">Make.com scenario</option>
                 <option value="zapier">Zapier zap</option>
@@ -583,7 +873,10 @@ export function ScanPageClient() {
             <textarea
               id="scan-json"
               value={jsonText}
-              onChange={(e) => setJsonText(e.target.value)}
+              onChange={(e) => {
+                setEntryNotice(null);
+                setJsonText(e.target.value);
+              }}
               disabled={busy}
               placeholder='{ "name": "…", "nodes": [ … ] }'
               spellCheck={false}
@@ -608,7 +901,7 @@ export function ScanPageClient() {
               size="lg"
               onClick={() => void runScan()}
               disabled={busy}
-              className="h-11 w-full gap-2 font-semibold sm:w-auto sm:min-w-[160px]"
+              className="h-12 w-full gap-2 bg-cyan-600 text-sm font-semibold text-white hover:bg-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400 sm:w-auto sm:min-w-[180px]"
             >
               {isScanning ? (
                 <>
@@ -628,6 +921,33 @@ export function ScanPageClient() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mobile sticky action bar — shown when result has critical/high findings */}
+      {result && !isScanning && (result.totals.high > 0) && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              className="h-11 flex-1 bg-cyan-600 text-sm font-semibold text-white hover:bg-cyan-500"
+              onClick={() => void runScan()}
+              disabled={busy}
+            >
+              Re-scan
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 flex-1 text-sm"
+              onClick={() => {
+                const el = document.querySelector("[data-findings-section]");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              View findings
+            </Button>
+          </div>
+        </div>
+      )}
 
       {(isScanning || result) && (
         <section className="space-y-6 sm:space-y-8" aria-live="polite">
@@ -656,14 +976,13 @@ export function ScanPageClient() {
             <ScanReportView
               result={result}
               notice={saveNotice}
+              onRerunScan={() => void runScan()}
               governance={
                 scannedContent !== null
                   ? {
                       content: scannedContent,
                       source: result.source,
                       onResolved: () => {
-                        // Hint to operators that re-running the scan will re-evaluate
-                        // the gate now that an action has been recorded.
                         setSaveNotice(
                           "Action recorded. Re-run the scan to refresh the gate decision against the latest accepted-risks and applied fixes."
                         );
@@ -673,6 +992,29 @@ export function ScanPageClient() {
               }
             />
           )}
+
+          {result && !isScanning ? (
+            <Card className="border-border/70 bg-card/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Next step</CardTitle>
+                <CardDescription>
+                  {hasSupabase
+                    ? "Connect a real source so the next scans and reports update automatically."
+                    : "Move from demo/manual scans to real workflow coverage by connecting a source when cloud mode is ready."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link href="/sources">Connect a source</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={saveNotice ? "/scan/history" : "/reports"}>
+                    {saveNotice ? "Open scan history" : "Open reports"}
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
         </section>
       )}
 

@@ -18,7 +18,7 @@ jobs:
 
       - name: Run Torqa scan + verdict
         id: torqa
-        uses: torqa/governance-gate@v0.2.1
+        uses: torqa/governance-gate@v0.3.0
         with:
           api-key: ${{ secrets.TORQA_API_KEY }}
           base-url: https://dashboard.torqa.dev

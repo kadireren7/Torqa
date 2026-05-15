@@ -11,7 +11,11 @@ export function isScanApiSuccess(data: unknown): data is ScanApiSuccess {
     o.source === "n8n" ||
     o.source === "generic" ||
     o.source === "github" ||
-    o.source === "ai-agent";
+    o.source === "ai-agent" ||
+    o.source === "make" ||
+    o.source === "zapier" ||
+    o.source === "lambda" ||
+    o.source === "mcp";
   const engineOk = o.engine === "server-preview" || o.engine === "server-v1" || o.engine === "hosted-python";
   const modeOk =
     o.engine_mode === undefined ||

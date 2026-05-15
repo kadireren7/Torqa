@@ -30,6 +30,7 @@ export function ProviderCard({ connector, connected, canConnect, onConnect }: Pr
 
   return (
     <div
+      id={connector.id}
       className={`group relative flex flex-col rounded-xl border bg-card transition-all duration-150 ${
         isComingSoon
           ? "border-border/40 opacity-60"

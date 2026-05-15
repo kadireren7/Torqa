@@ -294,9 +294,43 @@ export default function SourcesPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Sources</p>
         <h1 className="text-2xl font-semibold tracking-tight">Integration Center</h1>
         <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          Connect your automation platforms. Torqa continuously monitors connected sources, enforces policies, and surfaces governance violations.
+          Connect a platform so Torqa can scan real workflows continuously and keep new reports flowing without manual uploads.
         </p>
       </div>
+
+      <Card className={useCloud ? "border-border/70 bg-card/40" : "border-amber-500/30 bg-amber-500/[0.06]"}>
+        <CardContent className="flex flex-col gap-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium">{useCloud ? "Start with n8n or GitHub Actions" : "Local demo mode"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {useCloud
+                ? "Connect a real source first. If you only want to preview the report flow, use the demo scan path instead."
+                : "Saved source connections are unavailable here. Try the demo scan path or advanced manual scan, then connect cloud when you are ready."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {useCloud ? (
+              <>
+                <Button asChild size="sm">
+                  <Link href="/sources#n8n">Connect n8n</Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/sources#github">Connect GitHub Actions</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild size="sm">
+                  <Link href="/scan?sample=customer_support_n8n&source=n8n">Try demo scan</Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/advanced/manual-scan">Advanced manual scan</Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Alerts */}
       {error ? (
@@ -416,7 +450,9 @@ export default function SourcesPage() {
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-border/40 bg-muted/10 px-6 py-8 text-center">
               <p className="text-sm text-muted-foreground">No sources connected yet.</p>
-              <p className="mt-1 text-xs text-muted-foreground">Choose a provider above to get started.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Start with n8n or GitHub Actions above, or use the demo scan path if you want to preview a report first.
+              </p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border/50">
@@ -484,11 +520,18 @@ export default function SourcesPage() {
         </div>
       ) : (
         <div className="rounded-xl border border-border/50 bg-muted/10 px-6 py-8 text-center">
-          <p className="text-sm font-medium">Cloud mode disabled</p>
-          <p className="mt-1 text-sm text-muted-foreground">Connect Supabase to save sources and enable continuous scanning.</p>
-          <Button asChild size="sm" className="mt-4">
-            <Link href="/settings">Configure in Settings</Link>
-          </Button>
+          <p className="text-sm font-medium">Local demo mode</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Source connections are not being saved because cloud mode is off. You can still run a demo scan now and connect Supabase later for persistent sources.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button asChild size="sm">
+              <Link href="/scan?sample=customer_support_n8n&source=n8n">Try demo scan</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/settings">Connect cloud</Link>
+            </Button>
+          </div>
         </div>
       )}
 

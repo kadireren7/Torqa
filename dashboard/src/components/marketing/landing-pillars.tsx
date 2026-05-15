@@ -5,38 +5,51 @@ import { motion, useReducedMotion } from "framer-motion";
 const FEATURES = [
   {
     num: "01",
-    label: "Scan",
-    title: "Deterministic inspection",
-    desc: "Every workflow JSON is parsed against a ruleset you control. No probabilistic scoring — exact rule IDs, exact line numbers.",
+    label: "Detect",
+    title: "MCP tool inspection",
+    desc: "Every tool in your MCP server config is parsed against a ruleset you control. Flags unrestricted write access, shell exec without validation, missing scope constraints, and more.",
+    planned: false,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/>
       </svg>
     ),
     preview: (
-      <div className="mt-4 space-y-1.5 font-mono text-[11px]">
-        {[
-          { id: "v1.n8n.credential_in_env", sev: "HIGH",   sevColor: "var(--rose)" },
-          { id: "v1.n8n.no_error_handler",  sev: "MEDIUM", sevColor: "var(--amber)" },
-          { id: "v1.n8n.webhook_no_auth",   sev: "HIGH",   sevColor: "var(--rose)" },
-        ].map(r => (
-          <div
-            key={r.id}
-            className="flex items-center justify-between rounded-md px-2.5 py-1.5"
-            style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)" }}
-          >
-            <span style={{ color: "var(--fg-3)" }}>{r.id}</span>
-            <span style={{ color: r.sevColor }}>{r.sev}</span>
-          </div>
-        ))}
+      <div
+        className="mt-4 rounded-md px-3 py-3 text-[11px] leading-relaxed font-mono"
+        style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)", color: "var(--fg-4)" }}
+      >
+        <span style={{ color: "#ef4444" }}>CRITICAL</span> · filesystem.write · unrestricted path · rule MCP-001<br />
+        <span style={{ color: "#ef4444" }}>CRITICAL</span> · shell.exec · no input validation · rule MCP-007
       </div>
     ),
   },
   {
     num: "02",
+    label: "Ask",
+    title: "Guided triage",
+    desc: "Click any finding and Torqa asks targeted questions about your intended use — before suggesting a fix. No generic remediations that break your actual use case.",
+    planned: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
+    preview: (
+      <div
+        className="mt-4 rounded-md px-3 py-3 text-[11px] leading-relaxed"
+        style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)", color: "var(--fg-3)" }}
+      >
+        &ldquo;Does this tool need write access outside the project directory?&rdquo; — Torqa uses your answer to scope the fix correctly.
+      </div>
+    ),
+  },
+  {
+    num: "03",
     label: "Fix",
-    title: "Auto-fix proposals",
-    desc: "For every finding, Torqa generates a concrete fix. One click opens a draft PR or applies the change — human approval required.",
+    title: "Safe policy generation",
+    desc: "Torqa generates a concrete fix plan based on your answers — tightened permissions, added input validation, or a scoped capability constraint. You approve before anything changes.",
+    planned: true,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -44,97 +57,32 @@ const FEATURES = [
       </svg>
     ),
     preview: (
-      <div className="mt-4 space-y-2">
-        {[
-          { rule: "credential_in_env", fix: "Move to vault reference", done: true },
-          { rule: "no_error_handler",  fix: "Wrap node in try-catch",  done: false },
-        ].map(f => (
-          <div
-            key={f.rule}
-            className="rounded-md p-2.5"
-            style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)" }}
-          >
-            <p className="font-mono text-[10px]" style={{ color: "var(--fg-4)" }}>{f.rule}</p>
-            <p className="mt-0.5 text-[11px]" style={{ color: "var(--fg-2)" }}>{f.fix}</p>
-            <div className="mt-1.5">
-              <span
-                className="rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold"
-                style={{
-                  color: f.done ? "var(--emerald)" : "var(--fg-3)",
-                  background: f.done ? "color-mix(in srgb, var(--emerald) 10%, transparent)" : "var(--overlay-md)",
-                }}
-              >
-                {f.done ? "APPLIED" : "PENDING"}
-              </span>
-            </div>
-          </div>
-        ))}
+      <div
+        className="mt-4 rounded-md px-3 py-3 text-[11px] leading-relaxed font-mono"
+        style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)", color: "var(--fg-4)" }}
+      >
+        <span style={{ color: "var(--emerald)" }}>+ allowed_paths: [&quot;/workspace&quot;]</span><br />
+        <span style={{ color: "#ef4444" }}>- allowed_paths: &quot;*&quot;</span>
       </div>
     ),
   },
   {
-    num: "03",
-    label: "Govern",
-    title: "Policies as gates",
-    desc: "Compose strict, default, or custom policy packs. Enforce in CI, on schedule, or as a webhook gate before runs hit production.",
+    num: "04",
+    label: "Verify",
+    title: "Before / after risk score",
+    desc: "Re-scan after applying a fix. Torqa confirms your risk score improved and no new findings were introduced. Full audit trail included.",
+    planned: false,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
       </svg>
     ),
     preview: (
-      <div className="mt-4 space-y-1.5 font-mono text-[11px]">
-        {[
-          { name: "strict-v2",       rules: "14 rules", active: true },
-          { name: "enterprise-soc2", rules: "22 rules", active: false },
-          { name: "custom-dev",      rules: "8 rules",  active: false },
-        ].map(p => (
-          <div
-            key={p.name}
-            className="flex items-center justify-between rounded-md px-2.5 py-1.5"
-            style={{
-              border: `1px solid ${p.active ? "color-mix(in srgb, var(--accent) 30%, transparent)" : "var(--line)"}`,
-              background: p.active ? "color-mix(in srgb, var(--accent) 6%, transparent)" : "var(--overlay-sm)",
-            }}
-          >
-            <span style={{ color: p.active ? "var(--accent)" : "var(--fg-3)" }}>{p.name}</span>
-            <span style={{ color: "var(--fg-4)" }}>{p.rules}</span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    num: "04",
-    label: "Audit",
-    title: "Full decision history",
-    desc: "Every scan, decision, fix, and approval is signed and timestamped. SOC 2 and ISO 27001 compliance reports generated on demand.",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-        <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>
-      </svg>
-    ),
-    preview: (
-      <div className="mt-4 space-y-1.5 font-mono text-[11px]">
-        {[
-          { action: "apply_fix",     ts: "2m ago",  color: "var(--emerald)" },
-          { action: "scan_passed",   ts: "8m ago",  color: "var(--emerald)" },
-          { action: "risk_accepted", ts: "1h ago",  color: "var(--amber)" },
-          { action: "scan_blocked",  ts: "3h ago",  color: "var(--rose)" },
-        ].map((e, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between rounded-md px-2.5 py-1.5"
-            style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)" }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: e.color }} />
-              <span style={{ color: "var(--fg-3)" }}>{e.action}</span>
-            </div>
-            <span style={{ color: "var(--fg-4)" }}>{e.ts}</span>
-          </div>
-        ))}
+      <div
+        className="mt-4 rounded-md px-3 py-3 text-[11px] leading-relaxed"
+        style={{ border: "1px solid var(--line)", background: "var(--overlay-sm)", color: "var(--fg-3)" }}
+      >
+        Risk score 28 → 91 · 3 critical findings resolved · scan diff exportable.
       </div>
     ),
   },
@@ -162,10 +110,10 @@ export function LandingPillars() {
             Platform
           </p>
           <h2 className="text-[36px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[44px]" style={{ color: "var(--fg-1)" }}>
-            One system for the full lifecycle.
+            From risky config to verified fix.
           </h2>
           <p className="mt-4 text-[16px] leading-[1.6]" style={{ color: "var(--fg-3)" }}>
-            From raw workflow JSON to signed audit record — Torqa handles every step deterministically.
+            Detect → Ask → Fix → Verify. Planned steps are marked — current scan and verify capabilities work today.
           </p>
         </motion.div>
 
@@ -194,6 +142,18 @@ export function LandingPillars() {
                 >
                   {f.label}
                 </span>
+                {f.planned && (
+                  <span
+                    className="rounded-full px-2.5 py-0.5 font-mono text-[10px]"
+                    style={{
+                      border: "1px solid color-mix(in srgb, var(--amber, #f59e0b) 30%, transparent)",
+                      background: "color-mix(in srgb, var(--amber, #f59e0b) 8%, transparent)",
+                      color: "var(--amber, #f59e0b)",
+                    }}
+                  >
+                    planned
+                  </span>
+                )}
               </div>
               <div
                 className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl"

@@ -11,6 +11,22 @@ const MINIMAL_N8N = JSON.stringify({
 });
 
 test.describe("scan flow", () => {
+  test("overview demo path reaches a first report", async ({ page }) => {
+    await page.goto("/overview");
+
+    await page.getByRole("link", { name: /try demo scan/i }).first().click();
+
+    await page.waitForURL(/\/scan/);
+    await expect(page.getByRole("heading", { name: "Scan" }).first()).toBeVisible();
+    await expect(page.getByText(/demo workflow loaded/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /run scan/i }).click();
+
+    await expect(page.getByRole("heading", { name: /scan results/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/next step/i).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /connect a source/i }).first()).toBeVisible();
+  });
+
   test("scan page renders input form", async ({ page }) => {
     await page.goto("/scan");
     await expect(page.getByRole("main").getByRole("heading", { name: "Scan" })).toBeVisible();
@@ -64,6 +80,8 @@ test.describe("sources", () => {
   test("sources / integrations page loads", async ({ page }) => {
     await page.goto("/sources");
     await expect(page.getByRole("main")).toBeVisible();
+    await expect(page.getByText(/local demo mode/i).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /try demo scan/i }).first()).toBeVisible();
   });
 });
 
@@ -76,5 +94,13 @@ test.describe("workflows", () => {
   test("workflow library page loads", async ({ page }) => {
     await page.goto("/workflow-library");
     await expect(page.getByRole("main")).toBeVisible();
+  });
+});
+
+test.describe("reports", () => {
+  test("reports page explains local demo mode", async ({ page }) => {
+    await page.goto("/reports");
+    await expect(page.getByText(/local demo mode/i).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /view demo report/i }).first()).toBeVisible();
   });
 });

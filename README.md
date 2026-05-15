@@ -4,8 +4,8 @@
 
 <h1>Torqa</h1>
 
-<p><strong>Governance layer for automation workflows.</strong><br />
-Scan, score, and enforce policy on every workflow — before it runs in production.</p>
+<p><strong>Security copilot for MCP servers and AI agents.</strong><br />
+Torqa scans MCP server configs, tool manifests, and agent definitions. Detects risky permissions, exposed secrets, and unsafe capabilities — then guides you through the fix.</p>
 
 <br />
 
@@ -16,7 +16,7 @@ Scan, score, and enforce policy on every workflow — before it runs in producti
 
 <br />
 
-[Overview](#overview) · [How it works](#how-it-works) · [Dashboard](#dashboard) · [Quickstart](#quickstart) · [API](#rest-api) · [CI Gate](#ci-gate) · [MCP Server](#mcp-server) · [Changelog](CHANGELOG.md)
+[Quickstart](#quickstart) · [What Torqa Scans](#what-torqa-scans) · [Product Flow](#product-flow) · [API / CI Gate](#api--ci-gate) · [Status](#status) · [Changelog](CHANGELOG.md)
 
 <br />
 
@@ -24,104 +24,135 @@ Scan, score, and enforce policy on every workflow — before it runs in producti
 
 ---
 
-## Overview
+## What Torqa Is
 
-Torqa sits above your automation stack and acts as a governance gate. It does not execute workflows — it inspects workflow definitions, scores them against policy rules, and produces an auditable decision.
+Torqa is a security copilot for MCP servers and AI agents.
 
-```
-n8n · GitHub Actions · AI Agents · Zapier · Make
-          │
-          ▼
-        Torqa
-          │
-    ┌─────┴──────┐
-  PASS      NEEDS REVIEW / FAIL
-```
+It does **not** execute agents or tools. It inspects your MCP server config, tool manifest, or agent definition — before you deploy — and returns deterministic findings:
 
-Every scan produces:
-- **Trust score** — 0–100
-- **Decision** — `APPROVE`, `NEEDS REVIEW`, or `BLOCK`
-- **Findings** — rule ID, severity, target, suggested fix
-- **Policy evaluation** — which rules triggered, which pack was used
+- **Risk score** from `0` to `100`
+- **Decision** such as `PASS`, `NEEDS REVIEW`, or `FAIL`
+- **Findings** with rule IDs, severity, affected tools, and remediation guidance
+- **Fix guidance** with before/after verification (guided flow is in development)
 
----
+If you are building or deploying MCP servers or AI agents, Torqa is the layer that tells you what is risky and why, before it reaches production.
 
-## How it works
+## Who It Is For
 
-**1. Connect a source**
-Connect your n8n instance, GitHub repo, or AI agent definition. Torqa fetches workflow definitions over your existing API or OAuth connection.
+- Developers building MCP servers who want to catch risky tool configs before deployment
+- AI agent teams who need to know which tools are over-permissioned
+- Platform engineers who want a CI gate on agent config changes
+- Security teams reviewing MCP manifests for exposed secrets and unsafe capabilities
+- Developers who want to verify that a fix actually reduced risk without introducing new issues
 
-**2. Run a scan**
-The scan engine applies a deterministic rule set (no LLM calls in the scan path). Each rule checks a specific property — credential exposure, dangerous permissions, missing auth gates, scope violations.
-
-**3. Get a governance report**
-Every scan produces a structured report: trust score, findings list, policy decision, and a suggested fix for each finding.
-
-**4. Automate enforcement**
-Use the CI gate to block pipelines. Use playbooks to auto-dispatch actions. Use the API or MCP server to integrate with your existing tooling.
-
----
-
-## Dashboard
-
-The Next.js dashboard (`dashboard/`) is the team interface for Torqa.
-
-| Feature | Status |
-|---|---|
-| Connect sources (n8n, GitHub, Zapier, Make, Pipedream) | Active |
-| Automated scan schedules (cron / hourly / daily) | Active |
-| Governance reports with findings and trust score | Active |
-| Policy marketplace — browse, install, publish packs | Active |
-| Governance playbooks — auto-dispatch on scan events | Active |
-| CI gate — `exit_code` 0/1 for GitHub Actions / GitLab | Active |
-| MCP server — JSON-RPC 2.0, 4 tools | Active |
-| Agent runtime governance — real-time policy evaluation | Active |
-| Compliance reports — SOC2 + ISO 27001 control mapping | Active |
-| Enforcement webhooks — HMAC-SHA256 signed outbound POST | Active |
-| Audit log | Active |
-| SSO (OIDC) | Active |
-| API keys — machine-to-machine access | Active |
-| Fix PR generator — draft GitHub PR from findings | Active |
-
-### Tech stack
+## Product Flow
 
 ```
-Next.js (App Router)    Supabase (auth · database · RLS)    Tailwind CSS
-TypeScript strict        Vitest                               Playwright (E2E + a11y)
-Radix UI / shadcn        framer-motion
+Connect → Scan → Ask → Fix → Patch → Verify
 ```
 
----
+| Step | Status | Description |
+| --- | --- | --- |
+| **Connect** | Works now | Paste MCP config, upload tool manifest, or link agent definition |
+| **Scan** | Works now | Deterministic rule-based inspection — same input, same findings |
+| **Ask** | Planned | Click a finding; Torqa asks guided questions about intended behavior |
+| **Fix** | Planned | Torqa generates a safe fix plan based on your answers |
+| **Patch** | Planned | Get a concrete diff or config patch to apply |
+| **Verify** | Works now | Re-scan to confirm risk score improved, no new findings introduced |
+
+## What Torqa Scans
+
+| Input type | Status | Notes |
+| --- | --- | --- |
+| MCP server config | Active | Primary focus — tool manifests, permission scopes, capability flags |
+| AI agent definitions | Active | JSON-defined agents with tools, prompts, and permission declarations |
+| GitHub Actions | Partial | Rules and CI/API paths exist; depth depends on credentials |
+| n8n workflows | Partial | Good for existing users; MCP/agents are the primary direction |
+| Generic JSON | Works now | Useful for local testing and demos |
+| Zapier / Make / Pipedream | Partial | Connectors exist; not the primary product direction |
+
+## Status
+
+### Works now
+
+- MCP config and agent definition scanning
+- Deterministic scan API and CI gate
+- Risk score, findings, and policy decisions
+- Scan history, share links, and evidence export
+- API keys and MCP server access
+- Audit trail and enforcement webhooks
+- Re-scan for before/after verification
+
+### In development
+
+- Guided triage (Ask step) — click finding → answer questions → get scoped fix
+- Fix plan generation based on intent answers
+- Patch/diff output for direct application
+
+### Partial
+
+- Source connectors beyond MCP and agent JSON
+- SSO / OIDC setup
+- Email notifications
+
+### Not yet
+
+- Payments / billing
+- Public docs site
+- Full connector parity across all listed platforms
+
+### Known limitations
+
+- Without Supabase, some surfaces use demo mode or browser-local storage
+- Scheduled scans need cloud mode plus a cron tick path
+- Compliance outputs are evidence helpers, **not** certifications
+- Fix automation depends on supported finding types
+
+More detail: [`docs/public-alpha.md`](docs/public-alpha.md)
 
 ## Quickstart
+
+### Option A: local evaluation
 
 ```bash
 git clone https://github.com/kadireren7/Torqa.git
 cd Torqa/dashboard
 npm install
-```
-
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
-
-```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> Without Supabase the dashboard runs in local/demo mode with mock data.
+In local mode:
+- dashboard loads and demo scan works
+- overview and insights use sample data
+- some settings remain local-only until cloud mode is configured
 
----
+### Option B: cloud-backed dashboard
 
-## REST API
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-All public endpoints require an API key. Generate one in **Settings → API**.
+Restart the dashboard after adding env vars.
+
+## Demo Path
+
+Fastest first-user flow:
+
+1. Open `/scan?sample=unsafe_mcp&source=mcp`
+2. Review the preloaded unsafe MCP server findings
+3. Check the risk score breakdown
+4. Connect a real MCP server from `/sources`
+
+## API / CI Gate
+
+### Public scan API
+
+All public endpoints require an API key from **Settings → API**.
 
 ```http
 POST /api/public/scan
@@ -129,145 +160,70 @@ x-api-key: torqa_live_<key>
 Content-Type: application/json
 
 {
-  "source": "n8n",
-  "content": { ...workflow_json }
+  "source": "mcp",
+  "content": { ...mcp_server_config }
 }
 ```
 
-Response:
+Response shape:
 
 ```json
 {
   "ok": true,
   "data": {
     "status": "FAIL",
-    "riskScore": 42,
-    "findings": [...],
+    "riskScore": 28,
+    "findings": [],
     "engine": "torqa-scan-v1"
   }
 }
 ```
 
-**Supported sources:** `n8n`, `github`, `ai_agent`, `zapier`, `make`, `pipedream`, `webhook`
+OpenAPI: `GET /api/openapi.json`
 
-Full spec: `GET /api/openapi.json`
+### CI gate
 
----
-
-## CI Gate
-
-Block pipelines on governance failures. Returns `exit_code: 0` (pass) or `1` (fail).
+Use the CI gate to fail builds on governance outcomes:
 
 ```yaml
-- name: Torqa governance gate
+- name: Torqa MCP security gate
   run: |
     RESULT=$(curl -sf -X POST https://your-app/api/public/ci/gate \
       -H "Authorization: Bearer ${{ secrets.TORQA_API_KEY }}" \
       -H "Content-Type: application/json" \
       -d '{
-        "workflow": '"$(cat .github/workflows/deploy.yml | jq -Rs .)"',
-        "source": "github",
-        "workflow_name": "deploy",
+        "workflow": '"$(cat mcp-server.json | jq -Rs .)"',
+        "source": "mcp",
         "fail_on": "fail"
       }')
     exit $(echo $RESULT | jq -r .exit_code)
 ```
 
-Or use `torqa.config.json` in your repo root for config-driven scans:
-
-```json
-{
-  "version": "1",
-  "policy": "torqa-baseline",
-  "fail_on": "fail"
-}
-```
-
----
-
-## MCP Server
+### MCP server
 
 Torqa exposes a JSON-RPC 2.0 MCP server at `POST /api/mcp`.
 
-**Tools available:**
-- `torqa_scan` — scan a workflow JSON
-- `torqa_findings` — query findings from scan history
-- `torqa_policy_list` — list available policy packs
-- `torqa_audit` — query governance decisions
+Available tools:
 
-Auth: `x-api-key` header or `Authorization: Bearer <key>`.
+- `torqa_scan`
+- `torqa_findings`
+- `torqa_policy_list`
+- `torqa_audit`
 
-```json
-POST /api/mcp
-x-api-key: torqa_live_<key>
-
-{ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }
-```
-
----
-
-## Supported Sources
-
-| Source | Connection | What is scanned |
-|---|---|---|
-| n8n | API key or self-hosted URL | Nodes, credentials, HTTP methods, code execution |
-| GitHub Actions | OAuth or token | Workflow YAML — permissions, secrets, unpinned actions |
-| AI Agents | Webhook or definition JSON | Prompt injection, dangerous tools, scope, hardcoded secrets |
-| Zapier | OAuth | Zap orchestration definitions |
-| Make | API token + zone | Scenario definitions |
-| Pipedream | API key | Workflow steps |
-| Generic | Direct JSON | Any workflow bundle |
-
----
-
-## What Torqa detects
-
-**n8n**
-- Credentials stored in workflow JSON
-- Dangerous code nodes (`eval`, `exec`, shell calls)
-- Webhook endpoints without auth
-- Unsafe HTTP methods on external endpoints
-
-**GitHub Actions**
-- `contents: write` on pull request triggers
-- Secrets printed to logs
-- Unpinned third-party actions
-- `pull_request_target` + PR head checkout (privilege escalation)
-- Self-hosted runners on public repos
-
-**AI Agents**
-- Prompt injection surfaces
-- Missing or oversized system prompts
-- Dangerous tool permissions (`exec`, `file_write`, `db_write`, `network`)
-- Too many tool definitions (scope creep)
-- Hardcoded secrets in prompts
-
----
-
-## Python CLI
-
-```bash
-pip install torqa
-# or from source:
-pip install -e ".[dev]"
-```
-
-```bash
-torqa scan workflow.json --source n8n
-torqa validate workflow.json --source n8n
-torqa report . --format html -o report.html
-torqa version
-```
-
-Exit codes: `0` = PASS, `1` = FAIL/BLOCK, `2` = configuration error.
-
----
+Requires API key setup and your deployed base URL.
 
 ## Deployment
 
-### Vercel (recommended)
+### Vercel
 
-Deploy with one click. Set the three Supabase env vars in project settings.
+Default for the Next.js dashboard. Requires Supabase env vars.
+
+Minimum env:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_APP_URL`
 
 ### Docker
 
@@ -277,6 +233,7 @@ docker run -p 3000:3000 \
   -e NEXT_PUBLIC_SUPABASE_URL=... \
   -e NEXT_PUBLIC_SUPABASE_ANON_KEY=... \
   -e SUPABASE_SERVICE_ROLE_KEY=... \
+  -e NEXT_PUBLIC_APP_URL=http://localhost:3000 \
   torqa-dashboard
 ```
 
@@ -286,32 +243,32 @@ docker run -p 3000:3000 \
 docker compose up
 ```
 
----
+### Optional env vars
 
-## Environment Variables
+| Variable | Needed for |
+| --- | --- |
+| `TORQA_CRON_SECRET` | Scheduled scans |
+| `TORQA_API_KEY_PEPPER` | API key hashing (recommended in production) |
+| `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` | GitHub connector |
+| `RESEND_API_KEY` | Email delivery |
+| `TORQA_ENGINE_URL` | Hosted Python engine |
 
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
-| `NEXT_PUBLIC_APP_URL` | Recommended | Public URL of your deployment |
-| `TORQA_API_KEY_PEPPER` | Recommended | Secret pepper for API key hashing |
-| `RESEND_API_KEY` | For email | Resend.com API key |
-| `GITHUB_OAUTH_CLIENT_ID` | For GitHub | GitHub OAuth App client ID |
-| `GITHUB_OAUTH_CLIENT_SECRET` | For GitHub | GitHub OAuth App client secret |
-| `TORQA_CRON_SECRET` | For schedules | Secret for cron job auth |
+## Python CLI
 
----
+```bash
+pip install -e ".[dev]"
+torqa scan mcp-server.json --source mcp
+torqa scan workflow.json --source n8n
+torqa version
+```
 
-## Contributing
+## Docs
 
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- [GOOD_FIRST_ISSUES.md](GOOD_FIRST_ISSUES.md)
-- [SECURITY.md](SECURITY.md)
-
----
+- [`docs/public-alpha.md`](docs/public-alpha.md)
+- [`docs/demo-script.md`](docs/demo-script.md)
+- [`docs/roadmap.md`](docs/roadmap.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
 
 ## License
 
-[GNU Affero General Public License v3](LICENSE) — © 2026 Kadir Eren Altıntaş
+Torqa is licensed under the [GNU Affero General Public License v3](LICENSE).
