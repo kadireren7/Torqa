@@ -1,8 +1,4 @@
 import Link from "next/link";
-import { ArrowRight, Bell, Bot, ClipboardList, Code2, Cpu, Gauge, KeyRound, ScrollText, ShieldCheck, Store, Users, Webhook } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "Settings",
@@ -10,294 +6,75 @@ export const metadata = {
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-8 pb-10">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Configure</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-          API keys, workspace, team, and notification preferences.
+    <div className="space-y-8">
+      <header className="space-y-2">
+        <p className="font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--fg-4)" }}>
+          Settings
         </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Card className="border-primary/40 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Gauge className="h-4 w-4 text-primary" />
-              Governance mode
-            </CardTitle>
-            <CardDescription>
-              Pick how Torqa acts on findings: autonomous, supervised, or interactive. Drives Fix Engine + audit log.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" className="gap-1.5">
-              <Link href="/settings/governance">
-                Configure mode
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              Pending approvals
-            </CardTitle>
-            <CardDescription>
-              Queued fix proposals waiting for human approval (supervised + interactive modes).
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/approvals">
-                Open queue
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <KeyRound className="h-4 w-4 text-primary" />
-              API Keys
-            </CardTitle>
-            <CardDescription>
-              Create, revoke, and manage API keys. Use with cURL, GitHub Actions, n8n, or any CI.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" className="gap-1.5">
-              <Link href="/settings/api">
-                Manage API keys
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Bell className="h-4 w-4 text-primary" />
-              Notifications
-            </CardTitle>
-            <CardDescription>
-              Personal scan alert preferences. Email and Slack delivery stay partial until provider wiring is configured.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/settings/notifications">
-                Notification prefs
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="h-4 w-4 text-primary" />
-              Workspace &amp; Team
-            </CardTitle>
-            <CardDescription>
-              Manage your workspace, team members, and organization settings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/workspace">
-                Workspace settings
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Webhook className="h-4 w-4 text-primary" />
-              Enforcement Webhooks
-            </CardTitle>
-            <CardDescription>
-              Outbound HTTP callbacks triggered on governance decisions — FAIL, NEEDS REVIEW, or custom triggers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/settings/webhooks">
-                Manage webhooks
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-primary" />
-              Audit Log
-            </CardTitle>
-            <CardDescription>
-              Full event trail — integrations, scans, policies, access changes, API key activity.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/settings/audit-log">
-                View audit log
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <KeyRound className="h-4 w-4 text-primary" />
-              SSO / Identity
-            </CardTitle>
-            <CardDescription>
-              OIDC configuration and callback testing for supported identity providers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/settings/sso">
-                SSO settings
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Developer</p>
-        <p className="mt-1 text-sm text-muted-foreground">API, audit, and integration setup paths used in the public alpha.</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Code2 className="h-4 w-4 text-primary" />
-              Developer
-            </CardTitle>
-            <CardDescription>
-              API reference, MCP server setup, CI gate examples, and webhook verification.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/developer">
-                API reference
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Cpu className="h-4 w-4 text-primary" />
-              MCP Server
-            </CardTitle>
-            <CardDescription>
-              Connect Claude or any MCP-compatible AI assistant to Torqa&apos;s governance engine via JSON-RPC 2.0.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/mcp">
-                MCP setup
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Preview</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Functional evaluation surfaces that are still early and not core setup paths for the public alpha.
+        <h1 className="text-[28px] font-bold tracking-[-0.02em]" style={{ color: "var(--fg-1)" }}>
+          Settings
+        </h1>
+        <p className="max-w-[600px] text-[14px] leading-[1.6]" style={{ color: "var(--fg-3)" }}>
+          Torqa runs in local mode. Hosted accounts, billing, and team settings are planned.
         </p>
-      </div>
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Store className="h-4 w-4 text-primary" />
-              Policy Marketplace
-              <Badge variant="secondary" className="ml-1">Preview</Badge>
-            </CardTitle>
-            <CardDescription>
-              Pack browsing and installs are available for evaluation; publishing and curation workflows are still early.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/marketplace">
-                Browse marketplace
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <section className="space-y-3">
+        <h2 className="text-[14px] font-semibold" style={{ color: "var(--fg-1)" }}>Mode</h2>
+        <div
+          className="flex items-center justify-between rounded-xl px-4 py-3"
+          style={{ background: "var(--surface-1)", border: "1px solid var(--line)" }}
+        >
+          <div>
+            <p className="text-[13px] font-semibold" style={{ color: "var(--fg-1)" }}>Local</p>
+            <p className="text-[12px]" style={{ color: "var(--fg-4)" }}>
+              Workflow planning runs deterministically on your machine.
+            </p>
+          </div>
+          <span
+            className="rounded-md px-2 py-1 text-[11px] font-semibold"
+            style={{
+              background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+              color: "var(--accent)",
+            }}
+          >
+            Active
+          </span>
+        </div>
+      </section>
 
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Bot className="h-4 w-4 text-primary" />
-              Agent Runtime
-              <Badge variant="secondary" className="ml-1">Preview</Badge>
-            </CardTitle>
-            <CardDescription>
-              Interactive policy-event evaluator for testing agent governance rules and example payloads.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/agent-runtime">
-                Agent runtime
-                <ArrowRight className="h-3.5 w-3.5" />
+      <section className="space-y-3">
+        <h2 className="text-[14px] font-semibold" style={{ color: "var(--fg-1)" }}>Project</h2>
+        <ul className="overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
+          {[
+            { label: "MCP server setup", href: "/mcp-server", external: false },
+            { label: "Web workflow builder", href: "/demo/mcp-workflow-builder", external: false },
+            { label: "Documentation (MCP_SERVER.md)", href: "https://github.com/kadireren7/Torqa/blob/main/docs/MCP_SERVER.md", external: true },
+            { label: "GitHub repository", href: "https://github.com/kadireren7/Torqa", external: true },
+          ].map((row, i) => {
+            const className = "flex items-center justify-between px-4 py-3 text-[13px] transition-opacity hover:opacity-80";
+            const style: React.CSSProperties = {
+              background: "var(--surface-1)",
+              color: "var(--fg-2)",
+              borderTop: i === 0 ? undefined : "1px solid var(--line)",
+            };
+            if (row.external) {
+              return (
+                <a key={row.label} href={row.href} target="_blank" rel="noreferrer" className={className} style={style}>
+                  <span>{row.label}</span>
+                  <span style={{ color: "var(--fg-4)" }}>↗</span>
+                </a>
+              );
+            }
+            return (
+              <Link key={row.label} href={row.href} className={className} style={style}>
+                <span>{row.label}</span>
+                <span style={{ color: "var(--fg-4)" }}>→</span>
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ScrollText className="h-4 w-4 text-primary" />
-              Audit Explorer
-            </CardTitle>
-            <CardDescription>
-              Broader audit trail view for governance events, source activity, and exportable evidence.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link href="/audit">
-                Open explorer
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+            );
+          })}
+        </ul>
+      </section>
     </div>
   );
 }

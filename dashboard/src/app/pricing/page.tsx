@@ -8,12 +8,10 @@ import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
   title: "Pricing | Torqa",
-  description:
-    "Start free with the local MCP workflow builder and tool scanner. Paid plans coming soon for teams that need saved history, real MCP discovery, and shared workflow libraries.",
+  description: "Run Torqa locally for free. Hosted credits are planned.",
   openGraph: {
     title: "Pricing — Torqa",
-    description:
-      "Free local demo. Build simulated MCP workflow plans, run MCP tool scans, and export local reports. Paid plans coming soon.",
+    description: "Free locally. Hosted credits planned.",
     url: "/pricing",
     type: "website",
   },
@@ -21,76 +19,48 @@ export const metadata: Metadata = {
 
 const TIERS = [
   {
-    name: "Local Demo",
+    name: "Open-source local",
     price: "Free",
-    priceNote: "No account needed",
-    description:
-      "Try Torqa instantly in your browser. No signup, no data leaves your machine.",
+    priceNote: "Run anywhere",
+    description: "Run Torqa locally and connect it to Claude. No account.",
     features: [
-      "Build simulated MCP workflow plans",
-      "Run limited MCP tool scans",
-      "Export local workflow plan JSON",
-      "Copy Claude/Cursor prompts",
-      "Export local reports",
-      "Fix guidance for each finding",
+      "Run Torqa MCP server locally",
+      "Deterministic workflow planning",
+      "Validate plans before export",
+      "Export JSON / Claude prompt",
+      "Web workflow builder",
     ],
-    cta: { label: "Build demo workflow", href: "/demo/mcp-workflow-builder", accent: true },
-    comingSoon: false,
+    cta: { label: "Use locally", href: "/mcp-server", accent: true },
+    status: null as null | string,
     highlight: true,
   },
   {
-    name: "Free Account",
+    name: "Hosted Free",
     price: "Free",
-    priceNote: "Coming soon",
-    description:
-      "A free account with saved workflow history and real MCP tool discovery.",
+    priceNote: "Planned",
+    description: "A hosted account with starter credits and saved plans.",
     features: [
-      "More workflow plans",
-      "Saved workflow history",
-      "Real MCP tool discovery",
-      "Cloud report history",
-      "Source connections (GitHub, n8n)",
+      "Starter credits",
+      "Saved workflow plans",
+      "Cloud history",
     ],
-    cta: { label: "Coming soon", href: "#", accent: false },
-    comingSoon: true,
+    cta: { label: "Join waitlist", href: "/waitlist", accent: false },
+    status: "Planned",
     highlight: false,
   },
   {
-    name: "Pro",
-    price: "$19",
-    priceNote: "/ month · coming soon",
-    description:
-      "For developers who need saved history, export packs, and CI gate integration.",
+    name: "Credit packs",
+    price: "From $5",
+    priceNote: "Planned",
+    description: "Top up credits for hosted workflow generation and saved history.",
     features: [
-      "More workflow plans",
-      "Saved workflow history",
-      "Real MCP tool discovery",
-      "Export packs (JSON, Claude prompt)",
-      "CI gate integration",
-      "Tool safety policy packs",
-      "Priority support",
+      "$5 → 50 credits (Starter)",
+      "$15 → 200 credits (Builder)",
+      "$39 → 750 credits (Agency)",
+      "Local MCP usage stays free",
     ],
-    cta: { label: "Coming soon", href: "#", accent: false },
-    comingSoon: true,
-    highlight: false,
-  },
-  {
-    name: "Team",
-    price: "Custom",
-    priceNote: "Contact us",
-    description:
-      "For teams that need shared workflow libraries, approval policies, and GitHub/MCP integrations.",
-    features: [
-      "Shared workflow library",
-      "Approval policies",
-      "Team reports",
-      "GitHub/MCP integrations",
-      "Audit logs",
-      "SSO (OIDC)",
-      "Dedicated support",
-    ],
-    cta: { label: "Coming soon", href: "#", accent: false },
-    comingSoon: true,
+    cta: { label: "Planned", href: "/credits", accent: false },
+    status: "Planned",
     highlight: false,
   },
 ] as const;
@@ -99,9 +69,7 @@ export default async function PricingPage() {
   const supabase = await createClient();
   let navUser: { email: string; displayName: string | null } | null = null;
   if (supabase) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) {
       const meta = user.user_metadata as Record<string, unknown> | undefined;
       navUser = {
@@ -119,43 +87,25 @@ export default async function PricingPage() {
       <LandingNavbar user={navUser} />
 
       <main id="main-content">
-        {/* Hero */}
-        <section
-          className="px-5 pb-16 pt-36 text-center sm:px-10 sm:pt-44"
-          style={{ background: "var(--surface-0)" }}
-        >
+        <section className="px-5 pb-12 pt-36 text-center sm:px-10 sm:pt-44" style={{ background: "var(--surface-0)" }}>
           <div className="mx-auto max-w-[640px]">
-            <p
-              className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em]"
-              style={{ color: "var(--fg-4)" }}
-            >
+            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--fg-4)" }}>
               Pricing
             </p>
-            <h1
-              className="mb-5 text-[40px] font-bold leading-[1.06] tracking-[-0.04em] sm:text-[56px]"
-              style={{ color: "var(--fg-1)" }}
-            >
-              Start free.
+            <h1 className="mb-5 text-[40px] font-bold leading-[1.06] tracking-[-0.04em] sm:text-[56px]" style={{ color: "var(--fg-1)" }}>
+              Free locally.
               <br />
-              Scale when ready.
+              Credits when hosted.
             </h1>
-            <p
-              className="text-[16px] leading-[1.6]"
-              style={{ color: "var(--fg-3)" }}
-            >
-              Torqa&apos;s local demo runs entirely in your browser — no account required.
-              Paid tiers are coming soon for teams that need more scan quota and
-              cloud-backed features.
+            <p className="text-[16px] leading-[1.6]" style={{ color: "var(--fg-3)" }}>
+              Torqa is open source. Run it locally for free. Hosted Torqa Cloud will use credits
+              for saved workflow plans, cloud history, and hosted MCP workflow generation.
             </p>
           </div>
         </section>
 
-        {/* Pricing grid */}
-        <section
-          className="px-5 pb-28 pt-10 sm:px-10"
-          style={{ background: "var(--surface-0)" }}
-        >
-          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="px-5 pb-28 pt-6 sm:px-10" style={{ background: "var(--surface-0)" }}>
+          <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-5 sm:grid-cols-3">
             {TIERS.map((tier) => (
               <div
                 key={tier.name}
@@ -165,44 +115,22 @@ export default async function PricingPage() {
                   border: tier.highlight
                     ? "1px solid color-mix(in srgb, var(--accent) 45%, transparent)"
                     : "1px solid var(--line-2)",
-                  boxShadow: tier.highlight
-                    ? "0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent), 0 4px 24px -4px color-mix(in srgb, var(--accent) 20%, transparent)"
-                    : undefined,
                 }}
               >
-                {tier.highlight && (
-                  <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
-                    style={{ background: "var(--accent)", color: "#fff" }}
-                  >
-                    Current plan
-                  </div>
-                )}
-
                 <div className="flex flex-1 flex-col gap-5 p-6">
-                  {/* Header */}
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <p
-                        className="text-[15px] font-semibold tracking-tight"
-                        style={{ color: "var(--fg-1)" }}
-                      >
+                      <p className="text-[15px] font-semibold tracking-tight" style={{ color: "var(--fg-1)" }}>
                         {tier.name}
                       </p>
-                      {tier.comingSoon && (
-                        <Badge
-                          variant="outline"
-                          className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-300"
-                        >
-                          Coming soon
+                      {tier.status && (
+                        <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-300">
+                          {tier.status}
                         </Badge>
                       )}
                     </div>
                     <div className="flex items-baseline gap-1.5">
-                      <span
-                        className="text-3xl font-bold tracking-tight"
-                        style={{ color: "var(--fg-1)" }}
-                      >
+                      <span className="text-3xl font-bold tracking-tight" style={{ color: "var(--fg-1)" }}>
                         {tier.price}
                       </span>
                       <span className="text-[12px]" style={{ color: "var(--fg-4)" }}>
@@ -214,7 +142,6 @@ export default async function PricingPage() {
                     </p>
                   </div>
 
-                  {/* Features */}
                   <ul className="flex-1 space-y-2">
                     {tier.features.map((f) => (
                       <li key={f} className="flex items-start gap-2">
@@ -223,48 +150,25 @@ export default async function PricingPage() {
                           style={{ color: tier.highlight ? "var(--accent)" : "var(--fg-4)" }}
                           aria-hidden
                         />
-                        <span
-                          className="text-[13px] leading-snug"
-                          style={{ color: "var(--fg-2)" }}
-                        >
+                        <span className="text-[13px] leading-snug" style={{ color: "var(--fg-2)" }}>
                           {f}
                         </span>
                       </li>
                     ))}
                   </ul>
 
-                  {/* CTA */}
                   <div className="mt-auto pt-2">
-                    {tier.comingSoon ? (
-                      <div
-                        className="w-full rounded-lg py-2.5 text-center text-[13px] font-medium"
-                        style={{
-                          background: "var(--overlay-sm)",
-                          color: "var(--fg-4)",
-                          border: "1px solid var(--line)",
-                          cursor: "default",
-                        }}
-                        aria-disabled="true"
-                      >
-                        Coming soon
-                      </div>
-                    ) : (
-                      <Link
-                        href={tier.cta.href}
-                        className="block w-full rounded-lg py-2.5 text-center text-[13px] font-semibold transition-opacity hover:opacity-90"
-                        style={
-                          tier.cta.accent
-                            ? { background: "var(--accent)", color: "#fff" }
-                            : {
-                                background: "var(--overlay-sm)",
-                                color: "var(--fg-2)",
-                                border: "1px solid var(--line-2)",
-                              }
-                        }
-                      >
-                        {tier.cta.label}
-                      </Link>
-                    )}
+                    <Link
+                      href={tier.cta.href}
+                      className="block w-full rounded-lg py-2.5 text-center text-[13px] font-semibold transition-opacity hover:opacity-90"
+                      style={
+                        tier.cta.accent
+                          ? { background: "var(--accent)", color: "#fff" }
+                          : { background: "var(--overlay-sm)", color: "var(--fg-2)", border: "1px solid var(--line-2)" }
+                      }
+                    >
+                      {tier.cta.label}
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -272,111 +176,29 @@ export default async function PricingPage() {
           </div>
         </section>
 
-        {/* Early access banner */}
-        <section
-          className="px-5 pb-12 pt-0 sm:px-10"
-          style={{ background: "var(--surface-0)" }}
-        >
-          <div
-            className="mx-auto flex max-w-[1200px] flex-col items-center gap-4 rounded-2xl px-8 py-8 text-center sm:flex-row sm:justify-between sm:text-left"
-            style={{
-              background: "var(--surface-1)",
-              border: "1px solid var(--line-2)",
-            }}
-          >
-            <div className="space-y-1">
-              <p
-                className="text-[15px] font-semibold"
-                style={{ color: "var(--fg-1)" }}
-              >
-                Paid plans coming soon
-              </p>
-              <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>
-                Join early access to get notified when accounts open and lock in
-                a founding-user rate.
-              </p>
-            </div>
-            <Link
-              href="/waitlist"
-              className="shrink-0 rounded-lg border px-5 py-2.5 text-[13px] font-semibold transition-opacity hover:opacity-90"
-              style={{
-                background: "var(--accent)",
-                borderColor: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              Join early access
-            </Link>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section
-          className="border-t px-5 py-20 sm:px-10"
-          style={{ borderColor: "var(--line)", background: "var(--surface-1)" }}
-        >
-          <div className="mx-auto max-w-[700px] space-y-10">
-            <div className="text-center">
-              <h2
-                className="text-[28px] font-bold tracking-tight sm:text-[36px]"
-                style={{ color: "var(--fg-1)" }}
-              >
-                Frequently asked questions
-              </h2>
-            </div>
-
-            <div className="space-y-6">
-              {[
-                {
-                  q: "Is this really free?",
-                  a: "Yes. The local demo runs entirely in your browser with no account needed. 3 scans per day, reset at midnight local time.",
-                },
-                {
-                  q: "When will paid plans launch?",
-                  a: "We're in public alpha. Paid plans are planned for the future. No timeline yet.",
-                },
-                {
-                  q: "Is my MCP config sent to a server?",
-                  a: "No. The scanner runs entirely in your browser session. No data leaves your device.",
-                },
-                {
-                  q: "What happens after I hit the daily limit?",
-                  a: "The limit resets at midnight local time. You can also reset the local demo counter manually from the scan page.",
-                },
-              ].map(({ q, a }) => (
-                <div
-                  key={q}
-                  className="rounded-xl border p-5"
-                  style={{ borderColor: "var(--line)", background: "var(--surface-0)" }}
-                >
-                  <p className="text-[15px] font-semibold" style={{ color: "var(--fg-1)" }}>
-                    {q}
-                  </p>
-                  <p className="mt-2 text-[14px] leading-[1.65]" style={{ color: "var(--fg-3)" }}>
-                    {a}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-center text-[13px]" style={{ color: "var(--fg-4)" }}>
-              Daily limits reset at midnight (local time). Paid tiers will remove limits
-              and add cloud-backed features. Hosted credits are planned for a later release.
+        <section className="border-t px-5 py-16 sm:px-10" style={{ borderColor: "var(--line)", background: "var(--surface-1)" }}>
+          <div className="mx-auto max-w-[700px] space-y-6 text-center">
+            <h2 className="text-[24px] font-bold tracking-tight sm:text-[32px]" style={{ color: "var(--fg-1)" }}>
+              Honest status
+            </h2>
+            <p className="text-[14px] leading-[1.7]" style={{ color: "var(--fg-3)" }}>
+              No checkout is live. No credits have shipped. Local Torqa is fully usable today —
+              the hosted product (credits, cloud history, hosted generation) is planned.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
-                href="/demo/mcp-workflow-builder"
+                href="/mcp-server"
                 className="rounded-lg px-6 py-3 text-[14px] font-semibold transition-opacity hover:opacity-90"
                 style={{ background: "var(--accent)", color: "#fff" }}
               >
-                Build demo workflow
+                Use locally
               </Link>
               <Link
-                href="/scan"
+                href="/waitlist"
                 className="rounded-lg border px-6 py-3 text-[14px] font-medium transition-colors hover:opacity-80"
                 style={{ borderColor: "var(--line-2)", color: "var(--fg-2)" }}
               >
-                Scan MCP tools
+                Join waitlist
               </Link>
             </div>
           </div>

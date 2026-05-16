@@ -8,14 +8,11 @@ import { expect, test, type Page } from "@playwright/test";
 const ROUTES = [
   "/",
   "/overview",
-  "/scan",
-  "/scan/history",
-  "/workflow-library",
-  "/policies",
-  "/insights",
-  "/alerts",
-  "/schedules",
-  "/settings/api",
+  "/mcp-server",
+  "/credits",
+  "/pricing",
+  "/settings",
+  "/demo/mcp-workflow-builder",
 ] as const;
 
 const SERIOUS_IMPACTS = new Set(["critical", "serious"]);
