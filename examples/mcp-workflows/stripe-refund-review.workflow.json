@@ -1,0 +1,48 @@
+{
+  "format": "torqa.workflow.v1",
+  "id": "stripe-refund-review",
+  "prompt": "If a Stripe refund request arrives, create a review task before any refund action.",
+  "intent": {
+    "goal": "Enforce a mandatory human review step before any Stripe refund is processed.",
+    "trigger": "Event-driven — Stripe webhook: charge.dispute.created or refund.request",
+    "entities": ["Stripe refund request", "review task", "approval decision"],
+    "requiredSystems": ["Stripe", "CRM"],
+    "approvalSensitiveActions": ["stripe.create_refund_review — irreversible financial action"]
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "tool": "crm.create_task",
+      "purpose": "Create a review task in CRM with refund details.",
+      "condition": null,
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-2",
+      "tool": "stripe.create_refund_review",
+      "purpose": "Process the refund only after manual approval is recorded.",
+      "condition": "only if step-1 task status = approved",
+      "approvalRequired": true,
+      "risk": "high"
+    }
+  ],
+  "safety": {
+    "approvalPoints": ["step-2: stripe.create_refund_review"],
+    "blockedActions": [],
+    "missingTools": []
+  },
+  "graph": {
+    "nodes": [
+      { "id": "trigger", "label": "Stripe webhook" },
+      { "id": "step-1", "label": "crm.create_task" },
+      { "id": "approval", "label": "Human approval" },
+      { "id": "step-2", "label": "stripe.create_refund_review" }
+    ],
+    "edges": [
+      { "from": "trigger", "to": "step-1" },
+      { "from": "step-1", "to": "approval" },
+      { "from": "approval", "to": "step-2" }
+    ]
+  }
+}

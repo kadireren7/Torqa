@@ -1,0 +1,56 @@
+{
+  "format": "torqa.workflow.v1",
+  "id": "github-issue-to-crm",
+  "prompt": "When a GitHub issue mentions billing, create a CRM task and notify support.",
+  "intent": {
+    "goal": "Automatically route billing-related GitHub issues to CRM and alert the support team.",
+    "trigger": "Event-driven — GitHub issue opened or labelled billing",
+    "entities": ["GitHub issues", "CRM task", "support channel"],
+    "requiredSystems": ["GitHub", "CRM", "Slack"],
+    "approvalSensitiveActions": []
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "tool": "github.search_issues",
+      "purpose": "Search for newly opened issues containing billing keywords.",
+      "condition": null,
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-2",
+      "tool": "crm.create_task",
+      "purpose": "Create a CRM support task for each matched issue.",
+      "condition": "for each issue in step-1",
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-3",
+      "tool": "slack.send_message",
+      "purpose": "Notify #billing-support with issue details and CRM link.",
+      "condition": "after step-2 succeeds",
+      "approvalRequired": false,
+      "risk": "low"
+    }
+  ],
+  "safety": {
+    "approvalPoints": [],
+    "blockedActions": [],
+    "missingTools": []
+  },
+  "graph": {
+    "nodes": [
+      { "id": "trigger", "label": "GitHub webhook" },
+      { "id": "step-1", "label": "github.search_issues" },
+      { "id": "step-2", "label": "crm.create_task" },
+      { "id": "step-3", "label": "slack.send_message" }
+    ],
+    "edges": [
+      { "from": "trigger", "to": "step-1" },
+      { "from": "step-1", "to": "step-2" },
+      { "from": "step-2", "to": "step-3" }
+    ]
+  }
+}

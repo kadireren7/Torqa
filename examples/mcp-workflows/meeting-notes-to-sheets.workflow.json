@@ -1,0 +1,46 @@
+{
+  "format": "torqa.workflow.v1",
+  "id": "meeting-notes-to-sheets",
+  "prompt": "Summarize new Notion meeting notes and add action items to Google Sheets.",
+  "intent": {
+    "goal": "Extract action items from Notion meeting notes and log them to Google Sheets.",
+    "trigger": "Scheduled — daily at 17:00 or on-demand",
+    "entities": ["Notion pages", "action items", "Google Sheet rows"],
+    "requiredSystems": ["Notion", "Google Sheets"],
+    "approvalSensitiveActions": []
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "tool": "notion.search_pages",
+      "purpose": "Find meeting note pages updated today.",
+      "condition": null,
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-2",
+      "tool": "sheets.append_row",
+      "purpose": "Append extracted action items to the tracker sheet.",
+      "condition": "for each action item extracted from step-1 pages",
+      "approvalRequired": false,
+      "risk": "low"
+    }
+  ],
+  "safety": {
+    "approvalPoints": [],
+    "blockedActions": [],
+    "missingTools": []
+  },
+  "graph": {
+    "nodes": [
+      { "id": "trigger", "label": "Scheduled 17:00" },
+      { "id": "step-1", "label": "notion.search_pages" },
+      { "id": "step-2", "label": "sheets.append_row" }
+    ],
+    "edges": [
+      { "from": "trigger", "to": "step-1" },
+      { "from": "step-1", "to": "step-2" }
+    ]
+  }
+}

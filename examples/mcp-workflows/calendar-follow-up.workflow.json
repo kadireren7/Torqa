@@ -1,0 +1,58 @@
+{
+  "format": "torqa.workflow.v1",
+  "id": "calendar-follow-up",
+  "prompt": "When someone requests a meeting, check calendar availability, propose times in Slack, and create calendar events only after approval.",
+  "intent": {
+    "goal": "Coordinate meeting scheduling with availability checks and explicit approval before booking.",
+    "trigger": "Event-driven — incoming meeting request (Slack DM, form, or email)",
+    "entities": ["meeting request", "proposed times", "calendar event"],
+    "requiredSystems": ["Google Calendar", "Slack"],
+    "approvalSensitiveActions": ["calendar.create_event — sends invites to attendees"]
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "tool": "calendar.check_availability",
+      "purpose": "Find 30-minute open slots across requested attendees for the next 5 business days.",
+      "condition": null,
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-2",
+      "tool": "slack.send_message",
+      "purpose": "Propose 3 candidate slots to the requester and ask them to pick one.",
+      "condition": "after step-1 returns >= 1 slot",
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-3",
+      "tool": "calendar.create_event",
+      "purpose": "Create the calendar event for the selected slot and send invites.",
+      "condition": "only if requester selects a slot from step-2",
+      "approvalRequired": true,
+      "risk": "medium"
+    }
+  ],
+  "safety": {
+    "approvalPoints": ["step-3: calendar.create_event"],
+    "blockedActions": [],
+    "missingTools": []
+  },
+  "graph": {
+    "nodes": [
+      { "id": "trigger", "label": "Meeting request" },
+      { "id": "step-1", "label": "calendar.check_availability" },
+      { "id": "step-2", "label": "slack.send_message" },
+      { "id": "approval", "label": "User picks slot" },
+      { "id": "step-3", "label": "calendar.create_event" }
+    ],
+    "edges": [
+      { "from": "trigger", "to": "step-1" },
+      { "from": "step-1", "to": "step-2" },
+      { "from": "step-2", "to": "approval" },
+      { "from": "approval", "to": "step-3" }
+    ]
+  }
+}
