@@ -16,13 +16,15 @@ test.describe("public smoke", () => {
     const text = await res.text();
     expect(text).toContain("openapi: 3.0.3");
     expect(text).toMatch(/version: "\d+\.\d+\.\d+"/);
-
     expect(text).toContain("/api/public/scan");
   });
 
-  test("marketing home loads", async ({ page }) => {
+  test("marketing home shows MCP workflow agent hero", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: "Torqa" }).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /build mcp workflows from claude/i }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /try web builder/i }).first()).toBeVisible();
   });
 
   test("login page loads", async ({ page }) => {
@@ -32,12 +34,37 @@ test.describe("public smoke", () => {
   });
 });
 
-test.describe("local mode (no Supabase in CI)", () => {
-  test("overview is reachable when middleware skips auth", async ({ page }) => {
+test.describe("dashboard surfaces", () => {
+  test("console shows MCP Workflow Agent title", async ({ page }) => {
     await page.goto("/overview");
-    await expect(page.getByRole("heading", { name: /mcp workflow console/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /scan mcp tools/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /build demo workflow/i }).first()).toBeVisible();
-    await expect(page.getByText(/local demo mode/i).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /torqa mcp workflow agent/i }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /open web builder/i }).first()).toBeVisible();
+  });
+
+  test("mcp-server page shows server command and tools", async ({ page }) => {
+    await page.goto("/mcp-server");
+    await expect(page.getByRole("heading", { name: /torqa mcp server/i })).toBeVisible();
+    await expect(page.getByText(/npm run mcp:server/i).first()).toBeVisible();
+    await expect(page.getByText("torqa.create_workflow_from_prompt")).toBeVisible();
+  });
+
+  test("web builder opens", async ({ page }) => {
+    await page.goto("/demo/mcp-workflow-builder");
+    await expect(page.getByRole("main")).toBeVisible();
+  });
+
+  test("pricing shows planned credits honestly", async ({ page }) => {
+    await page.goto("/pricing");
+    await expect(page.getByRole("heading", { name: /open-source local/i })).toBeVisible();
+    await expect(page.getByText(/credit packs/i).first()).toBeVisible();
+    await expect(page.getByText(/planned/i).first()).toBeVisible();
+  });
+
+  test("credits page is marked planned", async ({ page }) => {
+    await page.goto("/credits");
+    await expect(page.getByRole("heading", { name: /hosted credits/i })).toBeVisible();
+    await expect(page.getByText(/planned/i).first()).toBeVisible();
   });
 });

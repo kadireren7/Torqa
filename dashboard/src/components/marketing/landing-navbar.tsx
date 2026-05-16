@@ -14,10 +14,10 @@ export type LandingNavbarUser = {
 } | null;
 
 const NAV_LINKS = [
-  { label: "Platform",     href: "#features" },
   { label: "How it works", href: "#how" },
-  { label: "Metrics",      href: "#metrics" },
+  { label: "MCP tools",    href: "#tools" },
   { label: "Pricing",      href: "/pricing" },
+  { label: "GitHub",       href: "https://github.com/kadireren7/Torqa" },
 ];
 
 type Props = { user: LandingNavbarUser };

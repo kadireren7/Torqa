@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${origin}/scan`,
+      url: `${origin}/demo/mcp-workflow-builder`,
       changeFrequency: "monthly",
       priority: 0.9,
     },
