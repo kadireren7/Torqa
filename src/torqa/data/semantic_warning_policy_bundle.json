@@ -1,9 +1,0 @@
-{
-  "ir_goal": {
-    "inputs": [
-      { "name": "sem_warn_empty_result_when_transitions" },
-      { "name": "sem_warn_no_after_guarantees_with_result" },
-      { "name": "sem_advisory_max_transitions_50" }
-    ]
-  }
-}

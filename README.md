@@ -130,13 +130,13 @@ dashboard/src/lib/workflow-builder/            # planning engine
 dashboard/src/lib/mcp/workflow-tools/          # MCP tool handlers
 dashboard/src/app/builder/                     # web visual builder
 docs/MCP_SERVER.md                             # Claude setup guide
-docs/ARCHITECTURE.md                           # how the planner works
-docs/EXAMPLES.md                               # example walkthroughs
-docs/ROADMAP.md                                # what's next
+docs/architecture.md                           # how the planner works
+docs/examples.md                               # example walkthroughs
+docs/roadmap.md                                # what's next
 examples/mcp-workflows/                        # static example workflow JSON
 ```
 
-More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+More detail: [`docs/architecture.md`](docs/architecture.md).
 
 ## Examples
 
@@ -148,7 +148,7 @@ Static example workflow plans (`torqa.workflow.v1` shape):
 - [`stripe-refund-review.workflow.json`](examples/mcp-workflows/stripe-refund-review.workflow.json)
 - [`calendar-follow-up.workflow.json`](examples/mcp-workflows/calendar-follow-up.workflow.json)
 
-Walkthroughs: [`docs/EXAMPLES.md`](docs/EXAMPLES.md).
+Walkthroughs: [`docs/examples.md`](docs/examples.md).
 
 ## Roadmap
 
@@ -158,7 +158,7 @@ Walkthroughs: [`docs/EXAMPLES.md`](docs/EXAMPLES.md).
 - n8n / Zapier export adapters
 - Optional hosted cloud (later)
 
-Full plan: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Full plan: [`docs/roadmap.md`](docs/roadmap.md).
 
 ## License
 

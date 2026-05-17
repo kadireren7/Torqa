@@ -1,47 +1,18 @@
-# Torqa Docs Index
+# Torqa Docs
 
-Use this page as the central map for repository documentation.
+Torqa is a local-first Visual MCP Workflow Builder for Claude. The dashboard
+runs locally, the MCP server runs over stdio, and there is no SaaS backend.
 
 ## Start here
 
-- [Overview](overview.md) - product and architecture orientation.
-- [Quickstart](quickstart.md) - first successful run in minutes.
-- [First run](first-run.md) - practical first-user checklist.
-- [Roadmap](roadmap.md) - current priorities and non-goals.
-- [Status](status.md) - release readiness and known gaps.
+- [MCP Server](MCP_SERVER.md) — connect Torqa to Claude Desktop / Claude Code over stdio.
+- [Architecture](architecture.md) — what is deterministic, what is planned, where the boundaries are.
+- [Examples](examples.md) — five canonical workflow plans in `torqa.workflow.v1`.
+- [Roadmap](roadmap.md) — direction and non-goals.
+- [Legacy](legacy.md) — earlier Torqa explored other directions; this file records what was dropped.
 
-## CLI and integrations
+## Repository layout
 
-- [Examples](examples.md) - CLI and workflow examples.
-- [GitHub Actions](github-actions.md) - CI gate integration.
-- [n8n integration](integrations/n8n.md) - adapter behavior and usage.
-- [API contract](api.md) - public scan envelope and request/response shape.
-
-## Trust and policy
-
-- [Trust layer](trust-layer.md)
-- [Trust profiles](trust-profiles.md)
-- [Trust policies](trust-policies.md)
-- [Trust scoring](trust-scoring.md)
-
-## Architecture and operations
-
-- [Architecture](architecture.md)
-- [Concepts](concepts.md)
-- [Cloud backend](cloud-backend.md)
-- [Project config](project-config.md)
-- [Security](security.md)
-- [Launch checklist](launch-checklist.md)
-- [Analytics events](analytics-events.md)
-- [Operations and debugging](operations-and-debugging.md)
-
-## Product and launch context
-
-- [Why now](why-now.md)
-- [Use cases](use-cases.md)
-- [Public launch](public-launch.md)
-- [Launch plan](launch-plan.md)
-- [Demo script](demo-script.md)
-- [Pricing hypothesis](pricing-hypothesis.md)
-- [Flagship demo](flagship-demo.md)
-- [Guardrail demo](guardrail-demo.md)
+- `dashboard/` — Next.js app: landing, `/builder`, `/mcp-server`, stdio MCP server, smoke test.
+- `examples/mcp-workflows/` — example workflow JSON files.
+- `docs/` — this folder.
