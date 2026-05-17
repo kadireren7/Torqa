@@ -23,25 +23,25 @@ function siteOrigin() {
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: {
-    default: "Torqa",
+    default: "Torqa — Local-first Visual MCP Workflow Builder for Claude",
     template: "%s · Torqa",
   },
   description:
-    "Security copilot for MCP servers and AI agents — scan tool manifests, detect risky permissions and exposed secrets, then generate hardened configs with deterministic safe defaults.",
+    "Open-source local MCP workflow builder. Connect Torqa to Claude, describe an automation, and get a visual workflow plan with tools, steps, approvals, safety notes, and exportable JSON.",
   applicationName: "Torqa",
   authors: [{ name: "Torqa" }],
   openGraph: {
     type: "website",
     siteName: "Torqa",
-    title: "Torqa — MCP Server Security Copilot",
+    title: "Torqa — Local-first Visual MCP Workflow Builder",
     description:
-      "Scan MCP servers, detect unsafe tools and secrets, fix critical issues, and export hardened configs.",
+      "Run Torqa locally, connect it to Claude as an MCP server, and generate visual workflow plans from prompts.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Torqa — MCP Server Security Copilot",
+    title: "Torqa — Local-first Visual MCP Workflow Builder",
     description:
-      "Scan MCP servers, detect unsafe tools and secrets, fix critical issues, and export hardened configs.",
+      "Run Torqa locally, connect it to Claude as an MCP server, and generate visual workflow plans from prompts.",
   },
   robots: { index: true, follow: true },
 };

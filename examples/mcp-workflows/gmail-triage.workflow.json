@@ -1,0 +1,58 @@
+{
+  "format": "torqa.workflow.v1",
+  "id": "gmail-triage",
+  "prompt": "Every morning, find urgent customer emails, notify Slack, and draft replies for review.",
+  "intent": {
+    "goal": "Triage urgent inbound customer emails and prepare drafted replies for human review.",
+    "trigger": "Scheduled — daily at 09:00",
+    "entities": ["urgent emails", "Slack channel", "draft replies"],
+    "requiredSystems": ["Gmail", "Slack"],
+    "approvalSensitiveActions": ["gmail.send_reply — outbound communication"]
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "tool": "gmail.search",
+      "purpose": "Find urgent unread customer emails from the last 24 hours.",
+      "condition": null,
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-2",
+      "tool": "slack.send_message",
+      "purpose": "Post a summary of urgent threads to #support-urgent.",
+      "condition": "for each thread in step-1",
+      "approvalRequired": false,
+      "risk": "low"
+    },
+    {
+      "id": "step-3",
+      "tool": "gmail.create_draft",
+      "purpose": "Draft a reply for each thread; do not send.",
+      "condition": "for each thread in step-1",
+      "approvalRequired": true,
+      "risk": "medium"
+    }
+  ],
+  "safety": {
+    "approvalPoints": ["step-3: gmail.create_draft"],
+    "blockedActions": [],
+    "missingTools": []
+  },
+  "graph": {
+    "nodes": [
+      { "id": "trigger", "label": "Scheduled 09:00" },
+      { "id": "step-1", "label": "gmail.search" },
+      { "id": "step-2", "label": "slack.send_message" },
+      { "id": "step-3", "label": "gmail.create_draft" },
+      { "id": "approval", "label": "Approval gate" }
+    ],
+    "edges": [
+      { "from": "trigger", "to": "step-1" },
+      { "from": "step-1", "to": "step-2" },
+      { "from": "step-1", "to": "step-3" },
+      { "from": "step-3", "to": "approval" }
+    ]
+  }
+}
