@@ -3,8 +3,9 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Cpu, Plug, Sparkles } from "lucide-react";
-import { githubUrl } from "@/lib/marketing-content";
 import { motion, AnimatePresence } from "framer-motion";
+
+const githubUrl = "https://github.com/kadireren7/Torqa";
 import {
   generateWorkflowPlan,
   buildWorkflowExport,
